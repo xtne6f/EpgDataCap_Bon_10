@@ -1,0 +1,48 @@
+﻿<UserControl x:Class="EpgTimer.SetApp2View"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="400" d:DesignWidth="650">
+    <UserControl.Resources>
+        <Style TargetType="{x:Type ComboBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type CheckBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type ListBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+    </UserControl.Resources>
+    <Grid>
+        <!--<GroupBox Header="予約情報管理処理" Height="187" Margin="12,12,12,0" Name="groupBox1" VerticalAlignment="Top">
+            <Grid>
+                <CheckBox Content="優先度が同じで時間が重なった場合、後の予約を優先する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_back_priority" VerticalAlignment="Top" />
+                <CheckBox Content="イベントリレーによる追従を行う" Height="16" HorizontalAlignment="Left" Margin="6,28,0,0" Name="checkBox_enable_relay" VerticalAlignment="Top" />
+                <CheckBox Content="EPGデータ読み込み時、予約時と番組名が変わっていれば番組名を変更する" Height="16" HorizontalAlignment="Left" Margin="6,50,0,0" Name="checkBox_chgTitle" VerticalAlignment="Top" />
+                <CheckBox Content="EPGデータ読み込み時、EventIDの変更を開始、終了時間のみで処理する(番組名を考慮しない)" Height="16" HorizontalAlignment="Left" Margin="6,72,0,0" Name="checkBox_chk_TimeOnly" VerticalAlignment="Top" />
+                <CheckBox Content="HDDの空きが少ない場合、古い録画ファイルを削除する(追加設定で対象フォルダを設定)" Height="16" HorizontalAlignment="Left" Margin="6,97,0,0" Name="checkBox_autoDel" VerticalAlignment="Top" />
+                <Button Content="追加設定" Height="23" HorizontalAlignment="Left" Margin="510,94,0,0" Name="button_autoDel" VerticalAlignment="Top" Width="75" Click="button_autoDel_Click" />
+                <CheckBox Content="録画時のファイル名にPlugInを使用する" Height="16" HorizontalAlignment="Left" Margin="6,126,0,0" Name="checkBox_recname" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="270,123,0,0" Name="comboBox_recname" VerticalAlignment="Top" Width="160" />
+                <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="436,124,0,0" Name="button_recname" VerticalAlignment="Top" Width="54" Click="button_recname_Click" />
+            </Grid>
+        </GroupBox>-->
+        <GroupBox Header="その他" Height="148" Margin="12,12,12,0" Name="groupBox2" VerticalAlignment="Top">
+            <Grid>
+                <CheckBox Content="×ボタンで最小化する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_closeMin" VerticalAlignment="Top" />
+                <CheckBox Content="最小化で起動する" Height="16" HorizontalAlignment="Left" Margin="6,28,0,0" Name="checkBox_minWake" VerticalAlignment="Top" />
+                <Button Content="録画設定のデフォルト値を設定" Height="23" HorizontalAlignment="Left" Margin="6,50,0,0" Name="button_recDef" VerticalAlignment="Top" Width="209" Click="button_recDef_Click" />
+                <Button Content="検索条件のデフォルト値を設定" Height="23" HorizontalAlignment="Left" Margin="242,50,0,0" Name="button_searchDef" VerticalAlignment="Top" Width="248" Click="button_searchDef_Click" />
+                <!--<CheckBox Content="ネットワーク接続を許可する" Height="16" HorizontalAlignment="Left" Margin="6,88,0,0" Name="checkBox_tcpServer" VerticalAlignment="Top" />
+                <Label Content="ポート" Height="28" HorizontalAlignment="Left" Margin="212,83,0,0" Name="label1" VerticalAlignment="Top" />
+                <TextBox Height="24" HorizontalAlignment="Left" Margin="264,85,0,0" Name="textBox_tcpPort" VerticalAlignment="Top" Width="62" />-->
+            </Grid>
+        </GroupBox>
+    </Grid>
+</UserControl>

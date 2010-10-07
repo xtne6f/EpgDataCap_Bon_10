@@ -1,0 +1,94 @@
+﻿<UserControl x:Class="EpgTimer.SetEpgView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="700">
+    <UserControl.Resources>
+        <Style TargetType="{x:Type ComboBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type CheckBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type ListBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+    </UserControl.Resources>
+    <Grid>
+        <Label Content="EPG取得対象サービス" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
+        <ListView Height="191" HorizontalAlignment="Left" Margin="32,46,0,0" Name="listView_service" VerticalAlignment="Top" Width="196" ItemsSource="{Binding}" >
+            <ListView.ItemContainerStyle>
+                <Style TargetType="{x:Type ListViewItem}">
+                    <Setter Property="ToolTipService.ShowDuration" Value="20000" />
+                    <Setter Property="ToolTip" Value="{Binding Path=ToolTipView}" />
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.View>
+                <GridView x:Name="gridView_service">
+                    <GridViewColumn>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding Path=IsSelected}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}" >
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left" Width="150" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+        <Label Content="基本情報のみ取得するネットワーク" Height="28" HorizontalAlignment="Left" Margin="234,145,0,0" Name="label2" VerticalAlignment="Top" />
+        <CheckBox Content="BS" Height="16" HorizontalAlignment="Left" Margin="275,179,0,0" Name="checkBox_bs" VerticalAlignment="Top" />
+        <CheckBox Content="CS1" Height="16" HorizontalAlignment="Left" Margin="330,179,0,0" Name="checkBox_cs1" VerticalAlignment="Top" />
+        <CheckBox Content="CS2" Height="16" HorizontalAlignment="Left" Margin="396,179,0,0" Name="checkBox_cs2" VerticalAlignment="Top" />
+        <Label Content="※詳細情報は取得できないが、短時間で取得可能になります（地デジは対象外）" Height="28" HorizontalAlignment="Left" Margin="234,201,0,0" Name="label3" VerticalAlignment="Top" />
+        <Button Content="全チェック" Height="23" HorizontalAlignment="Left" Margin="234,46,0,0" Name="button_allChk" VerticalAlignment="Top" Width="169" Click="button_allChk_Click" />
+        <Button Content="映像サービスのみチェック" Height="23" HorizontalAlignment="Left" Margin="234,75,0,0" Name="button_videoChk" VerticalAlignment="Top" Width="169" Click="button_videoChk_Click" />
+        <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="234,104,0,0" Name="button_allClear" VerticalAlignment="Top" Width="169" Click="button_allClear_Click" />
+        <Label Content="EPG取得開始時間 (有効にするものにチェック)" Height="28" HorizontalAlignment="Left" Margin="12,253,0,0" Name="label4" VerticalAlignment="Top" />
+<!--        <ListBox Height="65" HorizontalAlignment="Left" Margin="32,288,0,0" Name="listBox_time" VerticalAlignment="Top" Width="176" ItemsSource="{Binding}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <CheckBox IsChecked="{Binding Path=IsSelected}" Content="{Binding Path=Time}" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>-->
+        <ListView Height="86" HorizontalAlignment="Left" Margin="32,288,0,0" Name="ListView_time" VerticalAlignment="Top" Width="176" ItemsSource="{Binding}">
+            <ListView.View>
+                <GridView x:Name="gridView_time">
+                    <GridViewColumn>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding Path=IsSelected}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Time}" >
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="開始時間" HorizontalContentAlignment="Left" Width="100" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+        <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="214,288,0,0" Name="button_addTime" VerticalAlignment="Top" Width="75" Click="button_addTime_Click" />
+        <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="214,317,0,0" Name="button_delTime" VerticalAlignment="Top" Width="75" Click="button_delTime_Click" />
+        <ComboBox Height="24" HorizontalAlignment="Left" Margin="304,287,0,0" Name="comboBox_HH" VerticalAlignment="Top" Width="47" ItemsSource="{Binding}" />
+        <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="357,286,0,0" Name="label5" VerticalAlignment="Top" />
+        <ComboBox Height="24" HorizontalAlignment="Left" Margin="385,287,0,0" Name="comboBox_MM" VerticalAlignment="Top" Width="47" ItemsSource="{Binding}" />
+        <Label Content="実行抑制条件" Height="28" HorizontalAlignment="Left" Margin="12,378,0,0" Name="label6" VerticalAlignment="Top" />
+        <TextBox Height="24" HorizontalAlignment="Left" Margin="159,380,0,0" Name="textBox_ngCapMin" VerticalAlignment="Top" Width="49" />
+        <Label Content="分以内に予約がある場合、実行しない　(0で録画時も実行)" Height="28" HorizontalAlignment="Left" Margin="226,378,0,0" Name="label7" VerticalAlignment="Top" />
+        <Label Content="使用チューナー条件" Height="28" HorizontalAlignment="Left" Margin="12,412,0,0" Name="label8" VerticalAlignment="Top" />
+        <TextBox Height="24" HorizontalAlignment="Left" Margin="159,414,0,0" Name="textBox_ngTunerMin" VerticalAlignment="Top" Width="49" />
+        <Label Content="分以内に予約がある場合、使用しない" Height="28" HorizontalAlignment="Left" Margin="226,412,0,0" Name="label9" VerticalAlignment="Top" />
+    </Grid>
+</UserControl>

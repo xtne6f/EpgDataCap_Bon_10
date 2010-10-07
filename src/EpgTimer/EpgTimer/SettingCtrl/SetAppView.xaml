@@ -1,0 +1,64 @@
+﻿<UserControl x:Class="EpgTimer.SetAppView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="400" d:DesignWidth="650">
+    <UserControl.Resources>
+        <Style TargetType="{x:Type ComboBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type CheckBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type ListBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+    </UserControl.Resources>
+    <Grid>
+        <GroupBox Header="録画、EPG取得終了後のデフォルト動作" Height="147" Margin="12,12,12,0" Name="groupBox1" VerticalAlignment="Top">
+            <Grid>
+                <RadioButton Content="何もしない" Height="16" HorizontalAlignment="Left" Margin="119,6,0,0" Name="radioButton_none" VerticalAlignment="Top" />
+                <RadioButton Content="スタンバイ" Height="16" HorizontalAlignment="Left" Margin="217,6,0,0" Name="radioButton_standby" VerticalAlignment="Top" />
+                <RadioButton Content="休止" Height="16" HorizontalAlignment="Left" Margin="315,6,0,0" Name="radioButton_suspend" VerticalAlignment="Top" />
+                <RadioButton Content="シャットダウン" Height="16" HorizontalAlignment="Left" Margin="377,6,0,0" Name="radioButton_shutdown" VerticalAlignment="Top" />
+                <CheckBox Content="スタンバイ or 休止復帰後に再起動を行う" Height="16" HorizontalAlignment="Left" Margin="217,28,0,0" Name="checkBox_reboot" VerticalAlignment="Top" />
+                <Label Content="復帰処理開始時間" Height="28" HorizontalAlignment="Left" Margin="6,54,0,0" Name="label1" VerticalAlignment="Top" />
+                <Label Content="録画開始" Height="28" HorizontalAlignment="Left" Margin="119,54,0,0" Name="label4" VerticalAlignment="Top" />
+                <TextBox Height="24" Margin="178,56,0,0" Name="textBox_pcWakeTime" VerticalAlignment="Top" HorizontalAlignment="Left" Width="42" />
+                <Label Content="分前 (再起動ありの場合は＋5分)" Height="28" HorizontalAlignment="Left" Margin="226,54,0,0" Name="label2" VerticalAlignment="Top" />
+                <Label Content="bat実行条件" Height="28" HorizontalAlignment="Left" Margin="6,88,0,0" Name="label3" VerticalAlignment="Top" />
+                <Label Content="録画後動作" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label5" VerticalAlignment="Top" />
+                <Label Content="次の予約まで" Height="28" HorizontalAlignment="Left" Margin="119,88,0,0" Name="label6" VerticalAlignment="Top" />
+                <TextBox Height="24" HorizontalAlignment="Left" Margin="207,90,0,0" Name="textBox_batWait" VerticalAlignment="Top" Width="42" />
+                <Label Content="分以上の空きがある場合" Height="28" HorizontalAlignment="Left" Margin="255,88,0,0" Name="label7" VerticalAlignment="Top" />
+                <Button Content="抑制条件" Height="23" HorizontalAlignment="Left" Margin="497,11,0,0" Name="button_standbyCtrl" VerticalAlignment="Top" Width="75" Click="button_standbyCtrl_Click" />
+            </Grid>
+        </GroupBox>
+        <GroupBox Header="録画時の処理" Height="213" Margin="12,165,12,0" Name="groupBox2" VerticalAlignment="Top">
+            <Grid>
+                <Label Content="録画マージン" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label8" VerticalAlignment="Top" />
+                <Label Content="開始" Height="28" HorizontalAlignment="Left" Margin="119,6,0,0" Name="label9" VerticalAlignment="Top" />
+                <TextBox Height="24" HorizontalAlignment="Left" Margin="159,8,0,0" Name="textBox_megine_start" VerticalAlignment="Top" Width="42" />
+                <Label Content="秒" Height="28" HorizontalAlignment="Left" Margin="208,6,0,0" Name="label10" VerticalAlignment="Top" />
+                <Label Content="終了" Height="28" HorizontalAlignment="Left" Margin="250,6,0,0" Name="label11" VerticalAlignment="Top" />
+                <TextBox Height="24" HorizontalAlignment="Left" Margin="290,8,0,0" Name="textBox_margine_end" VerticalAlignment="Top" Width="42" />
+                <Label Content="秒" Height="28" HorizontalAlignment="Left" Margin="339,6,0,0" Name="label12" VerticalAlignment="Top" />
+                <Label Content="録画用アプリ" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" Name="label13" VerticalAlignment="Top" />
+                <Label Content="開始" Height="28" HorizontalAlignment="Left" Margin="119,40,0,0" Name="label14" VerticalAlignment="Top" />
+                <TextBox Height="24" HorizontalAlignment="Left" Margin="159,42,0,0" Name="textBox_appWakeTime" VerticalAlignment="Top" Width="42" />
+                <Label Content="分前に起動する" Height="28" HorizontalAlignment="Left" Margin="208,40,0,0" Name="label15" VerticalAlignment="Top" />
+                <CheckBox Content="最小化で起動する" Height="16" HorizontalAlignment="Left" Margin="127,74,0,0" Name="checkBox_appMin" VerticalAlignment="Top" />
+                <CheckBox Content="視聴時はViewを起動する" Height="16" HorizontalAlignment="Left" Margin="305,74,0,0" Name="checkBox_appView" VerticalAlignment="Top" />
+                <CheckBox Content="ドロップログを出力する" Height="16" HorizontalAlignment="Left" Margin="127,96,0,0" Name="checkBox_appDrop" VerticalAlignment="Top" />
+                <CheckBox Content="番組情報を出力する" Height="16" HorizontalAlignment="Left" Margin="305,96,0,0" Name="checkBox_addPgInfo" VerticalAlignment="Top" />
+                <CheckBox Content="UDP、TCP送信を行う" Height="16" HorizontalAlignment="Left" Margin="127,118,0,0" Name="checkBox_appNW" VerticalAlignment="Top" />
+                <CheckBox Content="同一ファイル名が存在した場合に上書きする" Height="16" HorizontalAlignment="Left" Margin="127,140,0,0" Name="checkBox_appOverWrite" VerticalAlignment="Top" />
+            </Grid>
+        </GroupBox>
+    </Grid>
+</UserControl>

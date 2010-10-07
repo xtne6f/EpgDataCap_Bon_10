@@ -1,0 +1,85 @@
+﻿<Window x:Class="EpgTimer.SettingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="設定" Height="579" Width="800" xmlns:local="clr-namespace:EpgTimer" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" >
+    <Window.Resources>
+        <Style TargetType="{x:Type ComboBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type CheckBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type ListBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <TabControl Name="tabControl" Margin="0,0,0,41">
+            <TabItem Header="基本設定" Name="tabItem_basic">
+                <Grid>
+                    <local:SetBasicView x:Name="setBasicView" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="チューナー設定" Name="tabItem_tuner">
+                <Grid>
+                    <local:SetTunerView x:Name="setTunerView" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="動作設定" Name="tabItem_app1">
+                <Grid>
+                    <local:SetAppView x:Name="setAppView" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="動作設定２" Name="tabItem_app2">
+                <Grid>
+                    <local:SetApp2View x:Name="setApp2View" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="動作設定３" Name="tabItem_app3">
+                <Grid>
+                    <local:SetApp3View x:Name="setApp3View" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="EPG取得設定" Name="tabItem_epg">
+                <Grid>
+                    <local:SetEpgView x:Name="setEpgView"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="サービス設定" Name="tabItem_service">
+                <Grid>
+                    <local:SetServiceCtrlView x:Name="setServiceCtrlView" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="番組表設定" Name="tabItem_epgColor">
+                <Grid>
+                    <local:SetEpgColor x:Name="setEpgColor" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="番組表設定２" Name="tabItem_epgService">
+                <Grid>
+                    <local:SetEpgServiceView x:Name="setEpgServiceView" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="TVTest連携" Name="tabItem_tvTest">
+                <Grid>
+                    <local:SetTVTestView x:Name="setTVTestView" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="カスタムボタン" Name="tabItem_custBtn">
+                <Grid>
+                    <local:SetCustBtnView x:Name="setCustBtnView" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="iEPG Ver.1" Name="tabItem_iepg">
+                <Grid>
+                    <local:SetIEPG1View x:Name="setIEPG1View" />
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <Button Content="OK" Height="23" Margin="0,0,104,12" Name="button_ok" VerticalAlignment="Bottom" Click="button_ok_Click" HorizontalAlignment="Right" Width="75" />
+        <Button Content="キャンセル" Height="23" HorizontalAlignment="Right" Margin="0,0,12,12" Name="button_cancel" VerticalAlignment="Bottom" Width="75" Click="button_cancel_Click" />
+    </Grid>
+</Window>

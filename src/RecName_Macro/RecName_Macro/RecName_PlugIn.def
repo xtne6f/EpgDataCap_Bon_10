@@ -1,0 +1,6 @@
+LIBRARY	"RecName_Macro"
+
+EXPORTS
+	GetPlugInName		@1
+	Setting				@2
+	ConvertRecName		@3

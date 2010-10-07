@@ -1,0 +1,228 @@
+﻿<UserControl x:Class="EpgTimer.SetEpgColor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="470" d:DesignWidth="592" >
+    <UserControl.Resources>
+        <Style TargetType="{x:Type ComboBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type CheckBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style TargetType="{x:Type ListBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+    </UserControl.Resources>
+    <Grid>
+        <GroupBox Header="ジャンル別背景色" Height="254" Margin="6,6,12,0" Name="groupBox1" VerticalAlignment="Top">
+            <Grid>
+                <Label Content="ニュース／報道" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,12,0,0" Name="comboBox0" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="スポーツ" Height="28" HorizontalAlignment="Left" Margin="302,12,0,0" Name="label2" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="400,12,0,0" Name="comboBox1" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="情報／ワイドショー" Height="28" HorizontalAlignment="Left" Margin="12,42,0,0" Name="label3" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,42,0,0" Name="comboBox2" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="ドラマ" Height="28" HorizontalAlignment="Left" Margin="302,42,0,0" Name="label4" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="400,42,0,0" Name="comboBox3" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="音楽" Height="28" HorizontalAlignment="Left" Margin="12,76,0,0" Name="label5" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,76,0,0" Name="comboBox4" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="バラエティ" Height="28" HorizontalAlignment="Left" Margin="302,76,0,0" Name="label6" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="400,76,0,0" Name="comboBox5" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="映画" Height="28" HorizontalAlignment="Left" Margin="12,106,0,0" Name="label7" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,106,0,0" Name="comboBox6" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="アニメ／特撮" Height="28" HorizontalAlignment="Left" Margin="302,106,0,0" Name="label8" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="400,106,0,0" Name="comboBox7" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="ドキュメンタリー／教養" Height="28" HorizontalAlignment="Left" Margin="12,136,0,0" Name="label9" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,136,0,0" Name="comboBox8" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="劇場／公演" Height="28" HorizontalAlignment="Left" Margin="302,136,0,0" Name="label10" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="400,136,0,0" Name="comboBox9" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="趣味／教育" Height="28" HorizontalAlignment="Left" Margin="12,166,0,0" Name="label11" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,166,0,0" Name="comboBox10" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="福祉" Height="28" HorizontalAlignment="Left" Margin="302,166,0,0" Name="label12" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="400,166,0,0" Name="comboBox11" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="その他" Height="28" HorizontalAlignment="Left" Margin="12,196,0,0" Name="label13" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,196,0,0" Name="comboBox12" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="なし" Height="28" HorizontalAlignment="Left" Margin="302,196,0,0" Name="label19" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="400,196,0,0" Name="comboBox13" VerticalAlignment="Top" Width="120">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </Grid>
+        </GroupBox>
+        <GroupBox Header="予約枠" Height="124" Margin="6,260,12,0" Name="groupBox2" VerticalAlignment="Top">
+            <Grid>
+                <Label Content="通常" Height="28" HorizontalAlignment="Left" Margin="12,6,0,0" Name="label14" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="166,6,0,0" Name="comboBox_reserveNormal" VerticalAlignment="Top" Width="120">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="無効" Height="28" HorizontalAlignment="Left" Margin="302,6,0,0" Name="label15" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="400,6,0,0" Name="comboBox_reserveNo" VerticalAlignment="Top" Width="120">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="チューナー不足" Height="28" HorizontalAlignment="Left" Margin="12,36,0,0" Name="label16" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="166,36,0,0" Name="comboBox_reserveNoTuner" VerticalAlignment="Top" Width="120">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <CheckBox Content="塗りつぶしで表示" Height="16" HorizontalAlignment="Left" Margin="12,70,0,0" Name="checkBox_reserveBackground" VerticalAlignment="Top" />
+            </Grid>
+        </GroupBox>
+        <GroupBox Header="フォント" Height="72" Margin="6,386,12,0" Name="groupBox3" VerticalAlignment="Top">
+            <Grid>
+                <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="12,6,0,0" Name="label17" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="83,6,0,0" Name="comboBox_font" VerticalAlignment="Top" Width="203" />
+                <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="302,6,0,0" Name="label18" VerticalAlignment="Top" />
+                <TextBox Height="24" HorizontalAlignment="Left" Margin="400,6,0,0" Name="textBox_fontSize" VerticalAlignment="Top" Width="39" />
+            </Grid>
+        </GroupBox>
+    </Grid>
+</UserControl>
