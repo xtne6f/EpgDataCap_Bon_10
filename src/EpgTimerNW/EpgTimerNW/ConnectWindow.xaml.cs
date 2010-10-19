@@ -13,7 +13,6 @@ using System.Windows.Shapes;
 using EpgTimer;
 using CtrlCmdCLI;
 
-
 namespace EpgTimerNW
 {
     /// <summary>

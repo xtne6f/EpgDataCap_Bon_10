@@ -15,6 +15,7 @@ using Common;
 using EpgTimer;
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
+using System.Net;
 
 namespace EpgTimerNW
 {
@@ -95,7 +96,21 @@ namespace EpgTimerNW
             closeButton.Click += new RoutedEventHandler(closeButton_Click);
             closeButton.Content = "終了";
             buttonList.Add("終了", closeButton);
+            
+            Button stanbyButton = new Button();
+            stanbyButton.MinWidth = 75;
+            stanbyButton.Margin = new Thickness(2, 2, 2, 15);
+            stanbyButton.Click += new RoutedEventHandler(standbyButton_Click);
+            stanbyButton.Content = "スタンバイ";
+            buttonList.Add("スタンバイ", stanbyButton);
 
+            Button suspendButton = new Button();
+            suspendButton.MinWidth = 75;
+            suspendButton.Margin = new Thickness(2, 2, 2, 15);
+            suspendButton.Click += new RoutedEventHandler(suspendButton_Click);
+            suspendButton.Content = "休止";
+            buttonList.Add("休止", suspendButton); 
+            
             Button epgCapButton = new Button();
             epgCapButton.MinWidth = 75;
             epgCapButton.Margin = new Thickness(2, 2, 2, 15);
@@ -337,7 +352,25 @@ namespace EpgTimerNW
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
             if (dlg.ShowDialog() == true)
             {
-                if (NWConnect.Instance.ConnectServer(Settings.Instance.NWServerIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, OutsideCmdCallback, this) == false)
+                bool connected = false;
+                String srvIP = Settings.Instance.NWServerIP;
+                try
+                {
+                    foreach (IPAddress address in Dns.GetHostAddresses(srvIP))
+                    {
+                        srvIP = address.ToString();
+                        if (NWConnect.Instance.ConnectServer(srvIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, OutsideCmdCallback, this) == true)
+                        {
+                            connected = true;
+                            break;
+                        }
+                    }
+                }
+                catch
+                {
+                }
+
+                if (connected == false)
                 {
                     MessageBox.Show("サーバーへの接続に失敗しました");
                 }
@@ -436,14 +469,22 @@ namespace EpgTimerNW
 
         void SuspendCmd()
         {
-            /*if (cmd.SendChkSuspend() != 1)
+            uint err = NWConnect.Instance.cmd.SendChkSuspend();
+            if (err == 205)
             {
-                MessageBox.Show("休止に移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
+                MessageBox.Show("サーバーに接続できませんでした");
             }
             else
             {
-                cmd.SendSuspend(2);
-            }*/
+                if (err != 1)
+                {
+                    MessageBox.Show("休止に移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
+                }
+                else
+                {
+                    NWConnect.Instance.cmd.SendSuspend(0xFF02);
+                }
+            }
         }
 
         void standbyButton_Click(object sender, RoutedEventArgs e)
@@ -453,14 +494,22 @@ namespace EpgTimerNW
 
         void StandbyCmd()
         {
-            /*if (cmd.SendChkSuspend() != 1)
+            uint err = NWConnect.Instance.cmd.SendChkSuspend();
+            if (err == 205)
             {
-                MessageBox.Show("スタンバイに移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
+                MessageBox.Show("サーバーに接続できませんでした");
             }
             else
             {
-                cmd.SendSuspend(1);
-            }*/
+                if (err != 1)
+                {
+                    MessageBox.Show("スタンバイに移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
+                }
+                else
+                {
+                    NWConnect.Instance.cmd.SendSuspend(0xFF01);
+                }
+            }
         }
 
         void closeButton_Click(object sender, RoutedEventArgs e)

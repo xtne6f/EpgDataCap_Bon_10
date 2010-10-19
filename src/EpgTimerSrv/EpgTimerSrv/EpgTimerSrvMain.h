@@ -68,6 +68,8 @@ protected:
 	BOOL enableTCPSrv;
 	DWORD tcpPort;
 	int autoAddDays;
+	BOOL chkGroupEvent;
+	BYTE rebootDef;
 
 	vector<OLD_EVENT_INFO_DATA3> oldSearchList;
 protected:

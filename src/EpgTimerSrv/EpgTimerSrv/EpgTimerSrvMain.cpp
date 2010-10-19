@@ -28,6 +28,8 @@ CEpgTimerSrvMain::CEpgTimerSrvMain(void)
 	this->enableTCPSrv = FALSE;
 	this->tcpPort = 4510;
 	this->autoAddDays = 8;
+	this->chkGroupEvent = TRUE;
+	this->rebootDef = 0;
 }
 
 
@@ -201,6 +203,8 @@ void CEpgTimerSrvMain::ReloadSetting()
 
 	this->wakeMargin = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath.c_str());
 	this->autoAddDays = GetPrivateProfileInt(L"SET", L"AutoAddDays", 8, iniPath.c_str());
+	this->chkGroupEvent = GetPrivateProfileInt(L"SET", L"ChkGroupEvent", 1, iniPath.c_str());
+	this->rebootDef = (BYTE)GetPrivateProfileInt(L"SET", L"Reboot", 0, iniPath.c_str());
 }
 
 //メイン処理停止
@@ -556,7 +560,7 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 				//対象期間外
 				continue;
 			}
-			
+
 			if(this->reserveManager.IsFindReserve(
 				result[i]->original_network_id,
 				result[i]->transport_stream_id,
@@ -572,6 +576,39 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 
 					itrAdd = addMap.find(eventKey);
 					if( itrAdd == addMap.end() ){
+						//まだ存在しないので追加対象
+						if(result[i]->eventGroupInfo != NULL && this->chkGroupEvent == TRUE){
+							//イベントグループのチェックをする
+							BOOL findGroup = FALSE;
+							for(size_t j=0; j<result[i]->eventGroupInfo->eventDataList.size(); j++ ){
+								EPGDB_EVENT_DATA groupData = result[i]->eventGroupInfo->eventDataList[j];
+								if(this->reserveManager.IsFindReserve(
+									groupData.original_network_id,
+									groupData.transport_stream_id,
+									groupData.service_id,
+									groupData.event_id
+									) == TRUE ){
+										findGroup = TRUE;
+										break;
+								}
+					
+								ULONGLONG eventKey = _Create64Key2(
+									groupData.original_network_id,
+									groupData.transport_stream_id,
+									groupData.service_id,
+									groupData.event_id
+									);
+
+								itrAdd = addMap.find(eventKey);
+								if( itrAdd != addMap.end() ){
+									findGroup = TRUE;
+									break;
+								}
+							}
+							if( findGroup == TRUE ){
+								continue;
+							}
+						}
 						//まだ存在しないので追加対象
 						RESERVE_DATA* addItem = new RESERVE_DATA;
 						if( result[i]->shortInfo != NULL ){
@@ -1002,6 +1039,9 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			WORD val = 0;
 			if( ReadVALUE( &val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				BYTE reboot = val>>8;
+				if( reboot == 0xFF ){
+					reboot = sys->rebootDef;
+				}
 				BYTE suspendMode = val&0x00FF;
 				if( sys->reserveManager.IsSuspendOK() == TRUE ){
 					if( sys->Lock() == TRUE ){
