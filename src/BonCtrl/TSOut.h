@@ -294,6 +294,10 @@ public:
 		wstring filePath
 		);
 
+	void SetSignalLevel(
+		float signalLv
+		);
+
 protected:
 	HANDLE lockEvent;
 

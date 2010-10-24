@@ -321,6 +321,32 @@ public:
 		TVTEST_CH_CHG_INFO* resVal
 		);
 
+	//ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
+	//戻り値：
+	// エラーコード
+	//引数：
+	// chInfo				[OUT]チャンネル情報
+	DWORD SendNwTVSetCh(
+		SET_CH_INFO* val
+		);
+
+	//ネットワークモードで起動中のEpgDataCap_Bonを終了
+	//戻り値：
+	// エラーコード
+	//引数：
+	// chInfo				[OUT]チャンネル情報
+	DWORD SendNwTVClose(
+		);
+
+	//ネットワークモードで起動するときのモード
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[OUT]モード（1:UDP 2:TCP 3:UDP+TCP）
+	DWORD SendNwTVMode(
+		DWORD val
+		);
+
 
 	//タイマーGUI（EpgTimer_Bon.exe）用
 

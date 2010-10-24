@@ -67,6 +67,10 @@
 #define CMD2_EPG_SRV_ENUM_PLUGIN			1061 //PlugInファイルの一覧を取得する（1:ReName、2:Write）
 #define CMD2_EPG_SRV_GET_CHG_CH_TVTEST		1062 //TVTestのチャンネル切り替え用の情報を取得する
 
+#define CMD2_EPG_SRV_NWTV_SET_CH			1070 //ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
+#define CMD2_EPG_SRV_NWTV_CLOSE				1071 //ネットワークモードで起動中のEpgDataCap_Bonを終了
+#define CMD2_EPG_SRV_NWTV_MODE				1072 //ネットワークモードで起動するときのモード（1:UDP 2:TCP 3:UDP+TCP）
+
 //タイマーGUI（EpgTimer_Bon.exe）用
 #define CMD2_TIMER_GUI_SHOW_DLG				101 //ダイアログを前面に表示
 #define CMD2_TIMER_GUI_UPDATE_RESERVE		102 //予約一覧の情報が更新された

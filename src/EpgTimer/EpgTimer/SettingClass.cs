@@ -165,6 +165,9 @@ namespace EpgTimer
         private List<IEPGStationInfo> iEpgStationList;
         private bool searchKeyAimaiFlag;
         private double dragScroll;
+        private bool nwTvMode;
+        private bool nwTvModeUDP;
+        private bool nwTvModeTCP;
 
         public bool SearchKeyRegExp
         {
@@ -475,7 +478,22 @@ namespace EpgTimer
             get { return dragScroll; }
             set { dragScroll = value; }
         }
-
+        public bool NwTvMode
+        {
+            get { return nwTvMode; }
+            set { nwTvMode = value; }
+        }
+        public bool NwTvModeUDP
+        {
+            get { return nwTvModeUDP; }
+            set { nwTvModeUDP = value; }
+        }
+        public bool NwTvModeTCP
+        {
+            get { return nwTvModeTCP; }
+            set { nwTvModeTCP = value; }
+        }
+        
         public Settings()
         {
             searchKeyContentList = new List<ContentKindInfo>();
@@ -518,7 +536,9 @@ namespace EpgTimer
             cust2BtnCmdOpt = "";
             iEpgStationList = new List<IEPGStationInfo>();
             dragScroll = 1.0;
-
+            nwTvMode = false;
+            nwTvModeUDP = false;
+            nwTvModeTCP = false;
         }
         [NonSerialized()]
         private static Settings _instance;

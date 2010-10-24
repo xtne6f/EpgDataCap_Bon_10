@@ -85,6 +85,10 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 			dlg.SetIniView(FALSE);
 		}else if( itr->first.CompareNoCase(L"nonw") == 0 ){
 			dlg.SetIniNW(FALSE);
+		}else if( itr->first.CompareNoCase(L"nwudp") == 0 ){
+			dlg.SetIniNWUDP(TRUE);
+		}else if( itr->first.CompareNoCase(L"nwtcp") == 0 ){
+			dlg.SetIniNWTCP(TRUE);
 		}
 	}
 

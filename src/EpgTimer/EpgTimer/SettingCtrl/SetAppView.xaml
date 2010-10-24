@@ -39,7 +39,7 @@
                 <Button Content="抑制条件" Height="23" HorizontalAlignment="Left" Margin="497,11,0,0" Name="button_standbyCtrl" VerticalAlignment="Top" Width="75" Click="button_standbyCtrl_Click" />
             </Grid>
         </GroupBox>
-        <GroupBox Header="録画時の処理" Height="213" Margin="12,165,12,0" Name="groupBox2" VerticalAlignment="Top">
+        <GroupBox Header="録画時の処理" Height="223" Margin="12,165,12,0" Name="groupBox2" VerticalAlignment="Top">
             <Grid>
                 <Label Content="録画マージン" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label8" VerticalAlignment="Top" />
                 <Label Content="開始" Height="28" HorizontalAlignment="Left" Margin="119,6,0,0" Name="label9" VerticalAlignment="Top" />
@@ -58,6 +58,8 @@
                 <CheckBox Content="番組情報を出力する" Height="16" HorizontalAlignment="Left" Margin="305,96,0,0" Name="checkBox_addPgInfo" VerticalAlignment="Top" />
                 <CheckBox Content="UDP、TCP送信を行う" Height="16" HorizontalAlignment="Left" Margin="127,118,0,0" Name="checkBox_appNW" VerticalAlignment="Top" />
                 <CheckBox Content="同一ファイル名が存在した場合に上書きする" Height="16" HorizontalAlignment="Left" Margin="127,140,0,0" Name="checkBox_appOverWrite" VerticalAlignment="Top" />
+                <Label Content="プロセス優先度" Height="28" HorizontalAlignment="Left" Margin="6,164,0,0" Name="label16" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="127,164,0,0" Name="comboBox_process" VerticalAlignment="Top" Width="157" />
             </Grid>
         </GroupBox>
     </Grid>

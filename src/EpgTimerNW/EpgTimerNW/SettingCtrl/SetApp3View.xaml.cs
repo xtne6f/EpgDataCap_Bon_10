@@ -30,9 +30,12 @@ namespace EpgTimer
             buttonItem.Add(new ViewMenuItem("設定", false));
             buttonItem.Add(new ViewMenuItem("再接続", false));
             buttonItem.Add(new ViewMenuItem("検索", false));
+            buttonItem.Add(new ViewMenuItem("スタンバイ", false));
+            buttonItem.Add(new ViewMenuItem("休止", false)); 
             buttonItem.Add(new ViewMenuItem("EPG取得", false));
             buttonItem.Add(new ViewMenuItem("EPG再読み込み", false));
             buttonItem.Add(new ViewMenuItem("終了", false));
+            buttonItem.Add(new ViewMenuItem("NetworkTV終了", false));
 
             taskItem.Add(new ViewMenuItem("（セパレータ）", false));
             taskItem.Add(new ViewMenuItem("設定", false));

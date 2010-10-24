@@ -64,73 +64,143 @@ namespace EpgTimer
                 {
                     TextBlock item = sender as TextBlock;
                     EpgServiceInfo serviceInfo = item.DataContext as EpgServiceInfo;
-
-                    UInt64 key = ((UInt64)serviceInfo.ONID) << 32 |
-                        ((UInt64)serviceInfo.TSID) << 16 |
-                        ((UInt64)serviceInfo.SID);
-                    TvTestChChgInfo chInfo = new TvTestChChgInfo();
-                    if (EpgTimerDef.Instance.CtrlCmd.SendGetChgChTVTest(key, ref chInfo) == 1)
+                    if (Settings.Instance.NwTvMode == true)
                     {
-                        bool send = false;
-                        foreach (Process p in Process.GetProcesses())
+                        SetChInfo chInfo = new SetChInfo();
+                        chInfo.useSID = 1;
+                        chInfo.useBonCh = 0;
+                        chInfo.ONID = serviceInfo.ONID;
+                        chInfo.TSID = serviceInfo.TSID;
+                        chInfo.SID = serviceInfo.SID;
+
+                        UInt32 nwMode = 0;
+                        if (Settings.Instance.NwTvModeUDP == true)
                         {
-                            if (String.Compare(p.ProcessName, "tvtest", true) == 0)
+                            nwMode += 1;
+                        }
+                        if (Settings.Instance.NwTvModeTCP == true)
+                        {
+                            nwMode += 2;
+                        }
+                        if (EpgTimerDef.Instance.CtrlCmd.SendNwTVMode(nwMode) == 1)
+                        {
+                            if (EpgTimerDef.Instance.CtrlCmd.SendNwTVSetCh(chInfo) == 1)
                             {
-                                cmd.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + p.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + p.Id.ToString());
-                                cmd.SetConnectTimeOut(1000);
-                                String val = "";
-                                if (cmd.SendViewGetBonDrivere(ref val) == 1)
+                                try
                                 {
-                                    if (String.Compare(val, chInfo.bonDriver, true) != 0)
+                                    bool open = false;
+                                    foreach (Process p in Process.GetProcesses())
                                     {
-                                        if (cmd.SendViewSetBonDrivere(chInfo.bonDriver) == 1)
+                                        if (String.Compare(p.ProcessName, "tvtest", true) == 0)
                                         {
-                                            cmd.SendViewSetCh(chInfo.chInfo);
+                                            open = true;
+                                            if (p.MainWindowHandle != IntPtr.Zero)
+                                            {
+                                                WakeupWindow(p.MainWindowHandle);
+                                            }
                                         }
                                     }
-                                    else
+                                    if (open == false)
                                     {
-                                        cmd.SendViewSetCh(chInfo.chInfo);
+                                        System.Diagnostics.Process process;
+                                        String cmdLine = "";
+                                        cmdLine += Settings.Instance.TvTestCmd;
+                                        if (cmdLine.IndexOf("/d") < 0)
+                                        {
+                                            if (Settings.Instance.TvTestCmd.Length > 0)
+                                            {
+                                                if (cmdLine.Length > 0)
+                                                {
+                                                    cmdLine += " ";
+                                                }
+                                            }
+                                            if (Settings.Instance.NwTvModeUDP == true)
+                                            {
+                                                cmdLine = "/d BonDriver_UDP.dll";
+                                            }
+                                            else if (Settings.Instance.NwTvModeTCP)
+                                            {
+                                                cmdLine = "/d BonDriver_TCP.dll";
+                                            }
+                                        }
+                                        process = System.Diagnostics.Process.Start(Settings.Instance.TvTestExe, cmdLine);
                                     }
-
-                                    if (p.MainWindowHandle != IntPtr.Zero)
-                                    {
-                                        WakeupWindow(p.MainWindowHandle);
-                                    }
-
-                                    send = true;
-                                    break;
+                                }
+                                catch
+                                {
                                 }
                             }
                         }
-                        if (send == false)
+                    }
+                    else
+                    {
+                        UInt64 key = ((UInt64)serviceInfo.ONID) << 32 |
+                            ((UInt64)serviceInfo.TSID) << 16 |
+                            ((UInt64)serviceInfo.SID);
+                        TvTestChChgInfo chInfo = new TvTestChChgInfo();
+                        if (EpgTimerDef.Instance.CtrlCmd.SendGetChgChTVTest(key, ref chInfo) == 1)
                         {
-                            try
+                            bool send = false;
+                            foreach (Process p in Process.GetProcesses())
                             {
-                                System.Diagnostics.Process process;
-                                String cmdLine = "/d " + chInfo.bonDriver + " /chspace " + chInfo.chInfo.space.ToString();
-                                if (Settings.Instance.TvTestCmd.Length > 0)
+                                if (String.Compare(p.ProcessName, "tvtest", true) == 0)
                                 {
-                                    cmdLine += " " + Settings.Instance.TvTestCmd;
-                                }
-                                process = System.Diagnostics.Process.Start(Settings.Instance.TvTestExe, cmdLine);
-                                System.Threading.Thread.Sleep(1000);
-
-                                cmd.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + process.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + process.Id.ToString());
-                                cmd.SetConnectTimeOut(1000);
-                                int count = 0;
-                                while (count < 10)
-                                {
-                                    if (cmd.SendViewSetCh(chInfo.chInfo) == 1)
+                                    cmd.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + p.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + p.Id.ToString());
+                                    cmd.SetConnectTimeOut(1000);
+                                    String val = "";
+                                    if (cmd.SendViewGetBonDrivere(ref val) == 1)
                                     {
+                                        if (String.Compare(val, chInfo.bonDriver, true) != 0)
+                                        {
+                                            if (cmd.SendViewSetBonDrivere(chInfo.bonDriver) == 1)
+                                            {
+                                                cmd.SendViewSetCh(chInfo.chInfo);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            cmd.SendViewSetCh(chInfo.chInfo);
+                                        }
+
+                                        if (p.MainWindowHandle != IntPtr.Zero)
+                                        {
+                                            WakeupWindow(p.MainWindowHandle);
+                                        }
+
+                                        send = true;
                                         break;
                                     }
-                                    System.Threading.Thread.Sleep(100);
-                                    count++;
                                 }
                             }
-                            catch
+                            if (send == false)
                             {
+                                try
+                                {
+                                    System.Diagnostics.Process process;
+                                    String cmdLine = "/d " + chInfo.bonDriver + " /chspace " + chInfo.chInfo.space.ToString();
+                                    if (Settings.Instance.TvTestCmd.Length > 0)
+                                    {
+                                        cmdLine += " " + Settings.Instance.TvTestCmd;
+                                    }
+                                    process = System.Diagnostics.Process.Start(Settings.Instance.TvTestExe, cmdLine);
+                                    System.Threading.Thread.Sleep(1000);
+
+                                    cmd.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + process.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + process.Id.ToString());
+                                    cmd.SetConnectTimeOut(1000);
+                                    int count = 0;
+                                    while (count < 10)
+                                    {
+                                        if (cmd.SendViewSetCh(chInfo.chInfo) == 1)
+                                        {
+                                            break;
+                                        }
+                                        System.Threading.Thread.Sleep(500);
+                                        count++;
+                                    }
+                                }
+                                catch
+                                {
+                                }
                             }
                         }
                     }

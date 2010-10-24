@@ -180,6 +180,9 @@
       <DependentUpon>SearchWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="SettingClass.cs" />
+    <Compile Include="SettingCtrl\SetCustBtnView.xaml.cs">
+      <DependentUpon>SetCustBtnView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="SettingCtrl\SetEpgColor.xaml.cs">
       <DependentUpon>SetEpgColor.xaml</DependentUpon>
     </Compile>
@@ -191,6 +194,9 @@
     </Compile>
     <Compile Include="SettingCtrl\SetIEPG1View.xaml.cs">
       <DependentUpon>SetIEPG1View.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="SettingCtrl\SetTVTestView.xaml.cs">
+      <DependentUpon>SetTVTestView.xaml</DependentUpon>
     </Compile>
     <Compile Include="SettingWindow.xaml.cs">
       <DependentUpon>SettingWindow.xaml</DependentUpon>
@@ -322,6 +328,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="SettingCtrl\SetCustBtnView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="SettingCtrl\SetEpgColor.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -335,6 +345,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="SettingCtrl\SetIEPG1View.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="SettingCtrl\SetTVTestView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

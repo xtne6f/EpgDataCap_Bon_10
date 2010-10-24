@@ -13,7 +13,7 @@ public:
 	~CTunerCtrl(void);
 
 	void SetExePath(wstring exePath);
-	BOOL OpenExe(wstring bonDriver, DWORD id, BOOL minWake, BOOL noView, BOOL noNW, map<DWORD, DWORD> registGUIMap, DWORD* PID );
+	BOOL OpenExe(wstring bonDriver, DWORD id, BOOL minWake, BOOL noView, BOOL noNW, map<DWORD, DWORD> registGUIMap, DWORD* PID, BOOL UDP, BOOL TCP, DWORD Priority );
 	void CloseExe(DWORD PID);
 	BOOL GetOpenExe(vector<DWORD>* IDList);
 	BOOL GetOpenExe(wstring exeName, vector<DWORD>* IDList);

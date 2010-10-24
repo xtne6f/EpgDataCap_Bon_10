@@ -32,6 +32,8 @@ namespace EpgTimer
             setEpgColor.SaveSetting();
             setEpgServiceView.SaveSetting();
             setIEPG1View.SaveSetting();
+            setTVTestView.SaveSetting();
+            setCustBtnView.SaveSetting();
             Settings.SaveToXmlFile();
             ChSet5.SaveFile();
 

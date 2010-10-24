@@ -120,7 +120,7 @@ BOOL _CreateDirectory( LPCTSTR lpPathName )
 
 HANDLE _CreateFile( LPCTSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile )
 {
-/*	SECURITY_DESCRIPTOR sd;
+	SECURITY_DESCRIPTOR sd;
 	SECURITY_ATTRIBUTES sa;
 	 
 	memset(&sd,0,sizeof(sd));
@@ -129,7 +129,7 @@ HANDLE _CreateFile( LPCTSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode
 	memset(&sa,0,sizeof(sa));
 	sa.nLength=sizeof(sa);
 	sa.lpSecurityDescriptor=&sd;
-*/
+/*
 	PACL                pDacl;
 	EXPLICIT_ACCESS     explicitAccess[3];
 	SECURITY_ATTRIBUTES sa;
@@ -147,7 +147,7 @@ HANDLE _CreateFile( LPCTSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode
 	sa.nLength              = sizeof(SECURITY_ATTRIBUTES);
 	sa.lpSecurityDescriptor = &sd;
 	sa.bInheritHandle       = FALSE;
-
+*/
 	HANDLE hFile =  ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, &sa, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		TCHAR* p = (TCHAR*)_tcsrchr(lpFileName, '\\');
@@ -168,36 +168,22 @@ HANDLE _CreateFile( LPCTSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode
 
 HANDLE _CreateFile2( LPCTSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile )
 {
-/*
-	SECURITY_DESCRIPTOR sd;
-	SECURITY_ATTRIBUTES sa;
-	 
-	memset(&sd,0,sizeof(sd));
-	InitializeSecurityDescriptor(&sd,SECURITY_DESCRIPTOR_REVISION);
-	SetSecurityDescriptorDacl(&sd, TRUE, NULL, FALSE);
-	memset(&sa,0,sizeof(sa));
-	sa.nLength=sizeof(sa);
-	sa.lpSecurityDescriptor=&sd;
-*/
-	PACL                pDacl;
-	EXPLICIT_ACCESS     explicitAccess[3];
-	SECURITY_ATTRIBUTES sa;
-	SECURITY_DESCRIPTOR sd;
-
-	InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
-
-	BuildExplicitAccessWithName(&explicitAccess[0], TEXT("SYSTEM"), FILE_ALL_ACCESS, GRANT_ACCESS, 0);
-	BuildExplicitAccessWithName(&explicitAccess[1], TEXT("Administrators"), FILE_ALL_ACCESS, GRANT_ACCESS, 0);
-	BuildExplicitAccessWithName(&explicitAccess[2], TEXT("Everyone"), FILE_ALL_ACCESS, GRANT_ACCESS, 0);
-	SetEntriesInAcl(3, explicitAccess, NULL, &pDacl);
-
-	SetSecurityDescriptorDacl(&sd, TRUE, pDacl, FALSE);
-
-	sa.nLength              = sizeof(SECURITY_ATTRIBUTES);
-	sa.lpSecurityDescriptor = &sd;
-	sa.bInheritHandle       = FALSE;
-
-	return ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, &sa, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
+	HANDLE hFile =  ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, NULL, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
+	if( hFile == INVALID_HANDLE_VALUE ){
+		TCHAR* p = (TCHAR*)_tcsrchr(lpFileName, '\\');
+		TCHAR* szDirPath = NULL;
+		if( p != NULL ){
+			int iSize = (int)(p - lpFileName);
+			szDirPath = new TCHAR[iSize+1];
+			_tcsncpy_s(szDirPath, iSize+1, lpFileName, iSize);
+		}
+		if( szDirPath != NULL ){
+			_CreateDirectory(szDirPath);
+			delete[] szDirPath;
+			hFile =  ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, NULL, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
+		}
+	}
+	return hFile;
 }
 
 BOOL _GetDiskFreeSpaceEx(

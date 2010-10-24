@@ -111,6 +111,14 @@ EpgTimer.exeの詳細はReadme_EpgTimer.txt
 
 
 ■更新履歴■
+10/10/25　人柱版１０．４
+・TVTest連携にNetworkTVモードを追加（EpgDataCap_BonからUDP or TCP送信するモード）
+・ボタンに「NetworkTV終了」を追加
+・動作設定に録画時のプロセス優先度指定できる設定追加
+・エラーログにSignal値を追加
+・EpgTimerNWにカスタムボタンとTVTest連携（NetworkTVモードのみ）を追加
+（起動するプロセスはローカルPCのものになります）
+・テストコード残っていたので削除
 10/10/25　人柱版１０．３
 ・番組情報変更時の情報更新に一部問題あったので修正
 ・GC.Collect()を行うようにしてみた

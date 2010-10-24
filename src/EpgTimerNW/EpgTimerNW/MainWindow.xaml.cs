@@ -125,6 +125,26 @@ namespace EpgTimerNW
             epgReloadButton.Content = "EPG再読み込み";
             buttonList.Add("EPG再読み込み", epgReloadButton);
 
+            Button custum1Button = new Button();
+            custum1Button.MinWidth = 75;
+            custum1Button.Margin = new Thickness(2, 2, 2, 15);
+            custum1Button.Click += new RoutedEventHandler(custum1Button_Click);
+            custum1Button.Content = "カスタム１";
+            buttonList.Add("カスタム１", custum1Button);
+
+            Button custum2Button = new Button();
+            custum2Button.MinWidth = 75;
+            custum2Button.Margin = new Thickness(2, 2, 2, 15);
+            custum2Button.Click += new RoutedEventHandler(custum2Button_Click);
+            custum2Button.Content = "カスタム２";
+            buttonList.Add("カスタム２", custum2Button);
+
+            Button nwTVEndButton = new Button();
+            nwTVEndButton.MinWidth = 75;
+            nwTVEndButton.Margin = new Thickness(2, 2, 2, 15);
+            nwTVEndButton.Click += new RoutedEventHandler(nwTVEndButton_Click);
+            nwTVEndButton.Content = "NetworkTV終了";
+            buttonList.Add("NetworkTV終了", nwTVEndButton);
 
             //ウインドウ位置の復元
             if (Settings.Instance.MainWndTop != 0)
@@ -555,6 +575,36 @@ namespace EpgTimerNW
                 }
             }
             ChSet5.LoadFile();
+        }
+
+
+        void custum1Button_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(Settings.Instance.Cust1BtnCmd, Settings.Instance.Cust1BtnCmdOpt);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        void custum2Button_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(Settings.Instance.Cust2BtnCmd, Settings.Instance.Cust2BtnCmdOpt);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+        
+        void nwTVEndButton_Click(object sender, RoutedEventArgs e)
+        {
+            cmd.SendNwTVClose();
         }
 
         void taskTray_ContextMenuClick(object sender, EventArgs e)

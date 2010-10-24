@@ -38,6 +38,16 @@
                     <local:SetEpgServiceView x:Name="setEpgServiceView" />
                 </Grid>
             </TabItem>
+            <TabItem Header="TVTest連携" Name="tabItem_tvTest">
+                <Grid>
+                    <local:SetTVTestView x:Name="setTVTestView" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="カスタムボタン" Name="tabItem_custBtn">
+                <Grid>
+                    <local:SetCustBtnView x:Name="setCustBtnView" />
+                </Grid>
+            </TabItem>
             <TabItem Header="iEPG Ver.1" Name="tabItem_iepg">
                 <Grid>
                     <local:SetIEPG1View x:Name="setIEPG1View" />

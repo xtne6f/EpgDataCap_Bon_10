@@ -55,6 +55,10 @@ CReserveManager::CReserveManager(void)
 	this->notFindTuijyuHour = 6;
 	this->noEpgTuijyuMin = 30;
 
+	this->NWTVPID = 0;
+	this->NWTVUDP = FALSE;
+	this->NWTVTCP = FALSE;
+
 	ReloadSetting();
 }
 
@@ -376,6 +380,14 @@ void CReserveManager::ReloadSetting()
 	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
 		itrCtrl->second->ReloadSetting();
 		itrCtrl->second->SetAutoDel(this->autoDel, &this->delExtList, &this->delFolderList); 
+	}
+
+	WCHAR buff[512] = L"";
+	GetPrivateProfileString( L"SET", L"RecExePath", L"", buff, 512, iniCommonPath.c_str() );
+	this->recExePath = buff;
+	if( this->recExePath.size() == 0 ){
+		GetModuleFolderPath(this->recExePath);
+		this->recExePath += L"\\EpgDataCap_Bon.exe";
 	}
 
 	UnLock();
@@ -3315,3 +3327,165 @@ BOOL CReserveManager::GetTVTestChgCh(
 	return ret;
 }
 
+BOOL CReserveManager::SetNWTVCh(
+	SET_CH_INFO* chInfo
+	)
+{
+	if( Lock() == FALSE ) return FALSE;
+
+	BOOL ret = FALSE;
+
+	BOOL findCh = FALSE;
+	SET_CH_INFO initCh;
+	wstring bonDriver = L"";
+
+	vector<DWORD> idList;
+	this->tunerManager.GetSupportServiceTuner(chInfo->ONID, chInfo->TSID, chInfo->SID, &idList);
+
+	for( int i=(int)idList.size() -1; i>=0; i-- ){
+		this->tunerManager.GetBonFileName(idList[i], bonDriver);
+		BOOL find = FALSE;
+		for( size_t j=0; j<this->tvtestUseBon.size(); j++ ){
+			if( CompareNoCase(this->tvtestUseBon[j], bonDriver) == 0 ){
+				find = TRUE;
+				break;
+			}
+		}
+		if( find == TRUE ){
+			map<DWORD, CTunerBankCtrl*>::iterator itr;
+			itr = this->tunerBankMap.find(idList[i]);
+			if( itr != this->tunerBankMap.end() ){
+				if( itr->second->IsOpenTuner() == FALSE ){
+					initCh.useSID = TRUE;
+					initCh.ONID = chInfo->ONID;
+					initCh.TSID = chInfo->TSID;
+					initCh.SID = chInfo->SID;
+
+					initCh.useBonCh = TRUE;
+					this->tunerManager.GetCh(idList[i], chInfo->ONID, chInfo->TSID, chInfo->SID, &initCh.space, &initCh.ch);
+					findCh = TRUE;
+					break;
+				}
+			}
+		}
+	}
+
+	if( findCh == FALSE ){
+		UnLock();
+		return FALSE;
+	}
+
+	BOOL findPID = FALSE;
+	CTunerCtrl ctrl;
+	vector<DWORD> pidList;
+	ctrl.GetOpenExe(L"EpgDataCap_Bon.exe", &pidList);
+	for( size_t i=0; i<pidList.size(); i++ ){
+		if( pidList[i] == this->NWTVPID ){
+			findPID = TRUE;
+		}
+	}
+	if( findPID == FALSE ){
+		this->NWTVPID = 0;
+	}
+
+	if( this->NWTVPID != 0 ){
+		int id = -1;
+		this->sendCtrlNWTV.SendViewGetID(&id);
+		if( this->sendCtrlNWTV.SendViewGetID(&id) == CMD_SUCCESS ){
+			if( id == -1 ){
+				DWORD status = 0;
+				if(this->sendCtrlNWTV.SendViewGetStatus(&status) == CMD_SUCCESS ){
+					if( status == VIEW_APP_ST_NORMAL ){
+						this->sendCtrlNWTV.SendViewSetBonDrivere(bonDriver);
+						this->sendCtrlNWTV.SendViewSetCh(&initCh);
+						ret = TRUE;
+					}else{
+						//録画とかしてそう
+						this->NWTVPID = 0;
+					}
+				}else{
+					//終了された？
+					this->NWTVPID = 0;
+				}
+			}else{
+				//録画用に奪われた？
+				this->NWTVPID = 0;
+			}
+		}else{
+			//終了された？
+			this->NWTVPID = 0;
+		}
+	}
+	if( this->NWTVPID == 0 ){
+
+		ctrl.SetExePath(this->recExePath.c_str());
+		DWORD PID = 0;
+		BOOL noNW = FALSE;
+		if( this->NWTVUDP == FALSE && this->NWTVTCP == FALSE ){
+			noNW = TRUE;
+		}
+		if( ctrl.OpenExe(bonDriver, -1, TRUE, TRUE, noNW, this->registGUIMap, &PID, this->NWTVUDP, this->NWTVTCP, 3) == TRUE ){
+			this->NWTVPID = PID;
+			ret = TRUE;
+
+			wstring pipeName = L"";
+			wstring eventName = L"";
+			Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, this->NWTVPID);
+			Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, this->NWTVPID);
+			this->sendCtrlNWTV.SetPipeSetting(eventName, pipeName);
+			this->sendCtrlNWTV.SendViewSetCh(&initCh);
+		}
+	}
+	if( ret == FALSE ){
+		this->NWTVPID = 0;
+	}
+
+	UnLock();
+
+	return ret;
+}
+
+BOOL CReserveManager::CloseNWTV(
+	)
+{
+	if( Lock() == FALSE ) return FALSE;
+
+	BOOL ret = FALSE;
+
+	if( this->NWTVPID != 0 ){
+		int id = -1;
+		if( this->sendCtrlNWTV.SendViewGetID(&id) == CMD_SUCCESS ){
+			if( id == -1 ){
+				this->sendCtrlNWTV.SendViewAppClose();
+				ret = TRUE;
+			}
+		}
+	}
+	this->NWTVPID = 0;
+
+	UnLock();
+
+	return ret;
+}
+
+void CReserveManager::SetNWTVMode(
+	DWORD mode
+	)
+{
+	if( Lock() == FALSE ) return ;
+
+	if( mode == 1 ){
+		this->NWTVUDP = TRUE;
+		this->NWTVTCP = FALSE;
+	}else if( mode == 2 ){
+		this->NWTVUDP = FALSE;
+		this->NWTVTCP = TRUE;
+	}else if( mode == 3 ){
+		this->NWTVUDP = TRUE;
+		this->NWTVTCP = TRUE;
+	}else{
+		this->NWTVUDP = FALSE;
+		this->NWTVTCP = FALSE;
+	}
+	UnLock();
+}

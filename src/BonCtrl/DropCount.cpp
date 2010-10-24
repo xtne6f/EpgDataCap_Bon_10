@@ -10,6 +10,8 @@ CDropCount::CDropCount(void)
 
 	this->lastLogDrop = 0;
 	this->lastLogScramble = 0;
+
+	this->signalLv = 0;
 }
 
 
@@ -53,6 +55,12 @@ void CDropCount::Clear()
 
 	this->lastLogDrop = 0;
 	this->lastLogScramble = 0;
+	this->signalLv = 0;
+}
+
+void CDropCount::SetSignal(float level)
+{
+	this->signalLv = level;
 }
 
 void CDropCount::GetCount(ULONGLONG* drop, ULONGLONG* scramble)
@@ -165,7 +173,7 @@ CHK_END:
 				wstring log;
 				SYSTEMTIME now;
 				GetLocalTime(&now);
-				Format(log, L"%04d/%02d/%02d %02d:%02d:%02d Drop:%I64d Scramble:%I64d",
+				Format(log, L"%04d/%02d/%02d %02d:%02d:%02d Drop:%I64d Scramble:%I64d Signal: %.02f",
 					now.wYear,
 					now.wMonth,
 					now.wDay,
@@ -173,7 +181,9 @@ CHK_END:
 					now.wMinute,
 					now.wSecond,
 					this->drop,
-					this->scramble);
+					this->scramble,
+					this->signalLv
+					);
 				this->log.push_back(log);
 				this->lastLogDrop = this->drop;
 				this->lastLogScramble = this->scramble;
@@ -184,7 +194,7 @@ CHK_END:
 
 void CDropCount::SaveLog(wstring filePath)
 {
-	HANDLE file = _CreateFile( filePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE file = _CreateFile2( filePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( file != INVALID_HANDLE_VALUE ){
 		DWORD write;
 

@@ -139,13 +139,16 @@ void CTunerBankCtrl::ReloadSetting()
 	this->recExePath = buff;
 	if( this->recExePath.size() == 0 ){
 		GetModuleFolderPath(this->recExePath);
-		this->recExePath += L"\\EpgDataCap_Box.exe";
+		this->recExePath += L"\\EpgDataCap_Bon.exe";
 	}
 
 	this->tunerCtrl.SetExePath(this->recExePath.c_str());
 
 	this->enableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str());
 	this->enableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str());
+
+	this->processPriority = (DWORD)GetPrivateProfileInt(L"SET", L"ProcessPriority", 3, iniPath.c_str());
+
 }
 
 void CTunerBankCtrl::SetAutoDel(
@@ -606,6 +609,26 @@ BOOL CTunerBankCtrl::IsNeedOpenTuner(multimap<LONGLONG, RESERVE_WORK*>* sortList
 		itr->second->reserveInfo->GetService(&(initCh->ONID), &(initCh->TSID), &(initCh->SID) );
 		initCh->useSID = TRUE;
 		initCh->useBonCh = FALSE;
+
+		wstring searchKey;
+		WIN32_FIND_DATA findData;
+		HANDLE find;
+
+		RESERVE_DATA data;
+		itr->second->reserveInfo->GetData(&data);
+
+		if( data.recSetting.recFolderList.size() == 0 ){
+			searchKey = this->recFolderPath;
+		}else{
+			searchKey = data.recSetting.recFolderList[0].recFolder;
+		}
+		searchKey += L"\\*.*";
+
+		//指定フォルダのファイル一覧取得
+		find = FindFirstFile( searchKey.c_str(), &findData);
+		if ( find != INVALID_HANDLE_VALUE ) {
+			FindClose(find);
+		}
 	}
 
 	return ret;
@@ -616,17 +639,21 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 {
 	BOOL noView = TRUE;
 	BOOL noNW = TRUE;
+	BOOL UDP = FALSE;
+	BOOL TCP = FALSE;
 	if( this->recView == TRUE && viewMode == TRUE ){
 		noView = FALSE;
 	}
 	if( this->recNW == TRUE || viewMode == TRUE ){
 		noNW = FALSE;
+		UDP = TRUE;
+		TCP = TRUE;
 	}
 	this->useOpendTuner = FALSE;
-	BOOL ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, this->registGUIMap, &this->processID);
+	BOOL ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, this->registGUIMap, &this->processID, UDP, TCP, this->processPriority);
 	if( ret == FALSE ){
 		Sleep(500);
-		ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, this->registGUIMap, &this->processID);
+		ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, this->registGUIMap, &this->processID, UDP, TCP, this->processPriority);
 	}
 	if( ret == TRUE ){
 		wstring pipeName = L"";
@@ -700,10 +727,10 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 						if( bonDriver.size() > 0 && CompareNoCase(bonDriver, this->bonFileName) == 0 ){
 							send.SendViewAppClose();
 							Sleep(5000);
-							ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, this->registGUIMap, &this->processID);
+							ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, this->registGUIMap, &this->processID, UDP, TCP, this->processPriority);
 							if( ret == FALSE ){
 								Sleep(500);
-								ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, this->registGUIMap, &this->processID);
+								ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, this->registGUIMap, &this->processID, UDP, TCP, this->processPriority);
 							}
 							if( ret == TRUE ){
 								wstring pipeName = L"";

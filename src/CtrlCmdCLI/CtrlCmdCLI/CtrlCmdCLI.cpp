@@ -1608,6 +1608,45 @@ UInt32 CtrlCmdUtil::SendGetChgChTVTest(
 }
 
 /// <summary>
+/// ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
+/// </summary>
+/// <param name="val">[IN]チャンネル情報</param>
+UInt32 CtrlCmdUtil::SendNwTVSetCh(
+	Def::SetChInfo^ val
+	)
+{
+	SET_CH_INFO chInfo;
+	CopyData(val, &chInfo);
+	DWORD ret = this->sendCmd->SendNwTVSetCh(&chInfo);
+
+	return ret;
+}
+
+/// <summary>
+/// ネットワークモードで起動中のEpgDataCap_Bonを終了
+/// </summary>
+UInt32 CtrlCmdUtil::SendNwTVClose(
+	)
+{
+	DWORD ret = this->sendCmd->SendNwTVClose();
+
+	return ret;
+}
+
+/// <summary>
+/// ネットワークモードで起動するときのモード
+/// </summary>
+/// <param name="val">[IN]モード（1:UDP 2:TCP 3:UDP+TCP）</param>
+UInt32 CtrlCmdUtil::SendNwTVMode(
+	UInt32 val
+	)
+{
+	DWORD ret = this->sendCmd->SendNwTVMode(val);
+
+	return ret;
+}
+
+/// <summary>
 /// BonDriverの切り替え
 /// </summary>
 /// <param name="val">[IN]BonDriverファイル名</param>

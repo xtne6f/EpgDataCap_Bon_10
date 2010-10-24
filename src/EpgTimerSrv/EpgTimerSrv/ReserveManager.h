@@ -151,6 +151,17 @@ public:
 		TVTEST_CH_CHG_INFO* chInfo
 		);
 
+	BOOL SetNWTVCh(
+		SET_CH_INFO* chInfo
+		);
+
+	BOOL CloseNWTV(
+		);
+
+	void SetNWTVMode(
+		DWORD mode
+		);
+
 protected:
 	HANDLE lockEvent;
 
@@ -238,6 +249,12 @@ protected:
 	int duraChgMarginMin;
 	int notFindTuijyuHour;
 	int noEpgTuijyuMin;
+
+	DWORD NWTVPID;
+	wstring recExePath;
+	CSendCtrlCmd sendCtrlNWTV;
+	BOOL NWTVUDP;
+	BOOL NWTVTCP;
 protected:
 	//PublicAPI排他制御用
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);

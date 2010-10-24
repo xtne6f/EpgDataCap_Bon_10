@@ -31,7 +31,7 @@ namespace EpgTimer
                 checkBox_nwTvMode.IsChecked = Settings.Instance.NwTvMode;
                 checkBox_nwUDP.IsChecked = Settings.Instance.NwTvModeUDP;
                 checkBox_nwTCP.IsChecked = Settings.Instance.NwTvModeTCP;
-
+                /*
                 string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
                 SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
                 foreach (string info in files)
@@ -52,11 +52,12 @@ namespace EpgTimer
                 {
                     comboBox_bon.SelectedIndex = 0;
                 }
+                */
             }
             catch
             {
             }
-
+            /*
             StringBuilder buff = new StringBuilder(512);
             buff.Clear();
 
@@ -70,7 +71,7 @@ namespace EpgTimer
                     listBox_bon.Items.Add(buff.ToString());
                 }
             }
-
+            */
         }
 
         private String GetBonFileName(String src)
@@ -129,13 +130,14 @@ namespace EpgTimer
             {
                 Settings.Instance.NwTvModeTCP = false;
             }
-
+            /*
             IniFileHandler.WritePrivateProfileString("TVTEST", "Num", listBox_bon.Items.Count.ToString(), SettingPath.TimerSrvIniPath);
             for (int i = 0; i < listBox_bon.Items.Count; i++)
             {
                 string val = listBox_bon.Items[i] as string;
                 IniFileHandler.WritePrivateProfileString("TVTEST", i.ToString(), val, SettingPath.TimerSrvIniPath);
             }
+            */
         }
 
         private void button_exe_Click(object sender, RoutedEventArgs e)

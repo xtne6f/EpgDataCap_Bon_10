@@ -32,12 +32,12 @@ BOOL CWriteMain::_StartSave(
 
 	wstring recFilePath = fileName;
 	if( overWriteFlag == TRUE ){
-		this->file = _CreateFile( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+		this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	}else{
-		this->file = _CreateFile( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL );
+		this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL );
 		if( this->file == INVALID_HANDLE_VALUE ){
 			if( GetNextFileName(fileName, recFilePath) == TRUE ){
-				this->file = _CreateFile( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL );
+				this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL );
 			}
 		}
 	}
@@ -53,7 +53,7 @@ BOOL CWriteMain::_StartSave(
 		SetFilePointerEx( this->file, stPos, NULL, FILE_BEGIN );
 		SetEndOfFile( this->file );
 		CloseHandle( this->file );
-		this->file = _CreateFile( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+		this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 		SetFilePointer( this->file, 0, NULL, FILE_BEGIN );
 	}
 

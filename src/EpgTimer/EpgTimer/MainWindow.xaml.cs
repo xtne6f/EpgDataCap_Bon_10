@@ -203,6 +203,13 @@ namespace EpgTimer
             custum2Button.Content = "カスタム２";
             buttonList.Add("カスタム２", custum2Button);
 
+            Button nwTVEndButton = new Button();
+            nwTVEndButton.MinWidth = 75;
+            nwTVEndButton.Margin = new Thickness(2, 2, 2, 15);
+            nwTVEndButton.Click += new RoutedEventHandler(nwTVEndButton_Click);
+            nwTVEndButton.Content = "NetworkTV終了";
+            buttonList.Add("NetworkTV終了", nwTVEndButton);
+
             ResetButtonView();
 
             ResetTaskMenu();
@@ -468,6 +475,11 @@ namespace EpgTimer
             }
         }
 
+        void nwTVEndButton_Click(object sender, RoutedEventArgs e)
+        {
+            EpgTimerDef.Instance.CtrlCmd.SendNwTVClose();
+        }
+        
         /// <summary>
         /// タスクトレイの右クリックメニューが押された
         /// </summary>

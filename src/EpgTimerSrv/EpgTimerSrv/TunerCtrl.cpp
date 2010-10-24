@@ -57,7 +57,7 @@ void CTunerCtrl::GetOption()
 	this->optNoNW = buff;
 }
 
-BOOL CTunerCtrl::OpenExe(wstring bonDriver, DWORD id, BOOL minWake, BOOL noView, BOOL noNW, map<DWORD, DWORD> registGUIMap, DWORD* PID )
+BOOL CTunerCtrl::OpenExe(wstring bonDriver, DWORD id, BOOL minWake, BOOL noView, BOOL noNW, map<DWORD, DWORD> registGUIMap, DWORD* PID, BOOL UDP, BOOL TCP, DWORD Priority )
 {
 	GetOption();
 	if( this->exePath.empty() == true ){
@@ -81,6 +81,13 @@ BOOL CTunerCtrl::OpenExe(wstring bonDriver, DWORD id, BOOL minWake, BOOL noView,
 	if( noNW == TRUE ){
 		strExecute += L" ";
 		strExecute += this->optNoNW;
+	}else{
+		if( UDP == TRUE ){
+			strExecute += L" -nwudp";
+		}
+		if( TCP == TRUE ){
+			strExecute += L" -nwtcp";
+		}
 	}
 
 	BOOL send = FALSE;
@@ -145,6 +152,32 @@ BOOL CTunerCtrl::OpenExe(wstring bonDriver, DWORD id, BOOL minWake, BOOL noView,
 			if( status == VIEW_APP_ST_ERR_BON ){
 				CloseExe(*PID);
 				bRet = FALSE;
+			}else{
+				HANDLE hProcess = OpenProcess(PROCESS_SET_INFORMATION, FALSE, *PID);
+				if( hProcess != NULL ){
+					switch(Priority){
+					case 0:
+						SetPriorityClass(hProcess, REALTIME_PRIORITY_CLASS);
+						break;
+					case 1:
+						SetPriorityClass(hProcess, HIGH_PRIORITY_CLASS);
+						break;
+					case 2:
+						SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS);
+						break;
+					case 3:
+						SetPriorityClass(hProcess, NORMAL_PRIORITY_CLASS);
+						break;
+					case 4:
+						SetPriorityClass(hProcess, BELOW_NORMAL_PRIORITY_CLASS);
+						break;
+					case 5:
+						SetPriorityClass(hProcess, IDLE_PRIORITY_CLASS);
+						break;
+					default:
+						break;
+					}
+				}
 			}
 		}
 	}

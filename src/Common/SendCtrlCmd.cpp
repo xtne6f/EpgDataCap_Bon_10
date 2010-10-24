@@ -1441,6 +1441,103 @@ DWORD CSendCtrlCmd::SendGetChgChTVTest(
 	return ret;
 }
 
+//ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
+//戻り値：
+// エラーコード
+//引数：
+// chInfo				[OUT]チャンネル情報
+DWORD CSendCtrlCmd::SendNwTVSetCh(
+	SET_CH_INFO* val
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_EPG_SRV_NWTV_SET_CH;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(val);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+
+	UnLock();
+	return ret;
+}
+
+//ネットワークモードで起動中のEpgDataCap_Bonを終了
+//戻り値：
+// エラーコード
+//引数：
+// chInfo				[OUT]チャンネル情報
+DWORD CSendCtrlCmd::SendNwTVClose(
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_EPG_SRV_NWTV_CLOSE;
+	send.dataSize = 0;
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+
+	UnLock();
+	return ret;
+}
+
+//ネットワークモードで起動するときのモード
+//戻り値：
+// エラーコード
+//引数：
+// val				[OUT]モード（1:UDP 2:TCP 3:UDP+TCP）
+DWORD CSendCtrlCmd::SendNwTVMode(
+	DWORD val
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_EPG_SRV_NWTV_MODE;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(val);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+
+	UnLock();
+	return ret;
+}
+
 //ダイアログを前面に表示
 //戻り値：
 // エラーコード

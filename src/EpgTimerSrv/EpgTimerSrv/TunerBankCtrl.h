@@ -182,6 +182,7 @@ protected:
 	wstring recExePath;
 	BYTE enableCaption;
 	BYTE enableData;
+	DWORD processPriority;
 
 	LONGLONG delayTime;
 

@@ -1431,6 +1431,32 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			}
 		}
 		break;
+	case CMD2_EPG_SRV_NWTV_SET_CH:
+		{
+			SET_CH_INFO val;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				if( sys->reserveManager.SetNWTVCh(&val) == TRUE ){
+					resParam->param = CMD_SUCCESS;
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_NWTV_CLOSE:
+		{
+			if( sys->reserveManager.CloseNWTV() == TRUE ){
+				resParam->param = CMD_SUCCESS;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_NWTV_MODE:
+		{
+			DWORD val;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				sys->reserveManager.SetNWTVMode(val);
+				resParam->param = CMD_SUCCESS;
+			}
+		}
+		break;
 	////////////////////////////////////////////////////////////
 	//旧バージョン互換コマンド
 	case CMD_EPG_SRV_GET_RESERVE_INFO:

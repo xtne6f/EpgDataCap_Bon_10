@@ -175,6 +175,10 @@ public:
 		wstring filePath
 		);
 
+	void SetSignalLevel(
+		float signalLv
+		);
+
 protected:
 	DWORD id;
 	WORD SID;

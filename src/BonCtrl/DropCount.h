@@ -21,6 +21,8 @@ public:
 
 	void SaveLog(wstring filePath);
 
+	void SetSignal(float level);
+
 protected:
 	typedef struct _DROP_INFO{
 		WORD PID;
@@ -46,7 +48,7 @@ protected:
 	LONGLONG lastLogTime;
 	ULONGLONG lastLogDrop;
 	ULONGLONG lastLogScramble;
-
+	float signalLv;
 
 protected:
 	void CheckCounter(CTSPacketUtil* tsPacket, DROP_INFO* info);

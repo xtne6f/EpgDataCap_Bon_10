@@ -422,6 +422,7 @@ float CBonCtrl::GetSignalLevel()
 {
 	if( Lock() == FALSE ) return 0;
 	float ret = this->bonUtil.GetSignalLevel();
+	this->tsOut.SetSignalLevel(ret);
 	UnLock();
 	return ret;
 }

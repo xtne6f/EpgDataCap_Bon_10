@@ -408,8 +408,11 @@ DWORD CBonDriverUtil::SetCh(
 		}
 	}
 	if( this->bon2IF->SetChannel(space, ch) == FALSE ){
-		UnLock();
-		return ERR_FALSE;
+		Sleep(500);
+		if( this->bon2IF->SetChannel(space, ch) == FALSE ){
+			UnLock();
+			return ERR_FALSE;
+		}
 	}
 	this->initChSetFlag = TRUE;
 	UnLock();

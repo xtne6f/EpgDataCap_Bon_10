@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Diagnostics;
 
 namespace EpgTimer
 {
@@ -102,6 +103,15 @@ namespace EpgTimer
             buff.Clear();
             IniFileHandler.GetPrivateProfileString("NO_SUSPEND", "NoStandbyTime", "10", buff, 512, SettingPath.TimerSrvIniPath);
             ngMin = buff.ToString();
+
+
+            comboBox_process.Items.Add("リアルタイム");
+            comboBox_process.Items.Add("高");
+            comboBox_process.Items.Add("通常以上");
+            comboBox_process.Items.Add("通常");
+            comboBox_process.Items.Add("通常以下");
+            comboBox_process.Items.Add("低");
+            comboBox_process.SelectedIndex = IniFileHandler.GetPrivateProfileInt("SET", "ProcessPriority", 3, SettingPath.TimerSrvIniPath);
         }
 
         public void SaveSetting()
@@ -198,6 +208,8 @@ namespace EpgTimer
             }
 
             IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoStandbyTime", ngMin, SettingPath.TimerSrvIniPath);
+
+            IniFileHandler.WritePrivateProfileString("SET", "ProcessPriority", comboBox_process.SelectedIndex.ToString(), SettingPath.TimerSrvIniPath);
         }
 
         private void button_standbyCtrl_Click(object sender, RoutedEventArgs e)

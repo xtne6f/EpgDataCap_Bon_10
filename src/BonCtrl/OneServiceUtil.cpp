@@ -537,3 +537,11 @@ void COneServiceUtil::SaveErrCount(
 {
 	this->dropCount.SaveLog(filePath);
 }
+
+
+void COneServiceUtil::SetSignalLevel(
+	float signalLv
+	)
+{
+	this->dropCount.SetSignal(signalLv);
+}

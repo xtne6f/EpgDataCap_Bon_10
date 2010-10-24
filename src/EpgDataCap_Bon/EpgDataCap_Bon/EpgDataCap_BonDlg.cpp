@@ -50,6 +50,8 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg(CWnd* pParent /*=NULL*/)
 	iniView = FALSE;
 	iniNetwork = TRUE;
 	iniMin = FALSE;
+	this->iniUDP = FALSE;
+	this->iniTCP = FALSE;
 	
 	this->minTask = GetPrivateProfileInt( L"Set", L"MinTask", 0, this->moduleIniPath );
 }
@@ -187,8 +189,17 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	this->main.SetHwnd(GetSafeHwnd());
 
 	if( this->iniNetwork == TRUE ){
-		this->chkUDP.SetCheck(GetPrivateProfileInt(L"SET", L"ChkUDP", 0, this->moduleIniPath));
-		this->chkTCP.SetCheck(GetPrivateProfileInt(L"SET", L"ChkTCP", 0, this->moduleIniPath));
+		if( this->iniUDP == TRUE || this->iniTCP == TRUE ){
+			if( this->iniUDP == TRUE ){
+				this->chkUDP.SetCheck(TRUE);
+			}
+			if( this->iniTCP == TRUE ){
+				this->chkTCP.SetCheck(TRUE);
+			}
+		}else{
+			this->chkUDP.SetCheck(GetPrivateProfileInt(L"SET", L"ChkUDP", 0, this->moduleIniPath));
+			this->chkTCP.SetCheck(GetPrivateProfileInt(L"SET", L"ChkTCP", 0, this->moduleIniPath));
+		}
 	}
 
 	ReloadNWSet();

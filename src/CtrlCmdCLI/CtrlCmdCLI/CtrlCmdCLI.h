@@ -345,6 +345,28 @@ namespace CtrlCmdCLI {
 			Def::TvTestChChgInfo^% resVal
 			);
 
+		/// <summary>
+		/// ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
+		/// </summary>
+        /// <param name="val">[IN]チャンネル情報</param>
+		UInt32 SendNwTVSetCh(
+			Def::SetChInfo^ val
+			);
+
+		/// <summary>
+		/// ネットワークモードで起動中のEpgDataCap_Bonを終了
+		/// </summary>
+		UInt32 SendNwTVClose(
+			);
+
+		/// <summary>
+		/// ネットワークモードで起動するときのモード
+		/// </summary>
+        /// <param name="val">[IN]モード（1:UDP 2:TCP 3:UDP+TCP）</param>
+		UInt32 SendNwTVMode(
+			UInt32 val
+			);
+
 		//View（TVTest）用
 
 		/// <summary>

@@ -22,6 +22,8 @@ public:
 	void SetIniMin(BOOL minFlag){ iniMin = minFlag; };
 	void SetIniNW(BOOL networkFlag){ iniNetwork = networkFlag; };
 	void SetIniView(BOOL viewFlag){ iniView = viewFlag; };
+	void SetIniNWUDP(BOOL udpFlag){ iniUDP = udpFlag; };
+	void SetIniNWTCP(BOOL tcpFlag){ iniTCP = tcpFlag; };
 
 // ダイアログ データ
 	enum { IDD = IDD_EPGDATACAP_BON_DIALOG };
@@ -67,6 +69,8 @@ protected:
 	BOOL iniMin;
 	BOOL iniView;
 	BOOL iniNetwork;
+	BOOL iniUDP;
+	BOOL iniTCP;
 
 	CEpgDataCap_BonMain main;
 
