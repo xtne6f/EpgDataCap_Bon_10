@@ -146,6 +146,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 			eventInfo = itrEvent->second;
 		}
 		if( eit->table_id == 0x4E || eit->table_id == 0x4F ){
+			//p/fなので時間更新
 			eventInfo->StartTimeFlag = eitEventInfo->StartTimeFlag;
 			eventInfo->start_time = eitEventInfo->start_time;
 			eventInfo->DurationFlag = eitEventInfo->DurationFlag;
@@ -158,6 +159,14 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 			}else if( eit->section_number == 1 ){
 				serviceInfo->nextEvent = eventInfo;
 			}
+		}else if( 0x50 <= eit->table_id && eit->table_id <= 0x5F ){
+			//自ストリームなら時間更新
+			eventInfo->StartTimeFlag = eitEventInfo->StartTimeFlag;
+			eventInfo->start_time = eitEventInfo->start_time;
+			eventInfo->DurationFlag = eitEventInfo->DurationFlag;
+			eventInfo->durationSec = eitEventInfo->durationHH*60*60 +
+				eitEventInfo->durationMM*60 +
+				eitEventInfo->durationSS;
 		}
 
 		//ExtendedEventは複数あるので1度だけチェックする

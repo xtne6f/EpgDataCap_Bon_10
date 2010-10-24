@@ -695,6 +695,7 @@ namespace EpgTimer
                         {
                             epgView.ReloadEpgData();
                             epgView.ReDrawReserve();
+                            GC.Collect();
                         }
                         else
                         {
@@ -702,6 +703,7 @@ namespace EpgTimer
                             {
                                 epgView.ReloadEpgData();
                                 epgView.ReDrawReserve();
+                                GC.Collect();
                             }));
                         }
                     }
