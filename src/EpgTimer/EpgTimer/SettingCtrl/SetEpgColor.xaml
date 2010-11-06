@@ -213,6 +213,17 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+                <Label Content="一部実行" Height="28" HorizontalAlignment="Left" Margin="302,36,0,0" Name="label20" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="400,36,0,0" Name="comboBox_reserveWarning" VerticalAlignment="Top" Width="120">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Background="{Binding Path=Color}" Width="20" />
+                                <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
                 <CheckBox Content="塗りつぶしで表示" Height="16" HorizontalAlignment="Left" Margin="12,70,0,0" Name="checkBox_reserveBackground" VerticalAlignment="Top" />
             </Grid>
         </GroupBox>

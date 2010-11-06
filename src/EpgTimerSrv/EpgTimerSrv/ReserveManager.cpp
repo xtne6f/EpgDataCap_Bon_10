@@ -2129,6 +2129,9 @@ void CReserveManager::CheckTuijyu()
 							}
 						}else{
 							//時間未定
+							if( resNowVal.StartTimeFlag == 1 ){
+								data.startTime = resNowVal.start_time;
+							}
 							LONGLONG dureSec = GetNowI64Time() - ConvertI64Time(data.startTime) + 10*60*I64_1SEC;
 							if( (DWORD)(dureSec/I64_1SEC) > data.durationSecond ){
 								data.durationSecond = (DWORD)(dureSec/I64_1SEC);
@@ -2172,9 +2175,15 @@ void CReserveManager::CheckTuijyu()
 										data.title.c_str(),
 										data.stationName.c_str()
 										);
+									if( CheckEventRelay(&resNextVal, &data, TRUE) == TRUE ){
+										chgReserve = TRUE;
+									}
 								}
 							}
 							if( endRec == FALSE ){
+								if( resNextVal.StartTimeFlag == 1 ){
+									data.startTime = resNextVal.start_time;
+								}
 								LONGLONG dureSec = GetNowI64Time() - ConvertI64Time(data.startTime) + 10*60*I64_1SEC;
 								if( (DWORD)(dureSec/I64_1SEC) > data.durationSecond ){
 									data.durationSecond = (DWORD)(dureSec/I64_1SEC);
@@ -2356,7 +2365,6 @@ void CReserveManager::CheckTuijyu()
 					data.recSetting.useMargineFlag = 1;
 					data.recSetting.startMargine = 0;
 					data.recSetting.endMargine = -60;
-					OutputDebugString(L"●情報確認できず終了 ");
 					_OutputDebugString(L"●情報確認できず終了 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
 						data.startTime.wYear,
 						data.startTime.wMonth,
@@ -2554,7 +2562,7 @@ BOOL CReserveManager::CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* c
 	return chgRes;
 }
 
-BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data)
+BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, BOOL errEnd)
 {
 	BOOL add = FALSE;
 	if( info == NULL ){
@@ -2568,9 +2576,13 @@ BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 			return add;
 	}
 	if( info->eventRelayInfo != NULL ){
-		if( info->StartTimeFlag == 0 || info->DurationFlag == 0 ){
-			OutputDebugString(L"イベントリレーチェック　開始 or 総時間未定");
-			return add;
+		if( errEnd == TRUE ){
+			OutputDebugString(L"イベントリレーチェック　総時間異常終了");
+		}else{
+			if( info->StartTimeFlag == 0 || info->DurationFlag == 0 ){
+				OutputDebugString(L"イベントリレーチェック　開始 or 総時間未定");
+				return add;
+			}
 		}
 		//イベントリレーあり
 		for( size_t i=0; info->eventRelayInfo->eventDataList.size(); i++ ){
@@ -2594,17 +2606,20 @@ BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 						itrRes->second->eventID == info->eventRelayInfo->eventDataList[i].event_id ){
 							//予約済み
 							find = TRUE;
-							//時間変更必要かチェック
-							SYSTEMTIME chkStart;
-							GetSumTime(info->start_time, info->durationSec, &chkStart);
-							if( ConvertI64Time(itrRes->second->startTime) != ConvertI64Time(chkStart) ){
-								RESERVE_DATA chgData = *(itrRes->second);
-								//開始時間変わっている
-								add = TRUE;
-								chgData.startTime = chkStart;
-								chgData.startTimeEpg = chgData.startTime;
-								_ChgReserveData( &chgData, TRUE );
-								OutputDebugString(L"★イベントリレー開始変更");
+							//追加済みなら異常終了のために開始時間変更する必要なし
+							if( errEnd == FALSE ){
+								//時間変更必要かチェック
+								SYSTEMTIME chkStart;
+								GetSumTime(info->start_time, info->durationSec, &chkStart);
+								if( ConvertI64Time(itrRes->second->startTime) != ConvertI64Time(chkStart) ){
+									RESERVE_DATA chgData = *(itrRes->second);
+									//開始時間変わっている
+									add = TRUE;
+									chgData.startTime = chkStart;
+									chgData.startTimeEpg = chgData.startTime;
+									_ChgReserveData( &chgData, TRUE );
+									OutputDebugString(L"★イベントリレー開始変更");
+								}
 							}
 							break;
 					}
@@ -2615,7 +2630,11 @@ BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 						addItem.title = L"(イベントリレー)";
 					}
 					addItem.title += data->title;
-					GetSumTime(info->start_time, info->durationSec, &addItem.startTime);
+					if( errEnd == TRUE ){
+						GetLocalTime(&addItem.startTime);
+					}else{
+						GetSumTime(info->start_time, info->durationSec, &addItem.startTime);
+					}
 					addItem.startTimeEpg = addItem.startTime;
 					addItem.durationSecond = 10*60;
 					addItem.stationName = itrCh->second.serviceName;

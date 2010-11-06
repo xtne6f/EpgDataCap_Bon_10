@@ -158,8 +158,11 @@ namespace EpgTimer
                             block.Background = Brushes.LightBlue;
                             block.Foreground = Brushes.Blue;
                             toolTip.Child = block;
-                            toolTip.IsOpen = true;
-                            toolTipOffTimer.Start();
+                            if (Settings.Instance.EpgToolTip == true)
+                            {
+                                toolTip.IsOpen = true;
+                                toolTipOffTimer.Start();
+                            }
 
                             lastPopupInfo = info;
                             lastPopupPos = cursorPos;

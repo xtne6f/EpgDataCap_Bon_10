@@ -189,6 +189,10 @@ namespace EpgTimer
                             {
                                 colorName = Settings.Instance.ReserveRectColorNoTuner;
                             }
+                            else if (info.Info.ReserveInfo.OverlapMode == 1)
+                            {
+                                colorName = Settings.Instance.ReserveRectColorWarning;
+                            }
                             else
                             {
                                 colorName = Settings.Instance.ReserveRectColorNormal;

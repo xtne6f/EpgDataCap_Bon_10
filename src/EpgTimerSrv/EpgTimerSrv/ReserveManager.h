@@ -290,7 +290,7 @@ protected:
 	void CheckErrReserve();
 	void CheckBatWork();
 	void CheckTuijyu();
-	BOOL CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data);
+	BOOL CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, BOOL errEnd = FALSE);
 
 	BOOL CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, BYTE* chgMode = NULL);
 	BOOL CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* ctrl);

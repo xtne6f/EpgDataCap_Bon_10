@@ -46,6 +46,7 @@ namespace EpgTimer
             comboBox_reserveNormal.DataContext = colorList.Values;
             comboBox_reserveNo.DataContext = colorList.Values;
             comboBox_reserveNoTuner.DataContext = colorList.Values;
+            comboBox_reserveWarning.DataContext = colorList.Values;
             try
             {
                 comboBox0.SelectedItem = colorList[Settings.Instance.ContentColorList[0x00]];
@@ -66,6 +67,7 @@ namespace EpgTimer
                 comboBox_reserveNormal.SelectedItem = colorList[Settings.Instance.ReserveRectColorNormal];
                 comboBox_reserveNo.SelectedItem = colorList[Settings.Instance.ReserveRectColorNo];
                 comboBox_reserveNoTuner.SelectedItem = colorList[Settings.Instance.ReserveRectColorNoTuner];
+                comboBox_reserveWarning.SelectedItem = colorList[Settings.Instance.ReserveRectColorWarning];
                 checkBox_reserveBackground.IsChecked = Settings.Instance.ReserveRectBackground;
 
                 foreach (FontFamily family in Fonts.SystemFontFamilies)
@@ -114,6 +116,7 @@ namespace EpgTimer
             Settings.Instance.ReserveRectColorNormal = ((ColorSelectionItem)(comboBox_reserveNormal.SelectedItem)).ColorName;
             Settings.Instance.ReserveRectColorNo = ((ColorSelectionItem)(comboBox_reserveNo.SelectedItem)).ColorName;
             Settings.Instance.ReserveRectColorNoTuner = ((ColorSelectionItem)(comboBox_reserveNoTuner.SelectedItem)).ColorName;
+            Settings.Instance.ReserveRectColorWarning = ((ColorSelectionItem)(comboBox_reserveWarning.SelectedItem)).ColorName;
             if (checkBox_reserveBackground.IsChecked == true)
             {
                 Settings.Instance.ReserveRectBackground = true;

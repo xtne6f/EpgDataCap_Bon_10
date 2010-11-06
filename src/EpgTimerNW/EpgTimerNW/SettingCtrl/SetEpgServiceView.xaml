@@ -48,7 +48,7 @@
                 </TabControl>
             </Grid>
         </GroupBox>
-        <GroupBox Header="その他" Height="101" Margin="12,351,12,0" Name="groupBox2" VerticalAlignment="Top">
+        <GroupBox Header="その他" Height="123" Margin="12,351,12,0" Name="groupBox2" VerticalAlignment="Top">
             <Grid>
                 <Label Content="マウススクロールサイズ" Height="28" HorizontalAlignment="Left" Margin="11,6,0,0" Name="label14" VerticalAlignment="Top" />
                 <TextBox Height="24" HorizontalAlignment="Left" Margin="165,6,0,0" Name="textBox_mouse_scroll" VerticalAlignment="Top" Width="55" />
@@ -58,6 +58,7 @@
                 <TextBox Height="24" HorizontalAlignment="Left" Margin="451,8,0,0" Name="textBox_minHeight" VerticalAlignment="Top" Width="55" />
                 <Label Content="ドラッグスクロール倍率" Height="28" HorizontalAlignment="Left" Margin="303,36,0,0" Name="label2" VerticalAlignment="Top" />
                 <TextBox Height="24" HorizontalAlignment="Left" Margin="451,38,0,0" Name="textBox_dragScroll" VerticalAlignment="Top" Width="55" />
+                <CheckBox Content="番組詳細をツールチップで表示する" Height="16" HorizontalAlignment="Left" Margin="17,70,0,0" Name="checkBox_descToolTip" VerticalAlignment="Top" />
             </Grid>
         </GroupBox>
     </Grid>

@@ -242,7 +242,7 @@ namespace EpgTimer
                 setEpgServiceSelect_bs.SetService(onBsList, bsList);
                 setEpgServiceSelect_cs.SetService(onCsList, csList);
                 setEpgServiceSelect_other.SetService(onOtherList, otherList);
-
+                checkBox_descToolTip.IsChecked = Settings.Instance.EpgToolTip;
 
             }
             catch
@@ -276,6 +276,14 @@ namespace EpgTimer
                 Settings.Instance.MinHeight = Convert.ToDouble(textBox_minHeight.Text);
                 Settings.Instance.ServiceWidth = Convert.ToDouble(textBox_service_width.Text);
                 Settings.Instance.DragScroll = Convert.ToDouble(textBox_dragScroll.Text);
+                if (checkBox_descToolTip.IsChecked == true)
+                {
+                    Settings.Instance.EpgToolTip = true;
+                }
+                else
+                {
+                    Settings.Instance.EpgToolTip = false;
+                }
             }
             catch
             {

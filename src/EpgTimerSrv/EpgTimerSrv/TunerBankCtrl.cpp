@@ -1301,7 +1301,7 @@ void CTunerBankCtrl::SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, B
 	string buff = "";
 	WtoA(outText, buff);
 
-	HANDLE file = _CreateFile( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE file = _CreateFile2( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( file != INVALID_HANDLE_VALUE ){
 		DWORD dwWrite;
 		WriteFile(file, buff.c_str(), (DWORD)buff.size(), &dwWrite, NULL);

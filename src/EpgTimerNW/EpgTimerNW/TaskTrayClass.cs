@@ -31,7 +31,7 @@ namespace EpgTimer
         }
         public Icon Icon {
             get { return notifyIcon.Icon; }
-            set { notifyIcon.Icon = value; }
+            set { if(notifyIcon != null ) notifyIcon.Icon = value; }
         }
         public bool Visible{
             get { return notifyIcon.Visible; }
