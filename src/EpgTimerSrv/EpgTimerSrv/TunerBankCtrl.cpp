@@ -1103,7 +1103,15 @@ void CTunerBankCtrl::StopAllRec()
 			this->sendCtrl.SendViewDeleteCtrl(itr->second->ctrlID[i]);
 
 			if( itr->second->ctrlID[i] == itr->second->mainCtrlID ){
-				AddEndReserve(itr->second, REC_END_STATUS_NEXT_START_END, resVal);
+				if( itr->second->endTime > GetNowI64Time() + 60*I64_1SEC ){
+					AddEndReserve(itr->second, REC_END_STATUS_NEXT_START_END, resVal);
+				}else{
+					if( itr->second->notStartHeadFlag == FALSE ){
+						AddEndReserve(itr->second, REC_END_STATUS_NORMAL, resVal);
+					}else{
+						AddEndReserve(itr->second, REC_END_STATUS_NOT_START_HEAD, resVal);
+					}
+				}
 			}
 		}
 //		this->endReserveList.insert(pair<DWORD, RESERVE_WORK*>(itr->first, itr->second));
@@ -1163,6 +1171,10 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 				//開始時間過ぎているので録画開始
 				if( RecStart(nowTime, itr->second) == TRUE ){
 					itr->second->recStartFlag = TRUE;
+					if( chkStartTime + 60*I64_1SEC < nowTime ){
+						//途中から開始された
+						itr->second->notStartHeadFlag = TRUE;
+					}
 				}else{
 					//録画に失敗した？
 					SET_CTRL_REC_STOP_RES_PARAM resVal;
@@ -1240,6 +1252,9 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 					this->sendCtrl.SendViewDeleteCtrl(itr->second->ctrlID[i]);
 					if( itr->second->ctrlID[i] == itr->second->mainCtrlID ){
 						DWORD endType = REC_END_STATUS_NORMAL;
+						if( itr->second->notStartHeadFlag == TRUE ){
+							endType = REC_END_STATUS_NOT_START_HEAD;
+						}
 						if( resVal.subRecFlag == 1 ){
 							endType = REC_END_STATUS_END_SUBREC;
 						}

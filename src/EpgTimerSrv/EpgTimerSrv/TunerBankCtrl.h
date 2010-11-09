@@ -124,6 +124,8 @@ protected:
 		WORD TSID;
 		WORD SID;
 
+		BYTE notStartHeadFlag;
+
 		//=オペレーターの処理
 		_RESERVE_WORK(void){
 			reserveInfo = NULL;
@@ -147,6 +149,8 @@ protected:
 			ONID = 0xFFFF;
 			TSID = 0xFFFF;
 			SID = 0xFFFF;
+
+			notStartHeadFlag = FALSE;
 		};
 	}RESERVE_WORK;
 	map<DWORD, RESERVE_WORK*> reserveWork; //キーreserveID

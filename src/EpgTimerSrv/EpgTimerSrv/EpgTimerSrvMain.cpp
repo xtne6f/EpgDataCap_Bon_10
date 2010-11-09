@@ -484,6 +484,17 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 				}
 				if( chgRes == TRUE ){
 					chgList.push_back(*(reserveList[i]));
+					_OutputDebugString(L"●EPG読み込み：登録変更 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
+						reserveList[i]->startTime.wYear,
+						reserveList[i]->startTime.wMonth,
+						reserveList[i]->startTime.wDay,
+						reserveList[i]->startTime.wHour,
+						reserveList[i]->startTime.wMinute,
+						reserveList[i]->startTime.wSecond,
+						reserveList[i]->durationSecond,
+						reserveList[i]->title.c_str(),
+						reserveList[i]->stationName.c_str()
+						);
 				}
 		}else{
 			//IDで見つからなかったので時間で検索してみる
@@ -502,6 +513,17 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 						if( info->shortInfo != NULL ){
 							if( CompareNoCase(reserveList[i]->title, info->shortInfo->event_name) == 0 ){
 								chgList.push_back(*(reserveList[i]));
+								_OutputDebugString(L"●EPG読み込み：ID変更 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
+									reserveList[i]->startTime.wYear,
+									reserveList[i]->startTime.wMonth,
+									reserveList[i]->startTime.wDay,
+									reserveList[i]->startTime.wHour,
+									reserveList[i]->startTime.wMinute,
+									reserveList[i]->startTime.wSecond,
+									reserveList[i]->durationSecond,
+									reserveList[i]->title.c_str(),
+									reserveList[i]->stationName.c_str()
+									);
 							}
 						}
 					}else{
@@ -514,6 +536,17 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 							}
 						}
 						chgList.push_back(*(reserveList[i]));
+						_OutputDebugString(L"●EPG読み込み：ID番組名変更 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
+							reserveList[i]->startTime.wYear,
+							reserveList[i]->startTime.wMonth,
+							reserveList[i]->startTime.wDay,
+							reserveList[i]->startTime.wHour,
+							reserveList[i]->startTime.wMinute,
+							reserveList[i]->startTime.wSecond,
+							reserveList[i]->durationSecond,
+							reserveList[i]->title.c_str(),
+							reserveList[i]->stationName.c_str()
+							);
 					}
 			}
 		}

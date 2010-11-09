@@ -1782,6 +1782,9 @@ void CReserveManager::CheckEndReserve()
 				}else if( itrEnd->second->endType == REC_END_STATUS_ERR_RECSTART ){
 					item.recStatus = REC_END_STATUS_ERR_RECSTART;
 					item.comment = L"録画開始処理に失敗しました（空き容量不足の可能性あり）";
+				}else if( itrEnd->second->endType == REC_END_STATUS_NOT_START_HEAD ){
+					item.recStatus = REC_END_STATUS_NOT_START_HEAD;
+					item.comment = L"一部のみ録画が実行された可能性があります";
 				}else{
 					item.recStatus = itrEnd->second->endType;
 					item.comment = L"録画中にキャンセルされた可能性があります";
@@ -2082,7 +2085,7 @@ void CReserveManager::CheckTuijyu()
 						chgRes = CheckChgEvent(&resVal, &data);
 						if( chgRes == TRUE ){
 							//開始時間6時間以内ならEPG再読み込みで変更されないようにする
-							if( GetNowI64Time() + 6*60*60*I64_1SEC < ConvertI64Time(data.startTime) ){
+							if( GetNowI64Time() + 6*60*60*I64_1SEC > ConvertI64Time(data.startTime) ){
 								if( data.reserveStatus == ADD_RESERVE_NORMAL ){
 									data.reserveStatus = ADD_RESERVE_CHG_PF2;
 								}
