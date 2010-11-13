@@ -10,6 +10,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <algorithm>
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -17,6 +18,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <algorithm>
 #endif
 using namespace std;
 

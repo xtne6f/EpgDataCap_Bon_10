@@ -201,11 +201,11 @@ BOOL _GetDiskFreeSpaceEx(
 	}
 	TCHAR szVolumePathName[MAX_PATH] = _T("");
 	if( GetVolumePathName( lpDirectoryName, szVolumePathName, MAX_PATH) == FALSE ){
-		return FALSE;
+		return GetDiskFreeSpaceEx( lpDirectoryName, lpFreeBytesAvailable, lpTotalNumberOfBytes, lpTotalNumberOfFreeBytes );
 	}
 	TCHAR szMount[MAX_PATH] = _T("");
 	if( GetVolumeNameForVolumeMountPoint(szVolumePathName, szMount, MAX_PATH) == FALSE ){
-		return FALSE;
+		return GetDiskFreeSpaceEx( szVolumePathName, lpFreeBytesAvailable, lpTotalNumberOfBytes, lpTotalNumberOfFreeBytes );
 	}
 	return GetDiskFreeSpaceEx( szMount, lpFreeBytesAvailable, lpTotalNumberOfBytes, lpTotalNumberOfFreeBytes );
 }

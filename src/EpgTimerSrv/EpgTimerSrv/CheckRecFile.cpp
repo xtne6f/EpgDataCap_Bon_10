@@ -30,7 +30,10 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 
 	map<wstring, ULONGLONG> checkMap;
 	for( size_t i=0; i<this->chkFolder.size(); i++ ){
-		checkMap.insert(pair<wstring, ULONGLONG>(this->chkFolder[i], 0));
+		wstring folder = this->chkFolder[i];
+		transform(folder.begin(), folder.end(), folder.begin(), toupper);
+		ChkFolderPath(folder);
+		checkMap.insert(pair<wstring, ULONGLONG>(folder, 0));
 	}
 
 	LONGLONG now = GetNowI64Time();
@@ -53,6 +56,8 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 		if( data.recSetting.recFolderList.size() > 0 ){
 			chkFolder = data.recSetting.recFolderList[0].recFolder;
 		}
+		transform(chkFolder.begin(), chkFolder.end(), chkFolder.begin(), toupper);
+		ChkFolderPath(chkFolder);
 
 		map<wstring, ULONGLONG>::iterator itr;
 		itr = checkMap.find(chkFolder);
