@@ -281,14 +281,14 @@ namespace EpgTimer
 
         private void CheckTime(DateTime newStart, DateTime newEnd, ref DateTime currentStart, ref DateTime currentEnd)
         {
-            if (currentStart.TimeOfDay == TimeSpan.Zero)
+            if (currentStart.Ticks == TimeSpan.Zero.Ticks)
             {
                 currentStart = newStart;
                 currentStart = new DateTime(currentStart.Year, currentStart.Month, currentStart.Day, currentStart.Hour, 0, 0);
             }
             else
             {
-                if (newStart.TimeOfDay != TimeSpan.Zero)
+                if (newStart.Ticks != TimeSpan.Zero.Ticks)
                 {
                     if (currentStart > newStart)
                     {
@@ -298,7 +298,7 @@ namespace EpgTimer
                 }
             }
 
-            if (currentEnd.TimeOfDay == TimeSpan.Zero)
+            if (currentEnd.Ticks == TimeSpan.Zero.Ticks)
             {
                 currentEnd = newEnd;
                 if (currentEnd.Minute != 0)
@@ -308,7 +308,7 @@ namespace EpgTimer
             }
             else
             {
-                if (newEnd.TimeOfDay != TimeSpan.Zero)
+                if (newEnd.Ticks != TimeSpan.Zero.Ticks)
                 {
                     if (currentEnd < newEnd)
                     {
