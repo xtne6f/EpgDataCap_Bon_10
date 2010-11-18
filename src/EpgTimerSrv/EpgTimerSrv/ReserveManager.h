@@ -250,6 +250,9 @@ protected:
 	int notFindTuijyuHour;
 	int noEpgTuijyuMin;
 
+	BOOL autoDelRecInfo;
+	int autoDelRecInfoNum;
+
 	DWORD NWTVPID;
 	wstring recExePath;
 	CSendCtrlCmd sendCtrlNWTV;

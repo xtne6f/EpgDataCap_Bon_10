@@ -1631,6 +1631,7 @@ void CTunerBankCtrl::StartEpgCap()
 	if( Lock() == FALSE ) return;
 
 	if( epgCapItem.size() == 0 ){
+		UnLock();
 		return ;
 	}
 

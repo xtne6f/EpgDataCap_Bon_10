@@ -33,7 +33,7 @@
                 <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="436,124,0,0" Name="button_recname" VerticalAlignment="Top" Width="54" Click="button_recname_Click" />
             </Grid>
         </GroupBox>
-        <GroupBox Header="その他" Height="148" Margin="12,205,12,0" Name="groupBox2" VerticalAlignment="Top">
+        <GroupBox Header="その他" Height="183" Margin="12,205,12,0" Name="groupBox2" VerticalAlignment="Top">
             <Grid>
                 <CheckBox Content="×ボタンで最小化する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_closeMin" VerticalAlignment="Top" />
                 <CheckBox Content="最小化で起動する" Height="16" HorizontalAlignment="Left" Margin="6,28,0,0" Name="checkBox_minWake" VerticalAlignment="Top" />
@@ -41,7 +41,10 @@
                 <Button Content="検索条件のデフォルト値を設定" Height="23" HorizontalAlignment="Left" Margin="242,50,0,0" Name="button_searchDef" VerticalAlignment="Top" Width="248" Click="button_searchDef_Click" />
                 <CheckBox Content="ネットワーク接続を許可する" Height="16" HorizontalAlignment="Left" Margin="6,88,0,0" Name="checkBox_tcpServer" VerticalAlignment="Top" />
                 <Label Content="ポート" Height="28" HorizontalAlignment="Left" Margin="212,83,0,0" Name="label1" VerticalAlignment="Top" />
-                <TextBox Height="24" HorizontalAlignment="Left" Margin="264,85,0,0" Name="textBox_tcpPort" VerticalAlignment="Top" Width="62" />
+                <TextBox Height="24" HorizontalAlignment="Left" Margin="276,85,0,0" Name="textBox_tcpPort" VerticalAlignment="Top" Width="62" />
+                <CheckBox Content="録画結果を自動的に削除する" Height="16" HorizontalAlignment="Left" Margin="6,115,0,0" Name="checkBox_autoDelRecInfo" VerticalAlignment="Top" />
+                <Label Content="保持件数" Height="28" HorizontalAlignment="Left" Margin="212,110,0,0" Name="label2" VerticalAlignment="Top" />
+                <TextBox Height="24" HorizontalAlignment="Left" Margin="276,112,0,0" Name="textBox_autoDelRecInfo" VerticalAlignment="Top" Width="62" />
             </Grid>
         </GroupBox>
     </Grid>

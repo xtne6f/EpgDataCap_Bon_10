@@ -55,6 +55,9 @@ CReserveManager::CReserveManager(void)
 	this->notFindTuijyuHour = 6;
 	this->noEpgTuijyuMin = 30;
 
+	this->autoDelRecInfo = FALSE;
+	this->autoDelRecInfoNum = 100;
+
 	this->NWTVPID = 0;
 	this->NWTVUDP = FALSE;
 	this->NWTVTCP = FALSE;
@@ -159,14 +162,17 @@ BOOL CReserveManager::Lock(LPCWSTR log, DWORD timeOut)
 	if( this->lockEvent == NULL ){
 		return FALSE;
 	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
+	//if( log != NULL ){
+	//	_OutputDebugString(L"◆%s",log);
+	//}
 	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
 	if( dwRet == WAIT_ABANDONED || 
 		dwRet == WAIT_FAILED ||
 		dwRet == WAIT_TIMEOUT){
 			OutputDebugString(L"◆CReserveManager::Lock FALSE");
+			if( log != NULL ){
+				OutputDebugString(log);
+			}
 		return FALSE;
 	}
 	return TRUE;
@@ -212,7 +218,7 @@ void CReserveManager::NotifyUnLock(LPCWSTR log)
 
 void CReserveManager::SetRegistGUI(map<DWORD, DWORD> registGUIMap)
 {
-	if( Lock() == FALSE ) return;
+	if( Lock(L"SetRegistGUI") == FALSE ) return;
 
 	if( this->notifyThread != NULL ){
 		::SetEvent(this->notifyStopEvent);
@@ -240,7 +246,7 @@ void CReserveManager::SetRegistGUI(map<DWORD, DWORD> registGUIMap)
 
 void CReserveManager::SetRegistTCP(map<wstring, REGIST_TCP_INFO> registTCPMap)
 {
-	if( Lock() == FALSE ) return;
+	if( Lock(L"SetRegistTCP") == FALSE ) return;
 
 	if( this->notifyThread != NULL ){
 		::SetEvent(this->notifyStopEvent);
@@ -261,7 +267,7 @@ void CReserveManager::SetRegistTCP(map<wstring, REGIST_TCP_INFO> registTCPMap)
 
 void CReserveManager::ReloadSetting()
 {
-	if( Lock() == FALSE ) return;
+	if( Lock(L"ReloadSetting") == FALSE ) return;
 
 	wstring iniAppPath = L"";
 	GetModuleIniPath(iniAppPath);
@@ -390,12 +396,17 @@ void CReserveManager::ReloadSetting()
 		this->recExePath += L"\\EpgDataCap_Bon.exe";
 	}
 
+	this->autoDelRecInfo = GetPrivateProfileInt(L"SET", L"AutoDelRecInfo", 0, iniAppPath.c_str());
+	this->autoDelRecInfoNum = GetPrivateProfileInt(L"SET", L"AutoDelRecInfoNum", 100, iniAppPath.c_str());
+
+	recInfoText.SetAutoDel(this->autoDelRecInfoNum, this->autoDelRecInfo);
+
 	UnLock();
 }
 
 void CReserveManager::SendNotifyUpdate()
 {
-	if( Lock() == FALSE ) return;
+	if( Lock(L"SendNotifyUpdate") == FALSE ) return;
 
 	_SendNotifyUpdate();
 
@@ -485,7 +496,7 @@ UINT WINAPI CReserveManager::SendNotifyThread(LPVOID param)
 
 void CReserveManager::SendNotifyEpgReload()
 {
-	if( Lock() == FALSE ) return;
+	if( Lock(L"SendNotifyEpgReload") == FALSE ) return;
 
 	_SendNotifyEpgReload();
 
@@ -656,7 +667,7 @@ UINT WINAPI CReserveManager::SendNotifyStatusThread(LPVOID param)
 
 BOOL CReserveManager::ReloadReserveData()
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"ReloadReserveData") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	wstring reserveFilePath = L"";
@@ -761,7 +772,7 @@ BOOL CReserveManager::ReloadReserveData()
 
 BOOL CReserveManager::AddLoadReserveData()
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"AddLoadReserveData") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	wstring filePath = L"";
@@ -815,7 +826,7 @@ BOOL CReserveManager::GetReserveDataAll(
 	vector<RESERVE_DATA*>* reserveList
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"GetReserveDataAll") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	map<DWORD, CReserveInfo*>::iterator itr;
@@ -838,7 +849,7 @@ BOOL CReserveManager::GetTunerReserveAll(
 	vector<TUNER_RESERVE_INFO>* list
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"GetTunerReserveAll") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	map<DWORD, BANK_INFO*>::iterator itr;
@@ -878,7 +889,7 @@ BOOL CReserveManager::GetReserveData(
 	RESERVE_DATA* reserveData
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"GetReserveData") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 
@@ -903,7 +914,7 @@ BOOL CReserveManager::AddReserveData(
 	vector<RESERVE_DATA>* reserveList
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"AddReserveData") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	//予約追加
@@ -980,7 +991,7 @@ BOOL CReserveManager::ChgReserveData(
 	vector<RESERVE_DATA>* reserveList
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"ChgReserveData") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	//予約変更
@@ -1097,7 +1108,7 @@ BOOL CReserveManager::DelReserveData(
 	vector<DWORD>* reserveList
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"DelReserveData") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	//予約削除
@@ -1171,7 +1182,7 @@ BOOL CReserveManager::_DelReserveData(
 
 void CReserveManager::ReloadBankMap(BOOL notify)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"ReloadBankMap") == FALSE ) return ;
 
 	_ReloadBankMap();
 	if( notify == TRUE ){
@@ -1254,6 +1265,8 @@ void CReserveManager::_ReloadBankMap()
 		reserveCount++;
 	}
 
+	Sleep(0);
+
 	//予約の割り振り
 	multimap<wstring, BANK_WORK_INFO*> tempMap;
 	multimap<wstring, BANK_WORK_INFO*> tempNGMap;
@@ -1298,6 +1311,8 @@ void CReserveManager::_ReloadBankMap()
 		}
 	}
 
+	Sleep(0);
+
 	//開始終了重なっている予約で、他のチューナーに回せるやつあるかチェック
 	for( itrSort = tempMap.begin(); itrSort !=  tempMap.end(); itrSort++ ){
 		BOOL insert = FALSE;
@@ -1331,6 +1346,8 @@ void CReserveManager::_ReloadBankMap()
 		}
 	}
 
+	Sleep(0);
+
 	//NGで少しでも録画できるかチェック
 	multimap<wstring, BANK_WORK_INFO*>::iterator itrSortNG;
 	for( itrSortNG = tempNGMap.begin(); itrSortNG != tempNGMap.end(); itrSortNG++){
@@ -1362,6 +1379,8 @@ void CReserveManager::_ReloadBankMap()
 			}
 		}
 	}
+
+	Sleep(0);
 
 	//予約情報を追加
 	for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
@@ -1640,13 +1659,13 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 		}
 
 		//終了している予約の確認
-		if( sys->Lock() == TRUE){
+		if( sys->Lock(L"BankCheckThread1") == TRUE){
 			sys->CheckEndReserve();
 			sys->UnLock();
 		}
 
 		//エラーの発生しているチューナーの確認
-		if( sys->Lock() == TRUE){
+		if( sys->Lock(L"BankCheckThread2") == TRUE){
 			sys->CheckErrReserve();
 			sys->UnLock();
 		}
@@ -1654,7 +1673,7 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 		//追従の確認
 		countTuijyuChk++;
 		if( countTuijyuChk > 10 ){
-			if( sys->Lock() == TRUE){
+			if( sys->Lock(L"BankCheckThread3") == TRUE){
 				sys->CheckTuijyu();
 				sys->UnLock();
 			}
@@ -1662,14 +1681,14 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 		}
 
 		//バッチ処理の確認
-		if( sys->Lock() == TRUE){
+		if( sys->Lock(L"BankCheckThread4") == TRUE){
 			sys->CheckBatWork();
 			sys->UnLock();
 		}
 
 		//自動削除の確認
 		if( sys->autoDel == TRUE ){
-			if( sys->Lock() == TRUE){
+			if( sys->Lock(L"BankCheckThread5") == TRUE){
 				CCheckRecFile chkFile;
 				chkFile.SetCheckFolder(&sys->delFolderList);
 				chkFile.SetDeleteExt(&sys->delExtList);
@@ -1681,7 +1700,7 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 		}
 
 		//EPG取得時間の確認
-		if( sys->Lock() == TRUE){
+		if( sys->Lock(L"BankCheckThread6") == TRUE){
 			LONGLONG capTime = 0;
 			if( sys->GetNextEpgcapTime(&capTime, -1) == TRUE ){
 				if( GetNowI64Time() > capTime ){
@@ -1694,7 +1713,7 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 
 		//録画状態の通知
 		if( sys->notifyStatus == 0 ){
-			if( sys->Lock() == TRUE){
+			if( sys->Lock(L"BankCheckThread7") == TRUE){
 				map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 				for( itrCtrl = sys->tunerBankMap.begin(); itrCtrl != sys->tunerBankMap.end(); itrCtrl++ ){
 					if( itrCtrl->second->IsRecWork() == TRUE ){
@@ -1705,7 +1724,7 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 				sys->UnLock();
 			}
 		}else if( sys->notifyStatus == 1 ){
-			if( sys->Lock() == TRUE){
+			if( sys->Lock(L"BankCheckThread8") == TRUE){
 				map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 				BOOL noRec = TRUE;
 				for( itrCtrl = sys->tunerBankMap.begin(); itrCtrl != sys->tunerBankMap.end(); itrCtrl++ ){
@@ -1723,7 +1742,7 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 
 		//EPG取得状態のチェック
 		if( sys->epgCapCheckFlag == TRUE ){
-			if( sys->Lock() == TRUE){
+			if( sys->Lock(L"BankCheckThread9") == TRUE){
 				if( sys->IsEpgCap() == FALSE ){
 					//取得完了
 					sys->SendNotifyStatus(0);
@@ -2043,6 +2062,7 @@ void CReserveManager::CheckTuijyu()
 		chk6h = TRUE;
 	}
 	for( itrRes = this->reserveInfoMap.begin(); itrRes != this->reserveInfoMap.end(); itrRes++ ){
+		Sleep(0);
 		RESERVE_DATA data;
 		itrRes->second->GetData(&data);
 
@@ -2741,7 +2761,7 @@ BOOL CReserveManager::IsEnableSuspend(
 	BYTE* rebootFlag
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"IsEnableSuspend") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	if( this->enableSetSuspendMode == 0xFF && this->enableSetRebootFlag == 0xFF ){
@@ -2761,7 +2781,7 @@ BOOL CReserveManager::IsEnableSuspend(
 BOOL CReserveManager::IsEnableReloadEPG(
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"IsEnableReloadEPG") == FALSE ) return FALSE;
 	BOOL ret = FALSE;
 	if( this->enableEpgReload == 1 ){
 		ret = TRUE;
@@ -3030,7 +3050,7 @@ BOOL CReserveManager::GetRecFileInfoAll(
 	vector<REC_FILE_INFO>* infoList
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"GetRecFileInfoAll") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	multimap<wstring, REC_FILE_INFO*>::iterator itr;
@@ -3053,7 +3073,7 @@ BOOL CReserveManager::DelRecFileInfo(
 	vector<DWORD>* idList
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"DelRecFileInfo") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	for( size_t i=0 ;i<idList->size(); i++){
@@ -3075,7 +3095,7 @@ BOOL CReserveManager::DelRecFileInfo(
 
 BOOL CReserveManager::StartEpgCap()
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"StartEpgCap") == FALSE ) return FALSE;
 
 	BOOL ret = _StartEpgCap();
 
@@ -3208,7 +3228,7 @@ BOOL CReserveManager::_StartEpgCap()
 
 void CReserveManager::StopEpgCap()
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"StopEpgCap") == FALSE ) return ;
 
 	map<DWORD, CTunerBankCtrl*>::iterator itr;
 	for( itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
@@ -3239,7 +3259,7 @@ BOOL CReserveManager::IsFindReserve(
 	WORD eventID
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"IsFindReserve") == FALSE ) return FALSE;
 
 	BOOL ret = FALSE;
 /*
@@ -3276,7 +3296,7 @@ BOOL CReserveManager::IsFindReserve(
 	DWORD durationSec
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"IsFindReserve") == FALSE ) return FALSE;
 
 	BOOL ret = FALSE;
 
@@ -3304,7 +3324,7 @@ BOOL CReserveManager::GetTVTestChgCh(
 	TVTEST_CH_CHG_INFO* chInfo
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"GetTVTestChgCh") == FALSE ) return FALSE;
 
 	BOOL ret = FALSE;
 	
@@ -3353,7 +3373,7 @@ BOOL CReserveManager::SetNWTVCh(
 	SET_CH_INFO* chInfo
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"SetNWTVCh") == FALSE ) return FALSE;
 
 	BOOL ret = FALSE;
 
@@ -3470,7 +3490,7 @@ BOOL CReserveManager::SetNWTVCh(
 BOOL CReserveManager::CloseNWTV(
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"CloseNWTV") == FALSE ) return FALSE;
 
 	BOOL ret = FALSE;
 
@@ -3494,7 +3514,7 @@ void CReserveManager::SetNWTVMode(
 	DWORD mode
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"SetNWTVMode") == FALSE ) return ;
 
 	if( mode == 1 ){
 		this->NWTVUDP = TRUE;

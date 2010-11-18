@@ -143,6 +143,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	find = FindFirstFile( searchKey.c_str(), &findData);
 	if ( find == INVALID_HANDLE_VALUE ) {
 		//１つも存在しない
+		epgUtil.UnInitialize();
 		return 0;
 	}
 	do{
@@ -198,6 +199,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 				CloseHandle(file);
 			}
 		}
+		Sleep(0);
 	}
 
 	//EPGデータを取得
@@ -242,9 +244,12 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 				item->eventMap.insert(pair<WORD, EPGDB_EVENT_INFO*>(itemEvent->event_id, itemEvent));
 			}
 		}
+		Sleep(0);
 	}
 
 	_OutputDebugString(L"End Load EpgData %dmsec\r\n", GetTickCount()-time);
+	epgUtil.UnInitialize();
+
 	return 0;
 }
 

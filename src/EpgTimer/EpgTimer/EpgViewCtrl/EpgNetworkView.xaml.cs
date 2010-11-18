@@ -124,6 +124,7 @@ namespace EpgTimer
             {
                 epgProgramView.canvas.Children.Remove(info);
             }
+            reserveBorder.Clear();
             foreach (ReserveViewItem info in reserveList)
             {
                 info.IsView = false;
