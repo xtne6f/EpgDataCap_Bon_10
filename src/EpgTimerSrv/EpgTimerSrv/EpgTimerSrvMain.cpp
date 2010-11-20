@@ -863,6 +863,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 
 	case CMD2_EPG_SRV_ENUM_RESERVE:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_RESERVE");
 			vector<RESERVE_DATA*> list;
 			if(sys->reserveManager.GetReserveDataAll(&list) == TRUE ){
 				resParam->param = CMD_SUCCESS;
@@ -876,11 +877,13 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 				for( size_t i=0; i<list.size(); i++ ){
 					SAFE_DELETE(list[i]);
 				}
+				list.clear();
 			}
 		}
 		break;
 	case CMD2_EPG_SRV_GET_RESERVE:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_GET_RESERVE");
 			DWORD reserveID = 0;
 			if( ReadVALUE( &reserveID, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				RESERVE_DATA info;
@@ -944,6 +947,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_ENUM_RECINFO:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_RECINFO");
 			vector<REC_FILE_INFO> list;
 			if(sys->reserveManager.GetRecFileInfoAll(&list) == TRUE ){
 				resParam->param = CMD_SUCCESS;
@@ -969,6 +973,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_ENUM_SERVICE:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_SERVICE");
 			if( sys->epgDB.IsLoadingData() == TRUE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
@@ -988,6 +993,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_ENUM_PG_INFO:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_INFO");
 			if( sys->epgDB.IsLoadingData() == TRUE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
@@ -1012,6 +1018,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_SEARCH_PG:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG");
 			if( sys->epgDB.IsLoadingData() == TRUE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
@@ -1035,6 +1042,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_GET_PG_INFO:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_GET_PG_INFO");
 			if( sys->epgDB.IsLoadingData() == TRUE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
@@ -1105,6 +1113,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_ENUM_AUTO_ADD:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_AUTO_ADD");
 			if( sys->Lock() == TRUE ){
 				vector<EPG_AUTO_ADD_DATA> val;
 				map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itr;
@@ -1219,6 +1228,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_ENUM_MANU_ADD:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_MANU_ADD");
 			if( sys->Lock() == TRUE ){
 				vector<MANUAL_AUTO_ADD_DATA> val;
 				map<DWORD, MANUAL_AUTO_ADD_DATA*>::iterator itr;
@@ -1334,6 +1344,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_ENUM_TUNER_RESERVE:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_TUNER_RESERVE");
 			vector<TUNER_RESERVE_INFO> list;
 			if(sys->reserveManager.GetTunerReserveAll(&list) == TRUE ){
 				resParam->param = CMD_SUCCESS;
@@ -1375,6 +1386,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_ENUM_PG_ALL:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_ALL");
 			if( sys->epgDB.IsLoadingData() == TRUE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
@@ -1399,6 +1411,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_ENUM_PLUGIN:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_PLUGIN");
 			WORD mode = 0;
 			if( ReadVALUE( &mode, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				if( mode == 1 || mode == 2 ){

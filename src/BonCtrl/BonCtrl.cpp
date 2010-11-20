@@ -135,7 +135,9 @@ BOOL CBonCtrl::Lock(LPCWSTR log, DWORD timeOut)
 	}
 	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
 	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
+		dwRet == WAIT_FAILED ||
+		dwRet == WAIT_TIMEOUT){
+			OutputDebugString(L"◆CBonCtrl::Lock FALSE");
 		return FALSE;
 	}
 	return TRUE;
@@ -334,6 +336,34 @@ DWORD CBonCtrl::SetCh(
 //戻り値：
 // エラーコード
 //引数：
+// space			[IN]変更チャンネルのSpace
+// ch				[IN]変更チャンネルの物理Ch
+// SID			[IN]変更チャンネルの物理service_id
+DWORD CBonCtrl::SetCh(
+	DWORD space,
+	DWORD ch,
+	WORD SID
+)
+{
+	if( Lock() == FALSE ) return ERR_FALSE;
+
+	if( this->tsOut.IsRec() == TRUE ){
+		UnLock();
+		return ERR_FALSE;
+	}
+
+	DWORD ret = ERR_FALSE;
+	ret = _SetCh(space, ch);
+	this->lastSID = SID;
+
+	UnLock();
+	return ret;
+}
+
+//チャンネル変更
+//戻り値：
+// エラーコード
+//引数：
 // ONID			[IN]変更チャンネルのorignal_network_id
 // TSID			[IN]変更チャンネルの物理transport_stream_id
 // SID			[IN]変更チャンネルの物理service_id
@@ -387,13 +417,28 @@ DWORD CBonCtrl::_SetCh(
 	return ret;
 }
 
+BOOL CBonCtrl::GetCh(
+	DWORD* space,
+	DWORD* ch
+	)
+{
+	if( Lock() == FALSE ) return FALSE;
+	BOOL ret = FALSE;
+	if( this->bonUtil.GetSetCh(space, ch) == TRUE ){
+		ret = TRUE;
+	}
+	UnLock();
+	return ret;
+}
+
+
 //チャンネル変更中かどうか
 //戻り値：
 // TRUE（変更中）、FALSE（完了）
-BOOL CBonCtrl::IsChChanging()
+BOOL CBonCtrl::IsChChanging(BOOL* chChgErr)
 {
 	if( Lock() == FALSE ) return 0;
-	BOOL ret = this->tsOut.IsChChanging();
+	BOOL ret = this->tsOut.IsChChanging(chChgErr);
 	UnLock();
 	return ret;
 }
@@ -506,6 +551,15 @@ UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
 				TS_DATA* item = new TS_DATA;
 				if( sys->packetInit.GetTSData(data, size, &item->data, &item->size) == TRUE ){
 					if( WaitForSingleObject( sys->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
+						if(sys->TSBuff.size()>5000){
+							for( size_t i=4900; i<sys->TSBuff.size(); i++ ){
+								SAFE_DELETE(sys->TSBuff[i]);
+							}
+							vector<TS_DATA*>::iterator itr;
+							itr = sys->TSBuff.begin();
+							advance(itr,4900);
+							sys->TSBuff.erase( sys->TSBuff.begin(), itr );
+						}
 						sys->TSBuff.push_back(item);
 						if( sys->buffLockEvent != NULL ){
 							SetEvent(sys->buffLockEvent);
@@ -1097,16 +1151,17 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 			startTime = GetTimeCount();
 			chkNext = FALSE;
 			wait = 1000;
-			chkWait = 8;
+			chkWait = 9;
 		}else{
-			if( sys->tsOut.IsChChanging() == TRUE ){
+			BOOL chChgErr = FALSE;
+			if( sys->tsOut.IsChChanging(&chChgErr) == TRUE ){
 				if( startTime + chkWait < GetTimeCount() ){
 					//チャンネル切り替えに8秒以上かかってるので無信号と判断
 					OutputDebugString(L"★AutoScan Ch Change timeout\r\n");
 					chkNext = TRUE;
 				}
 			}else{
-				if( startTime + chkWait+7 < GetTimeCount() ){
+				if( startTime + chkWait+7 < GetTimeCount() || chChgErr == TRUE){
 					//チャンネル切り替え成功したけどサービス一覧とれないので無信号と判断
 					OutputDebugString(L"★AutoScan GetService timeout\r\n");
 					chkNext = TRUE;
@@ -1287,6 +1342,10 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 			break;
 		}
 		if( chkNext == TRUE ){
+			if( sys->tsOut.IsChChanging(NULL) == TRUE ){
+				Sleep(200);
+				continue;
+			}
 			DWORD space = 0;
 			DWORD ch = 0;
 			sys->chUtil.GetCh(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, space, ch);
@@ -1304,13 +1363,14 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 			}
 			sys->epgSt_ch = sys->epgCapChList[chkCount];
 		}else{
-			if( sys->tsOut.IsChChanging() == TRUE ){
+			BOOL chChgErr = FALSE;
+			if( sys->tsOut.IsChChanging(&chChgErr) == TRUE ){
 				if( startTime + chkWait < GetTimeCount() ){
 					//チャンネル切り替えに10秒以上かかってるので無信号と判断
 					chkNext = TRUE;
 				}
 			}else{
-				if( startTime + chkWait + 15*60 < GetTimeCount() ){
+				if( startTime + chkWait + 15*60 < GetTimeCount() || chChgErr == TRUE){
 					//15分以上かかっているなら停止
 					sys->tsOut.StopSaveEPG(FALSE);
 					chkNext = TRUE;

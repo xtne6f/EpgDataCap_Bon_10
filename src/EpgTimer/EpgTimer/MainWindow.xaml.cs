@@ -14,6 +14,8 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using Common;
 using CtrlCmdCLI;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace EpgTimer
 {
@@ -478,6 +480,30 @@ namespace EpgTimer
         void nwTVEndButton_Click(object sender, RoutedEventArgs e)
         {
             EpgTimerDef.Instance.CtrlCmd.SendNwTVClose();
+            
+            foreach (Process p in Process.GetProcesses())
+            {
+                if (String.Compare(p.ProcessName, "tvtest", true) == 0)
+                {
+                    cmd.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + p.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + p.Id.ToString());
+                    cmd.SetConnectTimeOut(1000);
+                    String val = "";
+                    if (cmd.SendViewGetBonDrivere(ref val) == 1)
+                    {
+                        if (String.Compare(val, "BonDriver_UDP.dll", true) == 0)
+                        {
+                            cmd.SendViewAppClose();
+                            break;
+                        }
+                        else if (String.Compare(val, "BonDriver_TCP.dll", true) == 0)
+                        {
+                            cmd.SendViewAppClose();
+                            break;
+                        }
+                    }
+                }
+            }
+
         }
         
         /// <summary>

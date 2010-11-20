@@ -57,6 +57,8 @@ CReserveManager::CReserveManager(void)
 
 	this->autoDelRecInfo = FALSE;
 	this->autoDelRecInfoNum = 100;
+	this->timeSync = FALSE;
+	this->setTimeSync = FALSE;
 
 	this->NWTVPID = 0;
 	this->NWTVUDP = FALSE;
@@ -131,6 +133,10 @@ CReserveManager::~CReserveManager(void)
 
 	map<DWORD, BANK_INFO*>::iterator itrBank;
 	for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
+		map<DWORD, BANK_WORK_INFO*>::iterator itrWork;
+		for( itrWork = itrBank->second->reserveList.begin(); itrWork != itrBank->second->reserveList.end(); itrWork++ ){
+			SAFE_DELETE(itrWork->second);
+		}
 		SAFE_DELETE(itrBank->second);
 	}
 
@@ -398,6 +404,8 @@ void CReserveManager::ReloadSetting()
 
 	this->autoDelRecInfo = GetPrivateProfileInt(L"SET", L"AutoDelRecInfo", 0, iniAppPath.c_str());
 	this->autoDelRecInfoNum = GetPrivateProfileInt(L"SET", L"AutoDelRecInfoNum", 100, iniAppPath.c_str());
+
+	this->timeSync = GetPrivateProfileInt(L"SET", L"TimeSync", 0, iniAppPath.c_str());
 
 	recInfoText.SetAutoDel(this->autoDelRecInfoNum, this->autoDelRecInfo);
 
@@ -957,26 +965,28 @@ BOOL CReserveManager::_AddReserveData(RESERVE_DATA* reserve)
 	map<DWORD, RESERVE_DATA*>::iterator itrData;
 	itrData = this->reserveText.reserveIDMap.find(reserveID);
 	if( itrData != this->reserveText.reserveIDMap.end() ){
-		CReserveInfo* item = new CReserveInfo;
-		item->SetData(itrData->second);
+		if( this->reserveInfoMap.find(itrData->second->reserveID) == this->reserveInfoMap.end() ){
+			CReserveInfo* item = new CReserveInfo;
+			item->SetData(itrData->second);
 
-		//サービスサポートしてないチューナー検索
-		vector<DWORD> idList;
-		if( this->tunerManager.GetNotSupportServiceTuner(
-			itrData->second->originalNetworkID,
-			itrData->second->transportStreamID,
-			itrData->second->serviceID,
-			&idList ) == TRUE ){
-				item->SetNGChTunerID(&idList);
+			//サービスサポートしてないチューナー検索
+			vector<DWORD> idList;
+			if( this->tunerManager.GetNotSupportServiceTuner(
+				itrData->second->originalNetworkID,
+				itrData->second->transportStreamID,
+				itrData->second->serviceID,
+				&idList ) == TRUE ){
+					item->SetNGChTunerID(&idList);
+			}
+
+			this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second->reserveID, item));
+			LONGLONG keyID = _Create64Key2(
+				itrData->second->originalNetworkID,
+				itrData->second->transportStreamID,
+				itrData->second->serviceID,
+				itrData->second->eventID);
+			this->reserveInfoIDMap.insert(pair<LONGLONG, DWORD>(keyID, itrData->second->reserveID));
 		}
-
-		this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second->reserveID, item));
-		LONGLONG keyID = _Create64Key2(
-			itrData->second->originalNetworkID,
-			itrData->second->transportStreamID,
-			itrData->second->serviceID,
-			itrData->second->eventID);
-		this->reserveInfoIDMap.insert(pair<LONGLONG, DWORD>(keyID, itrData->second->reserveID));
 	}
 
 	return ret;
@@ -1149,13 +1159,14 @@ BOOL CReserveManager::_DelReserveData(
 				if( itrCtrl != this->tunerBankMap.end() ){
 					itrCtrl->second->DeleteReserve((*reserveList)[i]);
 				}
-
+				SAFE_DELETE(itrWork->second);
 				itrBank->second->reserveList.erase(itrWork);
 			}
 		}
 
 		itrWork = this->NGReserveMap.find((*reserveList)[i]);
 		if( itrWork != this->NGReserveMap.end() ){
+			SAFE_DELETE(itrWork->second);
 			this->NGReserveMap.erase(itrWork);
 		}
 
@@ -1199,6 +1210,10 @@ void CReserveManager::_ReloadBankMap()
 	//まずバンクをクリア
 	map<DWORD, BANK_INFO*>::iterator itrBank;
 	for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
+		map<DWORD, BANK_WORK_INFO*>::iterator itrWork;
+		for( itrWork = itrBank->second->reserveList.begin(); itrWork != itrBank->second->reserveList.end(); itrWork++ ){
+			SAFE_DELETE(itrWork->second);
+		}
 		itrBank->second->reserveList.clear();
 	}
 	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
@@ -1238,7 +1253,6 @@ void CReserveManager::_ReloadBankMap()
 			sortTimeMap.insert(pair<LONGLONG, CReserveInfo*>(ConvertI64Time(time), itrInfo->second));
 		}
 	}
-
 	multimap<wstring, BANK_WORK_INFO*> sortReserveMap;
 	multimap<LONGLONG, CReserveInfo*>::iterator itrSortInfo;
 	DWORD reserveNum = (DWORD)this->reserveInfoMap.size();
@@ -1804,6 +1818,9 @@ void CReserveManager::CheckEndReserve()
 				}else if( itrEnd->second->endType == REC_END_STATUS_NOT_START_HEAD ){
 					item.recStatus = REC_END_STATUS_NOT_START_HEAD;
 					item.comment = L"一部のみ録画が実行された可能性があります";
+				}else if( itrEnd->second->endType == REC_END_STATUS_ERR_CH_CHG ){
+					item.recStatus = REC_END_STATUS_ERR_CH_CHG;
+					item.comment = L"指定チャンネルのデータがBonDriverから出力されなかった可能性があります";
 				}else{
 					item.recStatus = itrEnd->second->endType;
 					item.comment = L"録画中にキャンセルされた可能性があります";
@@ -1831,6 +1848,7 @@ void CReserveManager::CheckEndReserve()
 				}
 
 				deleteList.push_back(itrEnd->second->reserveID);
+				SAFE_DELETE(itrEnd->second);
 			}
 			//予約一覧から削除
 			_DelReserveData(&deleteList);
@@ -3222,6 +3240,7 @@ BOOL CReserveManager::_StartEpgCap()
 	this->epgCapCheckFlag = TRUE;
 
 	SendNotifyStatus(2);
+	this->setTimeSync = FALSE;
 
 	return ret;
 }
@@ -3245,6 +3264,21 @@ BOOL CReserveManager::IsEpgCap()
 	for( itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
 		if(itr->second->IsEpgCapWorking() == TRUE){
 			ret = TRUE;
+			if( this->timeSync == TRUE && this->setTimeSync == FALSE){
+				LONGLONG delay = itr->second->DelayTime();
+				if( abs(delay) > 1*I64_1SEC ){
+					LONGLONG local = GetNowI64Time();
+					local += delay;
+					SYSTEMTIME setTime;
+					ConvertSystemTime(local, &setTime);
+					if( SetLocalTime(&setTime) == FALSE ){
+						_OutputDebugString(L"★SetLocalTime err %I64d", delay/I64_1SEC);
+					}else{
+						_OutputDebugString(L"★SetLocalTime %I64d",delay/I64_1SEC);
+						this->setTimeSync = TRUE;
+					}
+				}
+			}
 			break;
 		}
 	}

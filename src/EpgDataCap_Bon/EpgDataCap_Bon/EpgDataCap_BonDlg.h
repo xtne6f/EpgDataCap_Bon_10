@@ -47,6 +47,7 @@ protected:
 	void ReloadNWSet();
 	DWORD SelectBonDriver(LPCWSTR fileName);
 	DWORD SelectService(WORD ONID, WORD TSID, WORD SID);
+	DWORD SelectService(WORD ONID, WORD TSID, WORD SID,	DWORD space, DWORD ch);
 // 実装
 protected:
 	HICON m_hIcon;

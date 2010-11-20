@@ -348,7 +348,7 @@ public:
 		);
 
 
-	//タイマーGUI（EpgTimer_Bon.exe）用
+//タイマーGUI（EpgTimer_Bon.exe）用
 
 	//ダイアログを前面に表示
 	//戻り値：
@@ -404,7 +404,7 @@ public:
 		);
 
 
-	//Viewアプリ（EpgDataCap_Bon.exe）用
+//Viewアプリ（EpgDataCap_Bon.exe）用
 
 	//BonDriverの切り替え
 	//戻り値：

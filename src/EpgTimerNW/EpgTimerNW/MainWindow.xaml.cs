@@ -16,6 +16,8 @@ using EpgTimer;
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
 using System.Net;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace EpgTimerNW
 {
@@ -605,6 +607,28 @@ namespace EpgTimerNW
         void nwTVEndButton_Click(object sender, RoutedEventArgs e)
         {
             cmd.SendNwTVClose();
+            foreach (Process p in Process.GetProcesses())
+            {
+                if (String.Compare(p.ProcessName, "tvtest", true) == 0)
+                {
+                    cmd.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + p.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + p.Id.ToString());
+                    cmd.SetConnectTimeOut(1000);
+                    String val = "";
+                    if (cmd.SendViewGetBonDrivere(ref val) == 1)
+                    {
+                        if (String.Compare(val, "BonDriver_UDP.dll", true) == 0)
+                        {
+                            cmd.SendViewAppClose();
+                            break;
+                        }
+                        else if (String.Compare(val, "BonDriver_TCP.dll", true) == 0)
+                        {
+                            cmd.SendViewAppClose();
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         void taskTray_ContextMenuClick(object sender, EventArgs e)

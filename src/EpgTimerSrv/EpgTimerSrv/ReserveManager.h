@@ -252,6 +252,8 @@ protected:
 
 	BOOL autoDelRecInfo;
 	int autoDelRecInfoNum;
+	BOOL timeSync;
+	BOOL setTimeSync;
 
 	DWORD NWTVPID;
 	wstring recExePath;

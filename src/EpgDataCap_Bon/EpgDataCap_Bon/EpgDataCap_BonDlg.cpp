@@ -160,7 +160,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 			int sel = this->combService.GetCurSel();
 			if( sel != CB_ERR ){
 				DWORD index = (DWORD)this->combService.GetItemData(sel);
-				SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID );
+				SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID, this->serviceList[index].space, this->serviceList[index].ch );
 			}
 		}
 	}
@@ -371,6 +371,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 			break;
 		case TIMER_STATUS_UPDATE:
 			{
+				KillTimer( TIMER_STATUS_UPDATE );
 				SetThreadExecutionState(ES_SYSTEM_REQUIRED);
 
 				int iLine = this->editStatus.GetFirstVisibleLine();
@@ -378,7 +379,13 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				ULONGLONG scramble = 0;
 				this->main.GetErrCount(&drop, &scramble);
 
-				this->statusLog.Format(L"Signal: %.02f Drop: %I64d Scramble: %I64d",this->main.GetSignalLevel(), drop, scramble);
+				DWORD space = 0;
+				DWORD ch = 0;
+				if(this->main.GetCh(&space, &ch)==TRUE){
+					this->statusLog.Format(L"Signal: %.02f Drop: %I64d Scramble: %I64d  space: %d ch: %d",this->main.GetSignalLevel(), drop, scramble, space, ch);
+				}else{
+					this->statusLog.Format(L"Signal: %.02f Drop: %I64d Scramble: %I64d",this->main.GetSignalLevel(), drop, scramble);
+				}
 				this->statusLog += L"\r\n";
 
 				vector<NW_SEND_INFO> udpSendList;
@@ -423,10 +430,12 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					this->pgInfo = info;
 					SetDlgItemText(IDC_EDIT_PG_INFO, this->pgInfo);
 				}
+				SetTimer(TIMER_STATUS_UPDATE, 1000, NULL);
 			}
 			break;
 		case TIMER_CHSCAN_STATSU:
 			{
+				KillTimer( TIMER_CHSCAN_STATSU );
 				DWORD space = 0;
 				DWORD ch = 0;
 				wstring chName = L"";
@@ -436,6 +445,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				if( status == ST_WORKING ){
 					this->log.Format(L"%s (%d/%d 残り約 %d 秒)\r\n", chName.c_str(), chkNum, totalNum, (totalNum - chkNum)*10);
 					SetDlgItemText(IDC_EDIT_LOG, this->log);
+					SetTimer(TIMER_CHSCAN_STATSU, 1000, NULL);
 				}else if( status == ST_CANCEL ){
 					KillTimer(TIMER_CHSCAN_STATSU);
 					this->log = L"キャンセルされました\r\n";
@@ -448,7 +458,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					int sel = this->combService.GetCurSel();
 					if( sel != CB_ERR ){
 						DWORD index = (DWORD)this->combService.GetItemData(sel);
-						SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID );
+						SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID, this->serviceList[index].space, this->serviceList[index].ch );
 					}
 					BtnUpdate(GUI_NORMAL);
 					ChgIconStatus();
@@ -457,6 +467,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 			break;
 		case TIMER_EPGCAP_STATSU:
 			{
+				KillTimer( TIMER_EPGCAP_STATSU );
 				EPGCAP_SERVICE_INFO info;
 				DWORD status = this->main.GetEpgCapStatus(&info);
 				if( status == ST_WORKING ){
@@ -476,6 +487,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 
 					this->log = L"EPG取得中\r\n";
 					SetDlgItemText(IDC_EDIT_LOG, this->log);
+					SetTimer(TIMER_EPGCAP_STATSU, 1000, NULL);
 				}else if( status == ST_CANCEL ){
 					KillTimer(TIMER_EPGCAP_STATSU);
 					this->log = L"キャンセルされました\r\n";
@@ -902,7 +914,7 @@ void CEpgDataCap_BonDlg::OnCbnSelchangeComboTuner()
 		int sel = this->combService.GetCurSel();
 		if( sel != CB_ERR ){
 			DWORD index = (DWORD)this->combService.GetItemData(sel);
-			SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID );
+			SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID, this->serviceList[index].space, this->serviceList[index].ch );
 		}
 	}
 	ChgIconStatus();
@@ -916,7 +928,7 @@ void CEpgDataCap_BonDlg::OnCbnSelchangeComboService()
 	int sel = this->combService.GetCurSel();
 	if( sel != CB_ERR ){
 		DWORD index = (DWORD)this->combService.GetItemData(sel);
-		SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID );
+		SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID, this->serviceList[index].space, this->serviceList[index].ch );
 	}
 	ChgIconStatus();
 }
@@ -1033,6 +1045,11 @@ DWORD CEpgDataCap_BonDlg::SelectService(WORD ONID, WORD TSID, WORD SID)
 	return err;
 }
 
+DWORD CEpgDataCap_BonDlg::SelectService(WORD ONID, WORD TSID, WORD SID,	DWORD space, DWORD ch)
+{
+	DWORD err = this->main.SetCh(ONID, TSID, SID, space, ch);
+	return err;
+}
 
 void CEpgDataCap_BonDlg::OnBnClickedButtonChscan()
 {

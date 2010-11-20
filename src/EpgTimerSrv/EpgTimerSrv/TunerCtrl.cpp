@@ -195,10 +195,13 @@ void CTunerCtrl::CloseExe(DWORD PID)
 	Format(waitEventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, PID );
 
 	cmdSend.SetPipeSetting(waitEventName, pipeName);
-	cmdSend.SendViewAppClose();
 
 	BOOL bFind = TRUE;
 	DWORD dwCount=0;
+	bFind = _FindOpenExeProcess(PID);
+	if( bFind == TRUE ){
+		cmdSend.SendViewAppClose();
+	}
 	while(bFind == TRUE && dwCount<60){
 		bFind = _FindOpenExeProcess(PID);
 		Sleep(500);
@@ -209,7 +212,7 @@ void CTunerCtrl::CloseExe(DWORD PID)
 		HANDLE hProcess =  OpenProcess(PROCESS_TERMINATE, FALSE, PID);
 		TerminateProcess(hProcess, (UINT)-1);
 		CloseHandle(hProcess);
-		Sleep(1000);
+		Sleep(500);
 	}
 }
 

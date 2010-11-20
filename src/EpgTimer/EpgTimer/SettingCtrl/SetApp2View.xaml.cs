@@ -61,6 +61,12 @@ namespace EpgTimer
             }
             textBox_autoDelRecInfo.Text = IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfoNum", 100, SettingPath.TimerSrvIniPath).ToString();
 
+            if (IniFileHandler.GetPrivateProfileInt("SET", "TimeSync", 0, SettingPath.TimerSrvIniPath) == 1)
+            {
+                checkBox_timeSync.IsChecked = true;
+            }
+            
+
             StringBuilder buff = new StringBuilder(512);
             buff.Clear();
             IniFileHandler.GetPrivateProfileString("SET", "RecNamePlugInFile", "RecName_Macro.dll", buff, 512, SettingPath.TimerSrvIniPath);
@@ -246,6 +252,15 @@ namespace EpgTimer
                 IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfo", "0", SettingPath.TimerSrvIniPath);
             }
             IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfoNum", textBox_autoDelRecInfo.Text.ToString(), SettingPath.TimerSrvIniPath);
+
+            if (checkBox_timeSync.IsChecked == true)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "TimeSync", "1", SettingPath.TimerSrvIniPath);
+            }
+            else
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "TimeSync", "0", SettingPath.TimerSrvIniPath);
+            }
 
             Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
             Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;

@@ -18,6 +18,9 @@ CBonDriverUtil::CBonDriverUtil(void)
 	this->bonIF = NULL;
 	this->bon2IF = NULL;
 	this->module = NULL;
+
+	this->setSpace = 0;
+	this->setCh = 0;
 }
 
 CBonDriverUtil::~CBonDriverUtil(void)
@@ -397,6 +400,8 @@ DWORD CBonDriverUtil::SetCh(
 		UnLock();
 		return ERR_NOT_INIT;
 	}
+	this->setSpace = space;
+	this->setCh = ch;
 	//初回は常にチャンネル設定行う
 	if( this->initChSetFlag == TRUE ){
 		//２回目以降は変更あった場合に行う
@@ -441,8 +446,20 @@ DWORD CBonDriverUtil::GetNowCh(
 	}else{
 		*space = this->bon2IF->GetCurSpace();
 		*ch = this->bon2IF->GetCurChannel();
+		this->setSpace = *space;
+		this->setCh = *ch;
 	}
 	UnLock();
+	return TRUE;
+}
+
+BOOL CBonDriverUtil::GetSetCh(
+	DWORD* space,
+	DWORD* ch
+	)
+{
+	*space = this->setSpace;
+	*ch = this->setCh;
 	return TRUE;
 }
 

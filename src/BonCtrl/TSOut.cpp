@@ -8,6 +8,7 @@ CTSOut::CTSOut(void)
 	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
 
 	this->chChangeFlag = FALSE;
+	this->chChangeErr = FALSE;
 	this->chChangeTime = 0;
 	this->lastONID = 0xFFFF;
 	this->lastTSID = 0xFFFF;
@@ -72,7 +73,9 @@ BOOL CTSOut::Lock(LPCWSTR log, DWORD timeOut)
 	}
 	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
 	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
+		dwRet == WAIT_FAILED ||
+		dwRet == WAIT_TIMEOUT){
+			OutputDebugString(L"◆CTSOut::Lock FALSE");
 		return FALSE;
 	}
 	return TRUE;
@@ -93,6 +96,7 @@ DWORD CTSOut::SetChChangeEvent()
 	if( Lock() == FALSE ) return ERR_FALSE;
 
 	this->chChangeFlag = TRUE;
+	this->chChangeErr = FALSE;
 	this->chChangeTime = GetTimeCount();
 
 	this->decodeUtil.UnLoadDll();
@@ -103,16 +107,24 @@ DWORD CTSOut::SetChChangeEvent()
 	return NO_ERR;
 }
 
-BOOL CTSOut::IsChChanging()
+BOOL CTSOut::IsChChanging(BOOL* chChgErr)
 {
 	if( Lock() == FALSE ) return ERR_FALSE;
 
 	BOOL ret = this->chChangeFlag;
+	if( chChgErr != NULL ){
+		*chChgErr = this->chChangeErr;
+	}
 
 	if( this->chChangeTime == 0 ){
 		this->chChangeTime = GetTimeCount();
 	}else if( GetTimeCount() > this->chChangeTime + 15 ){
 		ret = FALSE;
+		if( this->chChangeFlag == TRUE ){
+			if( chChgErr != NULL ){
+				*chChgErr = TRUE;
+			}
+		}
 	}
 
 	UnLock();
@@ -193,28 +205,33 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 						this->decodeUtil.SetNetwork(onid, tsid);
 						this->decodeUtil.SetEmm(this->emmEnableFlag);
 						ResetErrCount();
-					}else if( GetTimeCount() > this->chChangeTime + 10 ){
+					}else if( GetTimeCount() > this->chChangeTime + 15 ){
 						OutputDebugString(L"★Ch Change Err\r\n");
 						//10秒以上たってるなら切り替わったとする
+						this->chChangeErr = TRUE;
 						//this->chChangeFlag = FALSE;
 						this->lastONID = onid;
 						this->lastTSID = tsid;
-						this->epgUtil.ClearSectionStatus();
-						this->decodeUtil.SetNetwork(onid, tsid);
-						this->decodeUtil.SetEmm(this->emmEnableFlag);
-						ResetErrCount();
+						//this->epgUtil.ClearSectionStatus();
+						//this->decodeUtil.SetNetwork(onid, tsid);
+						//this->decodeUtil.SetEmm(this->emmEnableFlag);
+						//ResetErrCount();
 					}
 				}
-				/*else{
-					if( this->chChangeTime == 0 ){
-						this->chChangeTime = GetTimeCount();
-					}
+				else{
 					if( GetTimeCount() > this->chChangeTime + 15 ){
 						//15秒以上たってるなら切り替わったとする
 						OutputDebugString(L"★GetTSID Err\r\n");
-						this->chChangeFlag = FALSE;
+						//this->chChangeFlag = FALSE;
+						this->chChangeErr = TRUE;
+						this->lastONID = onid;
+						this->lastTSID = tsid;
+						//this->epgUtil.ClearSectionStatus();
+						//this->decodeUtil.SetNetwork(onid, tsid);
+						//this->decodeUtil.SetEmm(this->emmEnableFlag);
+						//ResetErrCount();
 					}
-				}*/
+				}
 
 			}else{
 				//指定サービスに必要なPIDを解析

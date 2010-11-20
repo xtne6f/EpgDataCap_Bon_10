@@ -349,6 +349,14 @@ BOOL CEpgDBManager::IsLoadingData()
 {
 	if( Lock() == FALSE ) return FALSE;
 
+	BOOL ret = _IsLoadingData();
+
+	UnLock();
+	return ret;
+}
+
+BOOL CEpgDBManager::_IsLoadingData()
+{
 	BOOL ret = FALSE;
 	if( this->loadThread == NULL ){
 		ret = FALSE;
@@ -364,7 +372,6 @@ BOOL CEpgDBManager::IsLoadingData()
 		}
 	}
 
-	UnLock();
 	return ret;
 }
 
@@ -389,6 +396,10 @@ BOOL CEpgDBManager::CancelLoadData()
 BOOL CEpgDBManager::SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<EPGDB_EVENT_INFO*>* result)
 {
 	if( Lock() == FALSE ) return FALSE;
+	if( _IsLoadingData() == TRUE ){
+		UnLock();
+		return FALSE;
+	}
 
 	BOOL ret = TRUE;
 
@@ -834,6 +845,10 @@ BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, vector<wstring>* keyLi
 BOOL CEpgDBManager::GetServiceList(vector<EPGDB_SERVICE_INFO>* list)
 {
 	if( Lock() == FALSE ) return FALSE;
+	if( _IsLoadingData() == TRUE ){
+		UnLock();
+		return FALSE;
+	}
 
 	BOOL ret = TRUE;
 	map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
@@ -851,6 +866,10 @@ BOOL CEpgDBManager::GetServiceList(vector<EPGDB_SERVICE_INFO>* list)
 BOOL CEpgDBManager::EnumEventInfo(LONGLONG serviceKey, vector<EPGDB_EVENT_INFO*>* result)
 {
 	if( Lock() == FALSE ) return FALSE;
+	if( _IsLoadingData() == TRUE ){
+		UnLock();
+		return FALSE;
+	}
 
 	BOOL ret = TRUE;
 	map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
@@ -872,6 +891,10 @@ BOOL CEpgDBManager::EnumEventInfo(LONGLONG serviceKey, vector<EPGDB_EVENT_INFO*>
 BOOL CEpgDBManager::EnumEventAll(vector<EPGDB_SERVICE_EVENT_INFO*>* result)
 {
 	if( Lock() == FALSE ) return FALSE;
+	if( _IsLoadingData() == TRUE ){
+		UnLock();
+		return FALSE;
+	}
 
 	BOOL ret = TRUE;
 	map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
@@ -901,6 +924,10 @@ BOOL CEpgDBManager::SearchEpg(
 	)
 {
 	if( Lock() == FALSE ) return FALSE;
+	if( _IsLoadingData() == TRUE ){
+		UnLock();
+		return FALSE;
+	}
 
 	BOOL ret = FALSE;
 
@@ -930,6 +957,10 @@ BOOL CEpgDBManager::SearchEpg(
 	)
 {
 	if( Lock() == FALSE ) return FALSE;
+	if( _IsLoadingData() == TRUE ){
+		UnLock();
+		return FALSE;
+	}
 
 	BOOL ret = FALSE;
 
@@ -963,6 +994,10 @@ BOOL CEpgDBManager::SearchServiceName(
 	)
 {
 	if( Lock() == FALSE ) return FALSE;
+	if( _IsLoadingData() == TRUE ){
+		UnLock();
+		return FALSE;
+	}
 
 	BOOL ret = FALSE;
 

@@ -24,7 +24,7 @@ public:
 	~CTSOut(void);
 
 	DWORD SetChChangeEvent();
-	BOOL IsChChanging();
+	BOOL IsChChanging(BOOL* chChgErr);
 	void ResetChChange();
 
 	//現在のストリームのIDを取得する
@@ -306,6 +306,7 @@ protected:
 	CCreatePATPacket patUtil;
 
 	BOOL chChangeFlag;
+	BOOL chChangeErr;
 	LONGLONG chChangeTime;
 	WORD lastONID;
 	WORD lastTSID;
@@ -331,7 +332,7 @@ protected:
 	wstring epgTempFilePath;
 protected:
 	//PublicAPI排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
+	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 5*1000);
 	void UnLock(LPCWSTR log = NULL);
 
 	void CheckNeedPID();

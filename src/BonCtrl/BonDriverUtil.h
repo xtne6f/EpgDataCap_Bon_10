@@ -97,6 +97,11 @@ public:
 		DWORD* ch
 		);
 
+	BOOL GetSetCh(
+		DWORD* space,
+		DWORD* ch
+		);
+
 	//TSストリームを取得
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
@@ -156,9 +161,11 @@ protected:
 	IBonDriver2* bon2IF;
 	HMODULE module;
 
+	DWORD setSpace;
+	DWORD setCh;
 protected:
 	//PublicAPI排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
+	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 5*1000);
 	void UnLock(LPCWSTR log = NULL);
 
 	//ファイル名の最後が本当に「.dll」か確認

@@ -102,6 +102,19 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
+	// space			[IN]変更チャンネルのSpace
+	// ch				[IN]変更チャンネルの物理Ch
+	// SID			[IN]変更チャンネルの物理service_id
+	DWORD SetCh(
+		DWORD space,
+		DWORD ch,
+		WORD SID
+		);
+
+	//チャンネル変更
+	//戻り値：
+	// エラーコード
+	//引数：
 	// ONID			[IN]変更チャンネルのorignal_network_id
 	// TSID			[IN]変更チャンネルの物理transport_stream_id
 	// SID			[IN]変更チャンネルの物理service_id
@@ -111,10 +124,15 @@ public:
 		WORD SID
 		);
 
+	BOOL GetCh(
+		DWORD* space,
+		DWORD* ch
+		);
+
 	//チャンネル変更中かどうか
 	//戻り値：
 	// TRUE（変更中）、FALSE（完了）
-	BOOL IsChChanging();
+	BOOL IsChChanging(BOOL* chChgErr);
 
 	//現在のストリームのIDを取得する
 	//戻り値：
@@ -491,7 +509,7 @@ protected:
 
 protected:
 	//PublicAPI排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
+	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 15*1000);
 	void UnLock(LPCWSTR log = NULL);
 
 	//BonDriverをロード後の初期化処理

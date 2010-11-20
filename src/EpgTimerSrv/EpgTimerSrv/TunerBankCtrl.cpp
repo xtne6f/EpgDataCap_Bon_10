@@ -309,6 +309,7 @@ void CTunerBankCtrl::DeleteReserve(
 
 	itr = this->reserveWork.find(reserveID);
 	if( itr != this->reserveWork.end() ){
+		SAFE_DELETE(itr->second);
 		this->reserveWork.erase(itr);
 	}
 
@@ -329,6 +330,7 @@ void CTunerBankCtrl::ClearNoCtrl()
 	while(itr != this->reserveWork.end() )
 	{
 		if( itr->second->ctrlID.size() == 0 ){
+			SAFE_DELETE(itr->second);
 			this->reserveWork.erase(itr++);
 		}else{
 			itr++;
@@ -494,6 +496,13 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 							}
 							startEpgCap = FALSE;
 							sys->epgCapWork = FALSE;
+						}else{
+							//PC時計との誤差取得
+							int delaySec = 0;
+							if( sys->sendCtrl.SendViewGetDelay(&delaySec) == CMD_SUCCESS ){
+								delay = ((LONGLONG)delaySec)*I64_1SEC;
+								sys->delayTime = delay;
+							}
 						}
 					}else{
 						//エラー？
@@ -690,7 +699,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 						if( id == -1 ){
 							DWORD status = 0;
 							if(this->sendCtrl.SendViewGetStatus(&status) == CMD_SUCCESS){
-								if( status == VIEW_APP_ST_NORMAL ){
+								if( status == VIEW_APP_ST_NORMAL || status == VIEW_APP_ST_ERR_CH_CHG){
 									this->sendCtrl.SendViewSetID(this->tunerID);
 
 									this->sendCtrl.SendViewSetStandbyRec();
@@ -1163,9 +1172,26 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 		chkStartTime = ConvertI64Time(data.startTime) - startMargine - I64_1SEC;
 		chkEndTime = GetSumTime(data.startTime, data.durationSecond) + endMargine;
 
-		if( chkStartTime - 5*I64_1SEC < nowTime &&  nowTime < chkStartTime){
-			//開始5秒前になったらチェック間隔を短くする
-			*needShortCheck = TRUE;
+		if( nowTime < chkStartTime ){
+			if( chkStartTime - 5*I64_1SEC < nowTime){
+				//開始5秒前になったらチェック間隔を短くする
+				*needShortCheck = TRUE;
+			}else{
+				//ステータス確認
+				DWORD status = 0;
+				if( this->sendCtrl.SendViewGetStatus(&status) == CMD_SUCCESS ){
+					if( status == VIEW_APP_ST_ERR_CH_CHG ){
+						//チャンネル切り替え失敗してるようなのでリトライ
+						SET_CH_INFO chgCh;
+						itr->second->reserveInfo->GetService(&chgCh.ONID, &chgCh.TSID, &chgCh.SID);
+						chgCh.useSID = TRUE;
+						chgCh.useBonCh = FALSE;
+
+						this->sendCtrl.SendViewSetCh(&chgCh);
+						this->currentChID = ((DWORD)chgCh.ONID) << 16 | chgCh.TSID;
+					}
+				}
+			}
 		}else if( chkStartTime <= nowTime && nowTime < chkEndTime-30*I64_1SEC){
 			if( itr->second->recStartFlag == FALSE ){
 				//開始時間過ぎているので録画開始
@@ -1217,7 +1243,17 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 						SET_CTRL_REC_STOP_RES_PARAM resVal;
 						resVal.drop = 0;
 						resVal.scramble = 0;
-						AddEndReserve(itr->second, REC_END_STATUS_ERR_END, resVal);
+						if( status == VIEW_APP_ST_ERR_CH_CHG ){
+							__int64 chkTime = ConvertI64Time(data.startTime);
+							if( startMargine < 0 ){
+								chkTime -= startMargine;
+							}
+							if( nowTime > chkTime + (60*I64_1SEC) ){
+								AddEndReserve(itr->second, REC_END_STATUS_ERR_CH_CHG, resVal);
+							}
+						}else{
+							AddEndReserve(itr->second, REC_END_STATUS_ERR_END, resVal);
+						}
 					}
 				}
 				if( this->autoDel == TRUE ){
@@ -1468,6 +1504,7 @@ BOOL CTunerBankCtrl::CloseTuner()
 	this->tunerCtrl.CloseExe(this->processID);
 	this->processID = 0;
 	this->openTuner = FALSE;
+	this->delayTime = 0;
 
 	return TRUE;
 }

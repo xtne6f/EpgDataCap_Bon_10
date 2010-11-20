@@ -232,6 +232,44 @@ DWORD CEpgDataCap_BonMain::SetCh(
 	return err;
 }
 
+//チャンネル変更
+//戻り値：
+// エラーコード
+//引数：
+// SID			[IN]変更チャンネルのservice_id
+// SID			[IN]変更チャンネルのspace
+// SID			[IN]変更チャンネルのch
+DWORD CEpgDataCap_BonMain::SetCh(
+	WORD ONID,
+	WORD TSID,
+	WORD SID,
+	DWORD space,
+	DWORD ch
+	)
+{
+	DWORD err = ERR_FALSE;
+	if( this->bonCtrl.IsRec() == FALSE ){
+		if( this->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+			this->bonCtrl.StopEpgCap();
+		}
+		err = this->bonCtrl.SetCh(space, ch, SID);
+		if( err == NO_ERR ){
+			this->lastONID = ONID;
+			this->lastTSID = TSID;
+			this->lastSID = SID;
+
+			if( this->nwCtrlID != 0 ){
+				if( this->allService == TRUE ){
+					this->bonCtrl.SetServiceID(this->nwCtrlID, 0xFFFF);
+				}else{
+					this->bonCtrl.SetServiceID(this->nwCtrlID, this->lastSID);
+				}
+			}
+		}
+	}
+	return err;
+}
+
 //現在のサービス取得
 //戻り値：
 // エラーコード
@@ -250,12 +288,20 @@ void CEpgDataCap_BonMain::GetCh(
 	*SID = this->lastSID;
 }
 
+BOOL CEpgDataCap_BonMain::GetCh(
+	DWORD* space,
+	DWORD* ch
+	)
+{
+	return this->bonCtrl.GetCh(space, ch);
+}
+
 //チャンネル変更中かどうか
 //戻り値：
 // TRUE（変更中）、FALSE（完了）
-BOOL CEpgDataCap_BonMain::IsChChanging()
+BOOL CEpgDataCap_BonMain::IsChChanging(BOOL* chChgErr)
 {
-	return this->bonCtrl.IsChChanging();
+	return this->bonCtrl.IsChChanging(chChgErr);
 }
 
 void CEpgDataCap_BonMain::SetSID(
@@ -450,7 +496,7 @@ DWORD CEpgDataCap_BonMain::GetEpgInfo(
 {
 	WORD ONID = 0;
 	WORD TSID = 0;
-	if( this->bonCtrl.IsChChanging() == TRUE ){
+	if( this->bonCtrl.IsChChanging(NULL) == TRUE ){
 		return FALSE;
 	}
 	if( this->bonCtrl.GetStreamID(&ONID, &TSID) == FALSE ){
@@ -781,6 +827,14 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 				val = VIEW_APP_ST_REC;
 			}else if( sys->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
 				val = VIEW_APP_ST_GET_EPG;
+			}else{
+				//VIEW_APP_ST_NORMAL
+				BOOL chChgErr = FALSE;
+				if(sys->IsChChanging(&chChgErr) == FALSE ){
+					if( chChgErr == TRUE ){
+						val = VIEW_APP_ST_ERR_CH_CHG;
+					}
+				}
 			}
 			resParam->dataSize = GetVALUESize(val);
 			resParam->data = new BYTE[resParam->dataSize];

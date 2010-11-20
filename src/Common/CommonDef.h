@@ -18,6 +18,7 @@
 #define EPG_TIMER_SERVICE_EXE L"EpgTimerSrv.exe"
 
 #define EPG_TIMER_BON_MUTEX L"Global\\EpgTimer_Bon2"
+#define EPG_TIMER_BON_LITE_MUTEX L"Global\\EpgTimer_Bon2_Lite"
 #define EPG_TIMER_BON_SRV_MUTEX L"Global\\EpgTimer_Bon_Service"
 #define SERVICE_NAME L"EpgTimer Service"
 
@@ -62,6 +63,7 @@
 #define VIEW_APP_ST_ERR_BON				1 //BonDriverの初期化に失敗
 #define VIEW_APP_ST_REC					2 //録画状態
 #define VIEW_APP_ST_GET_EPG				3 //EPG取得状態
+#define VIEW_APP_ST_ERR_CH_CHG			4 //チャンネル切り替え失敗状態
 
 #define REC_END_STATUS_NORMAL		1		//正常終了
 #define REC_END_STATUS_OPEN_ERR		2		//チューナーのオープンができなかった
@@ -75,5 +77,7 @@
 #define REC_END_STATUS_NOT_FIND_6H	10		//6時間番組情報確認できなかった
 #define REC_END_STATUS_END_SUBREC	11		//サブフォルダへの録画が発生した
 #define REC_END_STATUS_ERR_RECSTART 12		//録画開始に失敗した
+#define REC_END_STATUS_NOT_START_HEAD 13	//一部のみ録画された
+#define REC_END_STATUS_ERR_CH_CHG	14		//チャンネル切り替えに失敗した
 
 #endif

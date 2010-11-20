@@ -71,6 +71,23 @@ public:
 		WORD SID
 		);
 
+	//チャンネル変更
+	//戻り値：
+	// エラーコード
+	//引数：
+	// ONID			[IN]変更チャンネルのorignal_network_id
+	// TSID			[IN]変更チャンネルのtransport_stream_id
+	// SID			[IN]変更チャンネルのservice_id
+	// space		[IN]変更チャンネルのspace
+	// ch			[IN]変更チャンネルのch
+	DWORD SetCh(
+		WORD ONID,
+		WORD TSID,
+		WORD SID,
+		DWORD space,
+		DWORD ch
+		);
+
 	//現在のサービス取得
 	//戻り値：
 	// エラーコード
@@ -84,10 +101,15 @@ public:
 		WORD* SID
 		);
 
+	BOOL GetCh(
+		DWORD* space,
+		DWORD* ch
+		);
+
 	//チャンネル変更中かどうか
 	//戻り値：
 	// TRUE（変更中）、FALSE（完了）
-	BOOL IsChChanging();
+	BOOL IsChChanging(BOOL* chChgErr);
 
 	//外部制御などでCH変更された場合にSIDのみ設定
 	void SetSID(

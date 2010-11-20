@@ -49,6 +49,7 @@ typedef struct _REC_SETTING_DATA{
 		tunerID = 0;
 	};
 	~_REC_SETTING_DATA(void){
+		recFolderList.clear();
 	}
 	_REC_SETTING_DATA & operator= (const _REC_SETTING_DATA & o) {
 		recMode = o.recMode;

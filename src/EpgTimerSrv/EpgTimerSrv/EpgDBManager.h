@@ -92,6 +92,8 @@ protected:
 	void ClearEpgData();
 	static UINT WINAPI LoadThread(LPVOID param);
 
+	BOOL _IsLoadingData();
+
 	void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, EPGDB_EVENT_INFO*>* resultMap);
 	BOOL IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector<EPGDB_CONTENT_DATA>* eventData);
 	BOOL IsInDateTime(vector<TIME_SEARCH>* timeList, SYSTEMTIME startTime);

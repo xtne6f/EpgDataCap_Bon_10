@@ -173,8 +173,12 @@ BOOL CParseReserveText::AddParseReserveText(LPCWSTR filePath)
 
 					if( item->reserveID == 0 ){
 						item->reserveID = GetNextReserveID();
-						this->reserveMap.insert( pair<wstring, RESERVE_DATA*>(strKey,item) );
-						this->reserveIDMap.insert( pair<DWORD, RESERVE_DATA*>(item->reserveID,item) );
+						if( this->reserveMap.find(strKey) == this->reserveMap.end()){
+							this->reserveMap.insert( pair<wstring, RESERVE_DATA*>(strKey,item) );
+							this->reserveIDMap.insert( pair<DWORD, RESERVE_DATA*>(item->reserveID,item) );
+						}else{
+							SAFE_DELETE(item);
+						}
 					}else{
 						SAFE_DELETE(item);
 					}
@@ -700,17 +704,20 @@ BOOL CParseReserveText::AddReserve(RESERVE_DATA* item, DWORD* reserveID)
 		item->startTime.wSecond,
 		item->transportStreamID);
 
-	RESERVE_DATA* pSetItem = new RESERVE_DATA;
-	*pSetItem = *item;
+	if( this->reserveMap.find(strKey) == this->reserveMap.end() ){
+		RESERVE_DATA* pSetItem = new RESERVE_DATA;
+		*pSetItem = *item;
 
-	pSetItem->reserveID = GetNextReserveID();
-	if( reserveID != NULL ){
-		*reserveID = pSetItem->reserveID;
+		pSetItem->reserveID = GetNextReserveID();
+		if( reserveID != NULL ){
+			*reserveID = pSetItem->reserveID;
+		}
+		this->reserveMap.insert( pair<wstring, RESERVE_DATA*>(strKey,pSetItem) );
+		this->reserveIDMap.insert( pair<DWORD, RESERVE_DATA*>(pSetItem->reserveID,pSetItem) );
+		return TRUE;
+	}else{
+		return FALSE;
 	}
-	this->reserveMap.insert( pair<wstring, RESERVE_DATA*>(strKey,pSetItem) );
-	this->reserveIDMap.insert( pair<DWORD, RESERVE_DATA*>(pSetItem->reserveID,pSetItem) );
-
-	return TRUE;
 }
 
 BOOL CParseReserveText::ChgReserve(RESERVE_DATA* item)
