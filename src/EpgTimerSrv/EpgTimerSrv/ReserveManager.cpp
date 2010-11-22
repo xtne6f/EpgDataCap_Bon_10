@@ -730,7 +730,7 @@ BOOL CReserveManager::ReloadReserveData()
 					&idList ) == TRUE ){
 						item->SetNGChTunerID(&idList);
 				}
-
+				
 				this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second->reserveID, item));
 				LONGLONG keyID = _Create64Key2(
 					itrData->second->originalNetworkID,
@@ -1090,9 +1090,9 @@ BOOL CReserveManager::_ChgReserveData(RESERVE_DATA* reserve, BOOL chgTime)
 					//サービスサポートしてないチューナー検索
 					vector<DWORD> idList;
 					if( this->tunerManager.GetNotSupportServiceTuner(
-						setData.originalNetworkID,
-						setData.transportStreamID,
-						setData.serviceID,
+						reserve->originalNetworkID,
+						reserve->transportStreamID,
+						reserve->serviceID,
 						&idList ) == TRUE ){
 							itrInfo->second->SetNGChTunerID(&idList);
 					}
@@ -1188,6 +1188,8 @@ BOOL CReserveManager::_DelReserveData(
 			this->reserveInfoMap.erase(itr);
 		}
 	}
+	this->reserveText.SwapMap();
+	map<DWORD, CReserveInfo*>(this->reserveInfoMap).swap(this->reserveInfoMap);
 	return TRUE;
 }
 
@@ -1221,6 +1223,9 @@ void CReserveManager::_ReloadBankMap()
 		SAFE_DELETE(itrNG->second);
 	}
 	this->NGReserveMap.clear();
+
+	map<DWORD, BANK_INFO*>(this->bankMap).swap(this->bankMap);
+	map<DWORD, BANK_WORK_INFO*>(this->NGReserveMap).swap(this->NGReserveMap);
 
 	//待機状態に入っているもの以外クリア
 	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
@@ -1362,8 +1367,24 @@ void CReserveManager::_ReloadBankMap()
 
 	Sleep(0);
 
-	//NGで少しでも録画できるかチェック
 	multimap<wstring, BANK_WORK_INFO*>::iterator itrSortNG;
+	//NGでチューナー入れ替えで録画できるものあるかチェック
+	for( itrSortNG = tempNGMap.begin(); itrSortNG != tempNGMap.end(); itrSortNG++){
+		if( itrSortNG->second->useTunerID != 0 ){
+			//チューナー固定でNGになっているのは無視
+			continue;
+		}
+		if( ChangeNGReserve(itrSortNG->second) == TRUE ){
+			//登録できたのでNGから削除
+			itrSortNG->second->reserveInfo->SetOverlapMode(0);
+			itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
+			if( itrNG != this->NGReserveMap.end() ){
+				this->NGReserveMap.erase(itrNG);
+			}
+		}
+	}
+
+	//NGで少しでも録画できるかチェック
 	for( itrSortNG = tempNGMap.begin(); itrSortNG != tempNGMap.end(); itrSortNG++){
 		if( itrSortNG->second->useTunerID != 0 ){
 			//チューナー固定でNGになっているのは無視
@@ -1411,6 +1432,125 @@ void CReserveManager::_ReloadBankMap()
 		}
 	}
 	_OutputDebugString(L"End _ReloadBankMap %dmsec\r\n", GetTickCount()-time);
+}
+
+BOOL CReserveManager::ChangeNGReserve(BANK_WORK_INFO* inItem)
+{
+	BOOL ret = FALSE;
+
+	if( inItem == NULL ){
+		return FALSE;
+	}
+
+	map<DWORD, BANK_INFO*>::iterator itrBank;
+	for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++ ){
+		if( inItem->reserveInfo->IsNGTuner(itrBank->second->tunerID) == FALSE ){
+			//NGじゃないバンクあり
+
+			//時間のかぶる予約一覧取得
+			vector<BANK_WORK_INFO*> chkReserve;
+			map<DWORD, BANK_WORK_INFO*>::iterator itrWork;
+			for( itrWork = itrBank->second->reserveList.begin(); itrWork != itrBank->second->reserveList.end(); itrWork++ ){
+				//時間かぶっている予約かチェック
+				if( itrWork->second->startTime <= inItem->startTime && 
+					inItem->startTime < itrWork->second->endTime){
+					//開始時間が含まれている
+						chkReserve.push_back(itrWork->second);
+				}else
+				if( itrWork->second->startTime < inItem->endTime &&
+					inItem->endTime <= itrWork->second->endTime ){
+					//終了時間が含まれている
+						chkReserve.push_back(itrWork->second);
+				}else
+				if( inItem->startTime <= itrWork->second->startTime &&
+					itrWork->second->startTime < inItem->endTime ){
+					//開始から終了の間に含んでしまう
+						chkReserve.push_back(itrWork->second);
+				}else
+				if( inItem->startTime < itrWork->second->endTime &&
+					itrWork->second->endTime <= inItem->endTime ){
+					//開始から終了の間に含んでしまう
+						chkReserve.push_back(itrWork->second);
+				}
+			}
+
+			//かぶった予約が別バンクで行えるかチェック
+			BOOL moveOK = TRUE;
+			vector<BANK_WORK_INFO*> tempIn;
+			for( size_t i=0; i<chkReserve.size(); i++ ){
+				BOOL inFlag = FALSE;
+				map<DWORD, BANK_INFO*>::iterator itrBank2;
+				//まず問題なく入る場所を探す
+				for( itrBank2 = this->bankMap.begin(); itrBank2 != this->bankMap.end(); itrBank2++ ){
+					if( itrBank2->first == itrBank->first ){
+						continue;
+					}
+					if( ReChkInsertStatus(itrBank2->second, chkReserve[i]) == 1 ){
+						inFlag = TRUE;
+						//行えるのでバンク移動
+						chkReserve[i]->preTunerID = itrBank->second->tunerID;
+
+						itrBank2->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(chkReserve[i]->reserveID, chkReserve[i]));
+
+						tempIn.push_back(chkReserve[i]);
+						break;
+					}
+				}
+				if(inFlag == FALSE ){
+					//開始時間とか重なるものを探す
+					for( itrBank2 = this->bankMap.begin(); itrBank2 != this->bankMap.end(); itrBank2++ ){
+						if( itrBank2->first == itrBank->first ){
+							continue;
+						}
+						if( ReChkInsertStatus(itrBank2->second, chkReserve[i]) != 0 ){
+							inFlag = TRUE;
+							//行えるのでバンク移動
+							chkReserve[i]->preTunerID = itrBank->second->tunerID;
+
+							itrBank2->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(chkReserve[i]->reserveID, chkReserve[i]));
+
+							tempIn.push_back(chkReserve[i]);
+							break;
+						}
+					}
+				}
+				if(inFlag == FALSE ){
+					moveOK = FALSE;
+					break;
+				}
+			}
+			if(moveOK == FALSE ){
+				//移動できなかったので復帰
+				for( size_t i=0; i<tempIn.size(); i++ ){
+					map<DWORD, BANK_INFO*>::iterator itrBank2;
+					itrBank2 = this->bankMap.find(tempIn[i]->preTunerID);
+					if( itrBank2 != this->bankMap.end() ){
+						map<DWORD, BANK_WORK_INFO*>::iterator itrRes;
+						itrRes = itrBank2->second->reserveList.find(tempIn[i]->reserveID);
+						if( itrRes != itrBank2->second->reserveList.end() ){
+							itrBank2->second->reserveList.erase(itrRes);
+						}
+					}
+				}
+			}else{
+				//このバンクから移動したものを削除
+				for( size_t i=0; i<tempIn.size(); i++ ){
+					map<DWORD, BANK_WORK_INFO*>::iterator itrRes;
+					itrRes = itrBank->second->reserveList.find(tempIn[i]->reserveID);
+					if( itrRes != itrBank->second->reserveList.end() ){
+						itrBank->second->reserveList.erase(itrRes);
+					}
+				}
+				//このバンクにNG追加
+				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(inItem->reserveID, inItem));
+
+				ret = TRUE;
+				break;
+			}
+		}
+	}
+
+	return ret;
 }
 
 void CReserveManager::CheckOverTimeReserve()
@@ -3266,7 +3406,7 @@ BOOL CReserveManager::IsEpgCap()
 			ret = TRUE;
 			if( this->timeSync == TRUE && this->setTimeSync == FALSE){
 				LONGLONG delay = itr->second->DelayTime();
-				if( abs(delay) > 1*I64_1SEC ){
+				if( abs(delay) > 10*I64_1SEC ){
 					LONGLONG local = GetNowI64Time();
 					local += delay;
 					SYSTEMTIME setTime;

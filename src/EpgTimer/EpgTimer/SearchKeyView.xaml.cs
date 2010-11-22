@@ -717,9 +717,13 @@ namespace EpgTimer
         {
             get
             {
+                if (Settings.Instance.NoToolTip == true)
+                {
+                    return null;
+                }
                 String viewTip = "";
 
-                if (ServiceInfo != null)
+                if (ServiceInfo != null )
                 {
                     viewTip =
                         "network_name : " + ServiceInfo.network_name + "\r\n" +

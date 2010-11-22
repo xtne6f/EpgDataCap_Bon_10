@@ -63,6 +63,7 @@ public:
 	// TRUE（成功）、FALSE（失敗）
 	BOOL DelReserve(DWORD reserveID);
 
+	void SwapMap();
 protected:
 	wstring loadFilePath;
 

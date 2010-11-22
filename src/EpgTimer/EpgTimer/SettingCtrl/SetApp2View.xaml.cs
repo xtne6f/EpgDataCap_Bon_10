@@ -178,6 +178,9 @@ namespace EpgTimer
                         searchSet.ServiceList.Add((long)info.Key);
                     }
                 }
+
+                checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
+
             }
             catch
             {
@@ -330,7 +333,15 @@ namespace EpgTimer
                 IniFileHandler.WritePrivateProfileString("SET", "EnableTCPSrv", "0", SettingPath.TimerSrvIniPath);
             }
             IniFileHandler.WritePrivateProfileString("SET", "TCPPort", textBox_tcpPort.Text, SettingPath.TimerSrvIniPath);
-        
+
+            if (checkBox_noToolTips.IsChecked == true)
+            {
+                Settings.Instance.NoToolTip = true;
+            }
+            else
+            {
+                Settings.Instance.NoToolTip = false;
+            }
         }
 
         private void button_recname_Click(object sender, RoutedEventArgs e)

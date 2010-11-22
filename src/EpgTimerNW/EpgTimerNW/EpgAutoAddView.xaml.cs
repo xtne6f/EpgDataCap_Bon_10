@@ -340,6 +340,10 @@ namespace EpgTimer
         {
             get
             {
+                if (Settings.Instance.NoToolTip == true)
+                {
+                    return null;
+                } 
                 String view = "";
                 if (EpgAutoAddInfo != null)
                 {

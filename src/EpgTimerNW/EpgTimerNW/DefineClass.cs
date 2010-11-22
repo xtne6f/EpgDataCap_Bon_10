@@ -382,6 +382,10 @@ namespace EpgTimer
         {
             get
             {
+                if (Settings.Instance.NoToolTip == true)
+                {
+                    return null;
+                } 
                 String viewTip = "";
                 if (Nibble2 == 0xFF)
                 {

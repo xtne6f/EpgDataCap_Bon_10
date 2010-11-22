@@ -667,6 +667,7 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, EPGDB
 					itrEvent->second->event_id);
 
 				resultMap->insert(pair<ULONGLONG, EPGDB_EVENT_INFO*>(mapKey, itrEvent->second));
+
 			}
 		}
 	}

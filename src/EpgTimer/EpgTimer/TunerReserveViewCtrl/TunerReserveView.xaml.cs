@@ -115,14 +115,17 @@ namespace EpgTimer
                         if (info.TopPos <= cursorPos.Y && cursorPos.Y < info.TopPos + info.Height)
                         {
                             TextBlock block = info.Info.ToolTipView;
-                            block.Background = Brushes.LightBlue;
-                            block.Foreground = Brushes.Blue; 
-                            toolTip.Child = block;
-                            toolTip.IsOpen = true;
-                            toolTipOffTimer.Start();
+                            if (block != null)
+                            {
+                                block.Background = Brushes.LightBlue;
+                                block.Foreground = Brushes.Blue;
+                                toolTip.Child = block;
+                                toolTip.IsOpen = true;
+                                toolTipOffTimer.Start();
 
-                            lastPopupInfo = info;
-                            lastPopupPos = cursorPos;
+                                lastPopupInfo = info;
+                                lastPopupPos = cursorPos;
+                            }
                         }
                     }
                 }

@@ -720,6 +720,10 @@ namespace EpgTimer
         {
             get
             {
+                if (Settings.Instance.NoToolTip == true)
+                {
+                    return null;
+                } 
                 String viewTip = "";
 
                 if (ServiceInfo != null)

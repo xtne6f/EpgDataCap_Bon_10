@@ -33,7 +33,7 @@
                 <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="436,124,0,0" Name="button_recname" VerticalAlignment="Top" Width="54" Click="button_recname_Click" />
             </Grid>
         </GroupBox>
-        <GroupBox Header="その他" Height="209" Margin="12,205,12,0" Name="groupBox2" VerticalAlignment="Top">
+        <GroupBox Header="その他" Height="233" Margin="12,205,12,0" Name="groupBox2" VerticalAlignment="Top">
             <Grid>
                 <CheckBox Content="×ボタンで最小化する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_closeMin" VerticalAlignment="Top" />
                 <CheckBox Content="最小化で起動する" Height="16" HorizontalAlignment="Left" Margin="6,28,0,0" Name="checkBox_minWake" VerticalAlignment="Top" />
@@ -47,6 +47,7 @@
                 <TextBox Height="24" HorizontalAlignment="Left" Margin="276,112,0,0" Name="textBox_autoDelRecInfo" VerticalAlignment="Top" Width="62" />
                 <CheckBox Content="EPG取得時に放送波時間でPC時計を同期する" Height="16" HorizontalAlignment="Left" Margin="6,144,0,0" Name="checkBox_timeSync" VerticalAlignment="Top" />
                 <Label Content="（※EpgTimerSrv.exeが管理者権限で起動している必要があります）" Height="28" HorizontalAlignment="Left" Margin="276,139,0,0" Name="label3" VerticalAlignment="Top" Foreground="Red" />
+                <CheckBox Content="ツールチップの表示を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,166,0,0" Name="checkBox_noToolTips" VerticalAlignment="Top" />
             </Grid>
         </GroupBox>
     </Grid>

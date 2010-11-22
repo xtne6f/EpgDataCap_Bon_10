@@ -127,15 +127,15 @@ void CEpgTimerSrvMain::StartMain(
 		if( this->reloadEpgChkFlag == TRUE ){
 			if( this->epgDB.IsLoadingData() == FALSE ){
 				//リロード終わったので自動予約登録処理を行う
-				this->reserveManager.SendNotifyEpgReload();
 				if( Lock() == TRUE ){
 					CheckTuijyu();
 					AutoAddReserveEPG();
 					AutoAddReserveProgram();
+					this->reserveManager.ReloadBankMap(TRUE);
 					UnLock();
 				}
 				this->reloadEpgChkFlag = FALSE;
-				this->reserveManager.ReloadBankMap(TRUE);
+				this->reserveManager.SendNotifyEpgReload();
 
 				//リロードタイミングで予約始まったかもしれないのでチェック
 				if( this->reserveManager.IsSuspendOK() == TRUE ){
@@ -679,8 +679,10 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 		setList.push_back(*(itrAdd->second));
 		SAFE_DELETE(itrAdd->second);
 	}
+	addMap.clear();
 	if( setList.size() > 0 ){
 		this->reserveManager.AddReserveData(&setList);
+		setList.clear();
 	}
 
 	return ret;
@@ -778,17 +780,27 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 
 	switch( cmdParam->param ){
 	case CMD2_EPG_SRV_ADDLOAD_RESERVE:
-		if( sys->reserveManager.AddLoadReserveData() == TRUE ){
-			resParam->param = CMD_SUCCESS;
+		if( sys->Lock() == TRUE ){
+			if( sys->reserveManager.AddLoadReserveData() == TRUE ){
+				resParam->param = CMD_SUCCESS;
+			}
+			sys->UnLock();
+		}else{
+			resParam->param = CMD_ERR_BUSY;
 		}
 		break;
 	case CMD2_EPG_SRV_RELOAD_EPG:
 		if( sys->epgDB.IsLoadingData() == TRUE ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
-			if( sys->epgDB.ReloadEpgData() == TRUE ){
-				sys->reloadEpgChkFlag = TRUE;
-				resParam->param = CMD_SUCCESS;
+			if( sys->Lock() == TRUE ){
+				if( sys->epgDB.ReloadEpgData() == TRUE ){
+					sys->reloadEpgChkFlag = TRUE;
+					resParam->param = CMD_SUCCESS;
+				}
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
 			}
 		}
 		break;
@@ -864,39 +876,49 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD2_EPG_SRV_ENUM_RESERVE:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_RESERVE");
-			vector<RESERVE_DATA*> list;
-			if(sys->reserveManager.GetReserveDataAll(&list) == TRUE ){
-				resParam->param = CMD_SUCCESS;
-				resParam->dataSize = GetVALUESize(&list);
-				resParam->data = new BYTE[resParam->dataSize];
-				if( WriteVALUE(&list, resParam->data, resParam->dataSize, NULL) == FALSE ){
-					_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_RESERVE\r\n");
-					resParam->dataSize = 0;
-					resParam->param = CMD_ERR;
+			if( sys->Lock() == TRUE ){
+				vector<RESERVE_DATA*> list;
+				if(sys->reserveManager.GetReserveDataAll(&list) == TRUE ){
+					resParam->param = CMD_SUCCESS;
+					resParam->dataSize = GetVALUESize(&list);
+					resParam->data = new BYTE[resParam->dataSize];
+					if( WriteVALUE(&list, resParam->data, resParam->dataSize, NULL) == FALSE ){
+						_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_RESERVE\r\n");
+						resParam->dataSize = 0;
+						resParam->param = CMD_ERR;
+					}
+					for( size_t i=0; i<list.size(); i++ ){
+						SAFE_DELETE(list[i]);
+					}
+					list.clear();
 				}
-				for( size_t i=0; i<list.size(); i++ ){
-					SAFE_DELETE(list[i]);
-				}
-				list.clear();
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
 			}
 		}
 		break;
 	case CMD2_EPG_SRV_GET_RESERVE:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_GET_RESERVE");
-			DWORD reserveID = 0;
-			if( ReadVALUE( &reserveID, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				RESERVE_DATA info;
-				if(sys->reserveManager.GetReserveData(reserveID, &info) == TRUE ){
-					resParam->param = CMD_SUCCESS;
-					resParam->dataSize = GetVALUESize(&info);
-					resParam->data = new BYTE[resParam->dataSize];
-					if( WriteVALUE(&info, resParam->data, resParam->dataSize, NULL) == FALSE ){
-						_OutputDebugString(L"err Write res CMD2_EPG_SRV_GET_RESERVE\r\n");
-						resParam->dataSize = 0;
-						resParam->param = CMD_ERR;
+			if( sys->Lock() == TRUE ){
+				DWORD reserveID = 0;
+				if( ReadVALUE( &reserveID, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+					RESERVE_DATA info;
+					if(sys->reserveManager.GetReserveData(reserveID, &info) == TRUE ){
+						resParam->param = CMD_SUCCESS;
+						resParam->dataSize = GetVALUESize(&info);
+						resParam->data = new BYTE[resParam->dataSize];
+						if( WriteVALUE(&info, resParam->data, resParam->dataSize, NULL) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_GET_RESERVE\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}
 					}
 				}
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
 			}
 		}
 		break;
@@ -948,26 +970,36 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD2_EPG_SRV_ENUM_RECINFO:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_RECINFO");
-			vector<REC_FILE_INFO> list;
-			if(sys->reserveManager.GetRecFileInfoAll(&list) == TRUE ){
-				resParam->param = CMD_SUCCESS;
-				resParam->dataSize = GetVALUESize(&list);
-				resParam->data = new BYTE[resParam->dataSize];
-				if( WriteVALUE(&list, resParam->data, resParam->dataSize, NULL) == FALSE ){
-					_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_RECINFO\r\n");
-					resParam->dataSize = 0;
-					resParam->param = CMD_ERR;
+			if( sys->Lock() == TRUE ){
+				vector<REC_FILE_INFO> list;
+				if(sys->reserveManager.GetRecFileInfoAll(&list) == TRUE ){
+					resParam->param = CMD_SUCCESS;
+					resParam->dataSize = GetVALUESize(&list);
+					resParam->data = new BYTE[resParam->dataSize];
+					if( WriteVALUE(&list, resParam->data, resParam->dataSize, NULL) == FALSE ){
+						_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_RECINFO\r\n");
+						resParam->dataSize = 0;
+						resParam->param = CMD_ERR;
+					}
 				}
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
 			}
 		}
 		break;
 	case CMD2_EPG_SRV_DEL_RECINFO:
 		{
-			vector<DWORD> list;
-			if( ReadVALUE( &list, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				if(sys->reserveManager.DelRecFileInfo(&list) == TRUE ){
-					resParam->param = CMD_SUCCESS;
+			if( sys->Lock() == TRUE ){
+				vector<DWORD> list;
+				if( ReadVALUE( &list, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+					if(sys->reserveManager.DelRecFileInfo(&list) == TRUE ){
+						resParam->param = CMD_SUCCESS;
+					}
 				}
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
 			}
 		}
 		break;
@@ -977,16 +1009,21 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			if( sys->epgDB.IsLoadingData() == TRUE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
-				vector<EPGDB_SERVICE_INFO> list;
-				if( sys->epgDB.GetServiceList(&list) == TRUE ){
-					resParam->param = CMD_SUCCESS;
-					resParam->dataSize = GetVALUESize(&list);
-					resParam->data = new BYTE[resParam->dataSize];
-					if( WriteVALUE(&list, resParam->data, resParam->dataSize, NULL) == FALSE ){
-						_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_SERVICE\r\n");
-						resParam->dataSize = 0;
-						resParam->param = CMD_ERR;
+				if( sys->Lock() == TRUE ){
+					vector<EPGDB_SERVICE_INFO> list;
+					if( sys->epgDB.GetServiceList(&list) == TRUE ){
+						resParam->param = CMD_SUCCESS;
+						resParam->dataSize = GetVALUESize(&list);
+						resParam->data = new BYTE[resParam->dataSize];
+						if( WriteVALUE(&list, resParam->data, resParam->dataSize, NULL) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_SERVICE\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}
 					}
+					sys->UnLock();
+				}else{
+					resParam->param = CMD_ERR_BUSY;
 				}
 			}
 		}
@@ -997,21 +1034,26 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			if( sys->epgDB.IsLoadingData() == TRUE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
-				resParam->param = CMD_ERR;
-				vector<EPGDB_EVENT_INFO*> val;
-				LONGLONG serviceKey = 0;
+				if( sys->Lock() == TRUE ){
+					resParam->param = CMD_ERR;
+					vector<EPGDB_EVENT_INFO*> val;
+					LONGLONG serviceKey = 0;
 
-				if( ReadVALUE(&serviceKey, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-					if( sys->epgDB.EnumEventInfo(serviceKey, &val) == TRUE){
-						resParam->param = CMD_SUCCESS;
-						resParam->dataSize = GetVALUESize(&val);
-						resParam->data = new BYTE[resParam->dataSize];
-						if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
-							_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_PG_INFO\r\n");
-							resParam->dataSize = 0;
-							resParam->param = CMD_ERR;
+					if( ReadVALUE(&serviceKey, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+						if( sys->epgDB.EnumEventInfo(serviceKey, &val) == TRUE){
+							resParam->param = CMD_SUCCESS;
+							resParam->dataSize = GetVALUESize(&val);
+							resParam->data = new BYTE[resParam->dataSize];
+							if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
+								_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_PG_INFO\r\n");
+								resParam->dataSize = 0;
+								resParam->param = CMD_ERR;
+							}
 						}
 					}
+					sys->UnLock();
+				}else{
+					resParam->param = CMD_ERR_BUSY;
 				}
 			}
 		}
@@ -1022,20 +1064,25 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			if( sys->epgDB.IsLoadingData() == TRUE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
-				vector<EPGDB_SEARCH_KEY_INFO> key;
-				vector<EPGDB_EVENT_INFO*> val;
+				if( sys->Lock() == TRUE ){
+					vector<EPGDB_SEARCH_KEY_INFO> key;
+					vector<EPGDB_EVENT_INFO*> val;
 
-				if( ReadVALUE( &key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-					if( sys->epgDB.SearchEpg(&key, &val) == TRUE ){
-						resParam->param = CMD_SUCCESS;
-						resParam->dataSize = GetVALUESize(&val);
-						resParam->data = new BYTE[resParam->dataSize];
-						if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
-							_OutputDebugString(L"err Write res CMD2_EPG_SRV_SEARCH_PG\r\n");
-							resParam->dataSize = 0;
-							resParam->param = CMD_ERR;
+					if( ReadVALUE( &key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+						if( sys->epgDB.SearchEpg(&key, &val) == TRUE ){
+							resParam->param = CMD_SUCCESS;
+							resParam->dataSize = GetVALUESize(&val);
+							resParam->data = new BYTE[resParam->dataSize];
+							if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
+								_OutputDebugString(L"err Write res CMD2_EPG_SRV_SEARCH_PG\r\n");
+								resParam->dataSize = 0;
+								resParam->param = CMD_ERR;
+							}
 						}
 					}
+					sys->UnLock();
+				}else{
+					resParam->param = CMD_ERR_BUSY;
 				}
 			}
 		}
@@ -1046,24 +1093,29 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			if( sys->epgDB.IsLoadingData() == TRUE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
-				ULONGLONG key;
-				EPGDB_EVENT_INFO* val;
+				if( sys->Lock() == TRUE ){
+					ULONGLONG key;
+					EPGDB_EVENT_INFO* val;
 
-				if( ReadVALUE( &key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-					WORD ONID = (WORD)(key>>48);
-					WORD TSID = (WORD)((key&0x0000FFFF00000000)>>32);
-					WORD SID = (WORD)((key&0x00000000FFFF0000)>>16);
-					WORD eventID = (WORD)(key&0x000000000000FFFF);
-					if( sys->epgDB.SearchEpg(ONID, TSID, SID, eventID, &val) == TRUE ){
-						resParam->param = CMD_SUCCESS;
-						resParam->dataSize = GetVALUESize(val);
-						resParam->data = new BYTE[resParam->dataSize];
-						if( WriteVALUE(val, resParam->data, resParam->dataSize, NULL) == FALSE ){
-							_OutputDebugString(L"err Write res CMD2_EPG_SRV_GET_PG_INFO\r\n");
-							resParam->dataSize = 0;
-							resParam->param = CMD_ERR;
+					if( ReadVALUE( &key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+						WORD ONID = (WORD)(key>>48);
+						WORD TSID = (WORD)((key&0x0000FFFF00000000)>>32);
+						WORD SID = (WORD)((key&0x00000000FFFF0000)>>16);
+						WORD eventID = (WORD)(key&0x000000000000FFFF);
+						if( sys->epgDB.SearchEpg(ONID, TSID, SID, eventID, &val) == TRUE ){
+							resParam->param = CMD_SUCCESS;
+							resParam->dataSize = GetVALUESize(val);
+							resParam->data = new BYTE[resParam->dataSize];
+							if( WriteVALUE(val, resParam->data, resParam->dataSize, NULL) == FALSE ){
+								_OutputDebugString(L"err Write res CMD2_EPG_SRV_GET_PG_INFO\r\n");
+								resParam->dataSize = 0;
+								resParam->param = CMD_ERR;
+							}
 						}
 					}
+					sys->UnLock();
+				}else{
+					resParam->param = CMD_ERR_BUSY;
 				}
 			}
 		}
@@ -1346,15 +1398,20 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_TUNER_RESERVE");
 			vector<TUNER_RESERVE_INFO> list;
-			if(sys->reserveManager.GetTunerReserveAll(&list) == TRUE ){
-				resParam->param = CMD_SUCCESS;
-				resParam->dataSize = GetVALUESize(&list);
-				resParam->data = new BYTE[resParam->dataSize];
-				if( WriteVALUE(&list, resParam->data, resParam->dataSize, NULL) == FALSE ){
-					_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_TUNER_RESERVE\r\n");
-					resParam->dataSize = 0;
-					resParam->param = CMD_ERR;
+			if( sys->Lock() == TRUE ){
+				if(sys->reserveManager.GetTunerReserveAll(&list) == TRUE ){
+					resParam->param = CMD_SUCCESS;
+					resParam->dataSize = GetVALUESize(&list);
+					resParam->data = new BYTE[resParam->dataSize];
+					if( WriteVALUE(&list, resParam->data, resParam->dataSize, NULL) == FALSE ){
+						_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_TUNER_RESERVE\r\n");
+						resParam->dataSize = 0;
+						resParam->param = CMD_ERR;
+					}
 				}
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
 			}
 		}
 		break;
@@ -1390,21 +1447,26 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			if( sys->epgDB.IsLoadingData() == TRUE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
-				resParam->param = CMD_ERR;
-				vector<EPGDB_SERVICE_EVENT_INFO*> val;
+				if( sys->Lock() == TRUE ){
+					resParam->param = CMD_ERR;
+					vector<EPGDB_SERVICE_EVENT_INFO*> val;
 
-				if( sys->epgDB.EnumEventAll(&val) == TRUE){
-					resParam->param = CMD_SUCCESS;
-					resParam->dataSize = GetVALUESize(&val);
-					resParam->data = new BYTE[resParam->dataSize];
-					if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
-						_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_PG_ALL\r\n");
-						resParam->dataSize = 0;
-						resParam->param = CMD_ERR;
+					if( sys->epgDB.EnumEventAll(&val) == TRUE){
+						resParam->param = CMD_SUCCESS;
+						resParam->dataSize = GetVALUESize(&val);
+						resParam->data = new BYTE[resParam->dataSize];
+						if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_PG_ALL\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}
+						for( size_t i=0;i<val.size(); i++ ){
+							SAFE_DELETE(val[i]);
+						}
 					}
-					for( size_t i=0;i<val.size(); i++ ){
-						SAFE_DELETE(val[i]);
-					}
+					sys->UnLock();
+				}else{
+					resParam->param = CMD_ERR_BUSY;
 				}
 			}
 		}
@@ -1508,60 +1570,72 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD_EPG_SRV_GET_RESERVE_INFO:
 		{
 			resParam->param = OLD_CMD_ERR;
-			DWORD reserveID = 0;
-			if( ReadVALUE(&reserveID, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				RESERVE_DATA info;
-				if(sys->reserveManager.GetReserveData(reserveID, &info) == TRUE ){
-					OLD_RESERVE_DATA oldInfo;
-					oldInfo = info;
-					CreateReserveDataStream(&oldInfo, resParam);
-					resParam->param = OLD_CMD_SUCCESS;
+			if( sys->Lock() == TRUE ){
+				DWORD reserveID = 0;
+				if( ReadVALUE(&reserveID, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+					RESERVE_DATA info;
+					if(sys->reserveManager.GetReserveData(reserveID, &info) == TRUE ){
+						OLD_RESERVE_DATA oldInfo;
+						oldInfo = info;
+						CreateReserveDataStream(&oldInfo, resParam);
+						resParam->param = OLD_CMD_SUCCESS;
+					}
 				}
+				sys->UnLock();
 			}
 		}
 		break;
 	case CMD_EPG_SRV_ADD_RESERVE:
 		{
 			resParam->param = OLD_CMD_ERR;
-			OLD_RESERVE_DATA oldItem;
-			if( CopyReserveData(&oldItem, cmdParam) == TRUE){
-				RESERVE_DATA item;
-				CopyOldNew(&oldItem, &item);
+			if( sys->Lock() == TRUE ){
+				OLD_RESERVE_DATA oldItem;
+				if( CopyReserveData(&oldItem, cmdParam) == TRUE){
+					RESERVE_DATA item;
+					CopyOldNew(&oldItem, &item);
 
-				vector<RESERVE_DATA> list;
-				list.push_back(item);
-				if(sys->reserveManager.AddReserveData(&list) == TRUE ){
-					resParam->param = OLD_CMD_SUCCESS;
+					vector<RESERVE_DATA> list;
+					list.push_back(item);
+					if(sys->reserveManager.AddReserveData(&list) == TRUE ){
+						resParam->param = OLD_CMD_SUCCESS;
+					}
 				}
+				sys->UnLock();
 			}
 		}
 		break;
 	case CMD_EPG_SRV_DEL_RESERVE:
 		{
 			resParam->param = OLD_CMD_ERR;
-			OLD_RESERVE_DATA oldItem;
-			if( CopyReserveData(&oldItem, cmdParam) == TRUE){
-				vector<DWORD> list;
-				list.push_back(oldItem.dwReserveID);
-				if(sys->reserveManager.DelReserveData(&list) == TRUE ){
-					resParam->param = OLD_CMD_SUCCESS;
+			if( sys->Lock() == TRUE ){
+				OLD_RESERVE_DATA oldItem;
+				if( CopyReserveData(&oldItem, cmdParam) == TRUE){
+					vector<DWORD> list;
+					list.push_back(oldItem.dwReserveID);
+					if(sys->reserveManager.DelReserveData(&list) == TRUE ){
+						resParam->param = OLD_CMD_SUCCESS;
+					}
 				}
+				sys->UnLock();
 			}
 		}
 		break;
 	case CMD_EPG_SRV_CHG_RESERVE:
 		{
 			resParam->param = OLD_CMD_ERR;
-			OLD_RESERVE_DATA oldItem;
-			if( CopyReserveData(&oldItem, cmdParam) == TRUE){
-				RESERVE_DATA item;
-				CopyOldNew(&oldItem, &item);
+			if( sys->Lock() == TRUE ){
+				OLD_RESERVE_DATA oldItem;
+				if( CopyReserveData(&oldItem, cmdParam) == TRUE){
+					RESERVE_DATA item;
+					CopyOldNew(&oldItem, &item);
 
-				vector<RESERVE_DATA> list;
-				list.push_back(item);
-				if(sys->reserveManager.ChgReserveData(&list) == TRUE ){
-					resParam->param = OLD_CMD_SUCCESS;
+					vector<RESERVE_DATA> list;
+					list.push_back(item);
+					if(sys->reserveManager.ChgReserveData(&list) == TRUE ){
+						resParam->param = OLD_CMD_SUCCESS;
+					}
 				}
+				sys->UnLock();
 			}
 		}
 
@@ -1569,76 +1643,85 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD_EPG_SRV_ADD_AUTO_ADD:
 		{
 			resParam->param = OLD_CMD_ERR;
-			OLD_SEARCH_KEY oldItem;
-			if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
-				EPG_AUTO_ADD_DATA item;
-				CopyOldNew(&oldItem, &item);
+			if( sys->Lock() == TRUE ){
+				OLD_SEARCH_KEY oldItem;
+				if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
+					EPG_AUTO_ADD_DATA item;
+					CopyOldNew(&oldItem, &item);
 
-				if( sys->Lock() == TRUE ){
-					sys->epgAutoAdd.AddData(&item);
+					if( sys->Lock() == TRUE ){
+						sys->epgAutoAdd.AddData(&item);
 
-					wstring savePath = L"";
-					GetSettingPath(savePath);
-					savePath += L"\\";
-					savePath += EPG_AUTO_ADD_TEXT_NAME;
+						wstring savePath = L"";
+						GetSettingPath(savePath);
+						savePath += L"\\";
+						savePath += EPG_AUTO_ADD_TEXT_NAME;
 
-					sys->epgAutoAdd.SaveText(savePath.c_str());
+						sys->epgAutoAdd.SaveText(savePath.c_str());
 
-					resParam->param = OLD_CMD_SUCCESS;
+						resParam->param = OLD_CMD_SUCCESS;
 
-					sys->AutoAddReserveEPG();
-					sys->UnLock();
-					sys->reserveManager.SendNotifyUpdate();
+						sys->AutoAddReserveEPG();
+						sys->UnLock();
+						sys->reserveManager.SendNotifyUpdate();
+					}
 				}
+				sys->UnLock();
 			}
 		}
 		break;
 	case CMD_EPG_SRV_DEL_AUTO_ADD:
 		{
 			resParam->param = OLD_CMD_ERR;
-			OLD_SEARCH_KEY oldItem;
-			if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
-				if( sys->Lock() == TRUE ){
-					sys->epgAutoAdd.DelData((DWORD)oldItem.iAutoAddID);
+			if( sys->Lock() == TRUE ){
+				OLD_SEARCH_KEY oldItem;
+				if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
+					if( sys->Lock() == TRUE ){
+						sys->epgAutoAdd.DelData((DWORD)oldItem.iAutoAddID);
 
-					wstring savePath = L"";
-					GetSettingPath(savePath);
-					savePath += L"\\";
-					savePath += EPG_AUTO_ADD_TEXT_NAME;
+						wstring savePath = L"";
+						GetSettingPath(savePath);
+						savePath += L"\\";
+						savePath += EPG_AUTO_ADD_TEXT_NAME;
 
-					sys->epgAutoAdd.SaveText(savePath.c_str());
+						sys->epgAutoAdd.SaveText(savePath.c_str());
 
-					resParam->param = OLD_CMD_SUCCESS;
-					sys->UnLock();
-					sys->reserveManager.SendNotifyUpdate();
+						resParam->param = OLD_CMD_SUCCESS;
+						sys->UnLock();
+						sys->reserveManager.SendNotifyUpdate();
+					}
 				}
+				sys->UnLock();
 			}
 		}
 		break;
 	case CMD_EPG_SRV_CHG_AUTO_ADD:
 		{
 			resParam->param = OLD_CMD_ERR;
-			OLD_SEARCH_KEY oldItem;
-			if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
-				EPG_AUTO_ADD_DATA item;
-				CopyOldNew(&oldItem, &item);
+			if( sys->Lock() == TRUE ){
+				OLD_SEARCH_KEY oldItem;
+				if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
+					EPG_AUTO_ADD_DATA item;
+					CopyOldNew(&oldItem, &item);
 
-				if( sys->Lock() == TRUE ){
-					sys->epgAutoAdd.ChgData(&item);
+					if( sys->Lock() == TRUE ){
+						sys->epgAutoAdd.ChgData(&item);
 
-					wstring savePath = L"";
-					GetSettingPath(savePath);
-					savePath += L"\\";
-					savePath += EPG_AUTO_ADD_TEXT_NAME;
+						wstring savePath = L"";
+						GetSettingPath(savePath);
+						savePath += L"\\";
+						savePath += EPG_AUTO_ADD_TEXT_NAME;
 
-					sys->epgAutoAdd.SaveText(savePath.c_str());
+						sys->epgAutoAdd.SaveText(savePath.c_str());
 
-					resParam->param = OLD_CMD_SUCCESS;
+						resParam->param = OLD_CMD_SUCCESS;
 
-					sys->AutoAddReserveEPG();
-					sys->UnLock();
-					sys->reserveManager.SendNotifyUpdate();
+						sys->AutoAddReserveEPG();
+						sys->UnLock();
+						sys->reserveManager.SendNotifyUpdate();
+					}
 				}
+				sys->UnLock();
 			}
 		}
 		break;
@@ -1649,33 +1732,36 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			if( sys->epgDB.IsLoadingData() == TRUE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
-				OLD_SEARCH_KEY oldItem;
-				if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
-					EPGDB_SEARCH_KEY_INFO item;
-					CopyOldNew(&oldItem, &item);
+				if( sys->Lock() == TRUE ){
+					OLD_SEARCH_KEY oldItem;
+					if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
+						EPGDB_SEARCH_KEY_INFO item;
+						CopyOldNew(&oldItem, &item);
 
-					vector<EPGDB_SEARCH_KEY_INFO> key;
-					vector<EPGDB_EVENT_INFO*> val;
-					key.push_back(item);
-					if( sys->epgDB.SearchEpg(&key, &val) == TRUE ){
-						for( size_t i=0; i<val.size(); i++ ){
-							OLD_EVENT_INFO_DATA3 add;
-							add = *val[i];
-							sys->oldSearchList.push_back(add);
-						}
-						if( sys->oldSearchList.size() == 0 ){
-							resParam->param = OLD_CMD_ERR;
-						}else{
-							if( sys->oldSearchList.size() == 1 ){
-								resParam->param = OLD_CMD_SUCCESS;
-							}else{
-								resParam->param = OLD_CMD_NEXT;
+						vector<EPGDB_SEARCH_KEY_INFO> key;
+						vector<EPGDB_EVENT_INFO*> val;
+						key.push_back(item);
+						if( sys->epgDB.SearchEpg(&key, &val) == TRUE ){
+							for( size_t i=0; i<val.size(); i++ ){
+								OLD_EVENT_INFO_DATA3 add;
+								add = *val[i];
+								sys->oldSearchList.push_back(add);
 							}
-							CreateEventInfoData3Stream(&sys->oldSearchList[0], resParam);
-							sys->oldSearchList.erase(sys->oldSearchList.begin());
-							vector<OLD_EVENT_INFO_DATA3>(sys->oldSearchList).swap(sys->oldSearchList);
+							if( sys->oldSearchList.size() == 0 ){
+								resParam->param = OLD_CMD_ERR;
+							}else{
+								if( sys->oldSearchList.size() == 1 ){
+									resParam->param = OLD_CMD_SUCCESS;
+								}else{
+									resParam->param = OLD_CMD_NEXT;
+								}
+								CreateEventInfoData3Stream(&sys->oldSearchList[0], resParam);
+								sys->oldSearchList.erase(sys->oldSearchList.begin());
+								vector<OLD_EVENT_INFO_DATA3>(sys->oldSearchList).swap(sys->oldSearchList);
+							}
 						}
 					}
+					sys->UnLock();
 				}
 			}
 		}
@@ -1686,13 +1772,16 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			if( sys->oldSearchList.size() == 0 ){
 				resParam->param = OLD_CMD_ERR;
 			}else{
-				if( sys->oldSearchList.size() == 1 ){
-					resParam->param = OLD_CMD_SUCCESS;
-				}else{
-					resParam->param = OLD_CMD_NEXT;
+				if( sys->Lock() == TRUE ){
+					if( sys->oldSearchList.size() == 1 ){
+						resParam->param = OLD_CMD_SUCCESS;
+					}else{
+						resParam->param = OLD_CMD_NEXT;
+					}
+					CreateEventInfoData3Stream(&sys->oldSearchList[0], resParam);
+					sys->oldSearchList.erase(sys->oldSearchList.begin());
+					sys->UnLock();
 				}
-				CreateEventInfoData3Stream(&sys->oldSearchList[0], resParam);
-				sys->oldSearchList.erase(sys->oldSearchList.begin());
 			}
 		}
 		break;

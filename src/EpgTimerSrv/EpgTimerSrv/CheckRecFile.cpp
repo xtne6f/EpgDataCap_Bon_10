@@ -33,7 +33,7 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 		wstring folder = this->chkFolder[i];
 		transform(folder.begin(), folder.end(), folder.begin(), toupper);
 		ChkFolderPath(folder);
-		checkMap.insert(pair<wstring, ULONGLONG>(folder, 0));
+		checkMap.insert(pair<wstring, ULONGLONG>(folder, 0)).second;
 	}
 
 	LONGLONG now = GetNowI64Time();

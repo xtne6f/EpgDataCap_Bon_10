@@ -170,6 +170,7 @@ namespace EpgTimer
         private bool nwTvModeTCP;
         private bool epgToolTip;
         private string reserveRectColorWarning;
+        private bool noToolTip;
 
         public bool SearchKeyRegExp
         {
@@ -505,6 +506,11 @@ namespace EpgTimer
             get { return reserveRectColorWarning; }
             set { reserveRectColorWarning = value; }
         }
+        public bool NoToolTip
+        {
+            get { return noToolTip; }
+            set { noToolTip = value; }
+        }
         
         public Settings()
         {
@@ -553,6 +559,7 @@ namespace EpgTimer
             nwTvModeTCP = false;
             epgToolTip = true;
             reserveRectColorWarning = "Yellow";
+            noToolTip = false;
         }
         [NonSerialized()]
         private static Settings _instance;

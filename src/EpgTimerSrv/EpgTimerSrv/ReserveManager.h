@@ -193,8 +193,8 @@ protected:
 
 	typedef struct _BANK_WORK_INFO{
 		CReserveInfo* reserveInfo;
-		LONGLONG startTime;
-		LONGLONG endTime;
+		LONGLONG startTime;//マイナス値マージン考慮した開始時間
+		LONGLONG endTime;//マイナス値マージン考慮した終了時間
 		BYTE priority;
 		BOOL recWaitFlag;
 		wstring sortKey;
@@ -278,6 +278,7 @@ protected:
 	DWORD ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
 	DWORD ReChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
 	DWORD ChkInsertNGStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
+	BOOL ChangeNGReserve(BANK_WORK_INFO* inItem);
 
 	void _SendNotifyUpdate();
 	static UINT WINAPI SendNotifyThread(LPVOID param);
