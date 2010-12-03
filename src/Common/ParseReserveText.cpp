@@ -333,7 +333,9 @@ BOOL CParseReserveText::Parse1Line(string parseLine, RESERVE_DATA* item )
 	if( wBuff.size() > 0 ){
 		wstring folder = L"";
 		wstring plugin = L"";
-		Separate( wBuff, L"*", folder, plugin);
+		wstring recname = L"";
+		Separate( wBuff, L"*", folder, wBuff);
+		Separate( wBuff, L"*", plugin, recname);
 
 		REC_FILE_SET_INFO folderItem;
 		folderItem.recFolder = folder;
@@ -343,6 +345,7 @@ BOOL CParseReserveText::Parse1Line(string parseLine, RESERVE_DATA* item )
 		}else{
 			folderItem.writePlugIn = plugin;
 		}
+		folderItem.recNamePlugIn = recname;
 		item->recSetting.recFolderList.push_back(folderItem);
 	}
 
@@ -463,6 +466,7 @@ BOOL CParseReserveText::Parse1Line(string parseLine, RESERVE_DATA* item )
 	item->reserveStatus = (DWORD)atoi(strBuff.c_str());
 	
 	Separate( parseLine, "\t", strBuff, parseLine);
+	
 
 /*
 	SYSTEMTIME Now;
@@ -606,6 +610,8 @@ BOOL CParseReserveText::SaveReserveText(LPCWSTR filePath)
 			path = itr->second->recSetting.recFolderList[0].recFolder;
 			path += L"*";
 			path += itr->second->recSetting.recFolderList[0].writePlugIn;
+			path += L"*";
+			path += itr->second->recSetting.recFolderList[0].recNamePlugIn;
 			WtoA(path, strBuff);
 			strWrite+=strBuff;
 		}
@@ -648,6 +654,8 @@ BOOL CParseReserveText::SaveReserveText(LPCWSTR filePath)
 				path = itr->second->recSetting.recFolderList[i].recFolder;
 				path += L"*";
 				path += itr->second->recSetting.recFolderList[i].writePlugIn;
+				path += L"*";
+				path += itr->second->recSetting.recFolderList[i].recNamePlugIn;
 				WtoA(path, strBuff);
 				strWrite+=strBuff +"\t";
 			}

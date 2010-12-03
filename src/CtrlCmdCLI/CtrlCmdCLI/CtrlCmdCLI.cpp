@@ -332,8 +332,12 @@ void CtrlCmdUtil::CopyData(Def::RecSettingData^ src, REC_SETTING_DATA* dest)
 		REC_FILE_SET_INFO item;
 		pin_ptr<const wchar_t> recFolderPathPin = PtrToStringChars(src->RecFolderList[i]->RecFolder);
 		pin_ptr<const wchar_t> writePlugInPin = PtrToStringChars(src->RecFolderList[i]->WritePlugIn);
+		pin_ptr<const wchar_t> recNamePlugInPin = PtrToStringChars(src->RecFolderList[i]->RecNamePlugIn);
+		pin_ptr<const wchar_t> recFileNamePin = PtrToStringChars(src->RecFolderList[i]->RecFileName);
 		item.recFolder = recFolderPathPin;
 		item.writePlugIn = writePlugInPin;
+		item.recNamePlugIn = recNamePlugInPin;
+		item.recFileName = recFileNamePin;
 
 		dest->recFolderList.push_back(item);
 	}
@@ -352,6 +356,7 @@ void CtrlCmdUtil::CopyData(Def::RecSettingData^ src, REC_SETTING_DATA* dest)
 	dest->continueRecFlag = src->ContinueRecFlag;
 	dest->partialRecFlag = src->PartialRecFlag;
 	dest->tunerID = src->TunerID;
+
 }
 
 void CtrlCmdUtil::CopyData(REC_SETTING_DATA* src, Def::RecSettingData^% dest)
@@ -367,6 +372,8 @@ void CtrlCmdUtil::CopyData(REC_SETTING_DATA* src, Def::RecSettingData^% dest)
 		Def::RecFileSetInfo^ item = gcnew Def::RecFileSetInfo();
 		item->RecFolder = gcnew String(src->recFolderList[i].recFolder.c_str());
 		item->WritePlugIn = gcnew String(src->recFolderList[i].writePlugIn.c_str());
+		item->RecNamePlugIn = gcnew String(src->recFolderList[i].recNamePlugIn.c_str());
+		item->RecFileName = gcnew String(src->recFolderList[i].recFileName.c_str());
 		dest->RecFolderList->Add( item );
 	}
 	dest->SuspendMode = src->suspendMode;
@@ -742,6 +749,8 @@ void CtrlCmdUtil::CopyData(Def::EpgSearchKeyInfo^ src, EPGDB_SEARCH_KEY_INFO* de
 		dest->audioList.push_back(src->audioList[i]);
 	}
 	dest->aimaiFlag = src->aimaiFlag;
+	dest->notContetFlag = src->notContetFlag;
+	dest->notDateFlag = src->notDateFlag;
 }
 
 void CtrlCmdUtil::CopyData(EPGDB_SEARCH_KEY_INFO* src, Def::EpgSearchKeyInfo^% dest)
@@ -776,6 +785,8 @@ void CtrlCmdUtil::CopyData(EPGDB_SEARCH_KEY_INFO* src, Def::EpgSearchKeyInfo^% d
 	}
 
 	dest->aimaiFlag = src->aimaiFlag;
+	dest->notContetFlag = src->notContetFlag;
+	dest->notDateFlag = src->notDateFlag;
 }
 
 void CtrlCmdUtil::CopyData(Def::RecFileInfo^ src, REC_FILE_INFO* dest)

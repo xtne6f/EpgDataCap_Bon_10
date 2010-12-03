@@ -178,6 +178,8 @@ namespace EpgTimer
                         searchSet.ServiceList.Add((long)info.Key);
                     }
                 }
+                searchSet.NotContetFlag = Settings.Instance.SearchKeyNotContent;
+                searchSet.NotDateFlag = Settings.Instance.SearchKeyNotDate;
 
                 checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
 
@@ -323,6 +325,8 @@ namespace EpgTimer
                 {
                 }
             }
+            Settings.Instance.SearchKeyNotContent = searchSet.NotContetFlag;
+            Settings.Instance.SearchKeyNotDate = searchSet.NotDateFlag;
 
             if (checkBox_tcpServer.IsChecked == true)
             {

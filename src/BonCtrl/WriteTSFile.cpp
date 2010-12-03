@@ -61,7 +61,9 @@ BOOL CWriteTSFile::Lock(LPCWSTR log, DWORD timeOut)
 	}
 	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
 	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
+		dwRet == WAIT_FAILED ||
+		dwRet == WAIT_TIMEOUT){
+			OutputDebugString(L"◆CWriteTSFile::Lock FALSE");
 		return FALSE;
 	}
 	return TRUE;
@@ -140,7 +142,13 @@ BOOL CWriteTSFile::StartSave(
 				wstring recPath;
 				recPath = folderPath;
 				recPath += L"\\";
-				recPath += fileName;
+				if( this->saveFolder[i].recFileName.size() == 0 ){
+					recPath += fileName;
+					item->recFileName = fileName;
+				}else{
+					recPath += this->saveFolder[i].recFileName;
+					item->recFileName = this->saveFolder[i].recFileName;
+				}
 				//開始
 				if( item->writeUtil->StartSave(recPath.c_str(), this->overWriteFlag, createSize) == FALSE ){
 					SAFE_DELETE(item);
@@ -349,7 +357,7 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 							if( sys->GetFreeFolder(200*1024*1024, freeFolderPath) == TRUE ){
 								wstring recFilePath = freeFolderPath;
 								recFilePath += L"\\";
-								recFilePath += sys->saveFileName;
+								recFilePath += sys->fileList[i]->recFileName;
 
 								//開始
 								if( sys->fileList[i]->writeUtil->StartSave(recFilePath.c_str(), sys->fileList[i]->overWriteFlag, 0) == FALSE ){

@@ -607,23 +607,24 @@ namespace EpgTimerNW
         void nwTVEndButton_Click(object sender, RoutedEventArgs e)
         {
             cmd.SendNwTVClose();
+            CtrlCmdUtil cmdTvTest = new CtrlCmdUtil();
             foreach (Process p in Process.GetProcesses())
             {
                 if (String.Compare(p.ProcessName, "tvtest", true) == 0)
                 {
-                    cmd.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + p.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + p.Id.ToString());
-                    cmd.SetConnectTimeOut(1000);
+                    cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + p.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + p.Id.ToString());
+                    cmdTvTest.SetConnectTimeOut(1000);
                     String val = "";
-                    if (cmd.SendViewGetBonDrivere(ref val) == 1)
+                    if (cmdTvTest.SendViewGetBonDrivere(ref val) == 1)
                     {
                         if (String.Compare(val, "BonDriver_UDP.dll", true) == 0)
                         {
-                            cmd.SendViewAppClose();
+                            cmdTvTest.SendViewAppClose();
                             break;
                         }
                         else if (String.Compare(val, "BonDriver_TCP.dll", true) == 0)
                         {
-                            cmd.SendViewAppClose();
+                            cmdTvTest.SendViewAppClose();
                             break;
                         }
                     }

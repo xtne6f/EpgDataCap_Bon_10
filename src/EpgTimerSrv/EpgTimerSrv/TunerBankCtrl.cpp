@@ -1432,8 +1432,40 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve)
 			REC_FILE_SET_INFO folderItem;
 			folderItem.recFolder = this->recFolderPath;
 			folderItem.writePlugIn = this->recWritePlugIn;
+
 			param.saveFolder.push_back(folderItem);
 		}else{
+			for( size_t j=0; j<data.recSetting.recFolderList.size(); j++ ){
+				if( data.recSetting.recFolderList[j].recNamePlugIn.size() > 0 ){
+					CReNamePlugInUtil plugIn;
+					wstring plugInPath;
+					GetModuleFolderPath(plugInPath);
+					plugInPath += L"\\RecName\\";
+					plugInPath += data.recSetting.recFolderList[j].recNamePlugIn;
+
+					if( plugIn.Initialize(plugInPath.c_str()) == TRUE ){
+						WCHAR name[512] = L"";
+						DWORD size = 512;
+						PLUGIN_RESERVE_INFO info;
+
+						info.startTime = data.startTime;
+						info.durationSec = data.durationSecond;
+						wcscpy_s(info.eventName, 512, data.title.c_str());
+						info.ONID = data.originalNetworkID;
+						info.TSID = data.transportStreamID;
+						info.SID = data.serviceID;
+						info.EventID = data.eventID;
+						wcscpy_s(info.serviceName, 256, data.stationName.c_str());
+						wcscpy_s(info.bonDriverName, 256, this->bonFileName.c_str());
+						info.bonDriverID = (this->tunerID & 0xFFFF0000)>>16;
+						info.tunerID = this->tunerID & 0x0000FFFF;
+
+						if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
+							data.recSetting.recFolderList[j].recFileName = name;
+						}
+					}
+				}
+			}
 			param.saveFolder = data.recSetting.recFolderList;
 		}
 

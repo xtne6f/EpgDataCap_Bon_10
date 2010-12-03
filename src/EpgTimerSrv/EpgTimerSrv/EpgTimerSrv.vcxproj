@@ -158,6 +158,7 @@
     <ClInclude Include="..\..\Common\EpgDataCap3Util.h" />
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
     <ClInclude Include="..\..\Common\ErrDef.h" />
+    <ClInclude Include="..\..\Common\NWStructDef.h" />
     <ClInclude Include="..\..\Common\ParseChText4.h" />
     <ClInclude Include="..\..\Common\ParseChText5.h" />
     <ClInclude Include="..\..\Common\ParseEpgAutoAddText.h" />
@@ -173,6 +174,7 @@
     <ClInclude Include="..\..\Common\StructDef.h" />
     <ClInclude Include="..\..\Common\TCPServer.h" />
     <ClInclude Include="..\..\Common\TimeUtil.h" />
+    <ClInclude Include="..\..\Common\twitterUtil.h" />
     <ClInclude Include="..\..\Common\Util.h" />
     <ClInclude Include="BatManager.h" />
     <ClInclude Include="CheckRecFile.h" />
@@ -190,6 +192,7 @@
     <ClInclude Include="TunerBankCtrl.h" />
     <ClInclude Include="TunerCtrl.h" />
     <ClInclude Include="TunerManager.h" />
+    <ClInclude Include="TwitterManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp" />
@@ -209,6 +212,7 @@
     <ClCompile Include="..\..\Common\StringUtil.cpp" />
     <ClCompile Include="..\..\Common\TCPServer.cpp" />
     <ClCompile Include="..\..\Common\TimeUtil.cpp" />
+    <ClCompile Include="..\..\Common\twitterUtil.cpp" />
     <ClCompile Include="..\..\Common\Util.cpp" />
     <ClCompile Include="BatManager.cpp" />
     <ClCompile Include="CheckRecFile.cpp" />
@@ -228,6 +232,7 @@
     <ClCompile Include="TunerBankCtrl.cpp" />
     <ClCompile Include="TunerCtrl.cpp" />
     <ClCompile Include="TunerManager.cpp" />
+    <ClCompile Include="TwitterManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="EpgTimerSrv.rc" />

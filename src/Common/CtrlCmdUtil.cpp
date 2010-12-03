@@ -962,6 +962,7 @@ BOOL ReadVALUE( REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSi
 			return FALSE;
 		}
 		pos += size;
+
 	}
 
 	if( readSize != NULL ){
@@ -3314,6 +3315,8 @@ DWORD GetVALUESize( EPGDB_SEARCH_KEY_INFO* val )
 	size += GetVALUESize(&val->videoList);
 	size += GetVALUESize(&val->audioList);
 	size += GetVALUESize(val->aimaiFlag);
+	size += GetVALUESize(val->notContetFlag);
+	size += GetVALUESize(val->notDateFlag);
 
 	return size;
 }
@@ -3370,6 +3373,14 @@ BOOL WriteVALUE( EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 		}
 		pos += size;
 		if( WriteVALUE( val->aimaiFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->notContetFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->notDateFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
 			return FALSE;
 		}
 		pos += size;
@@ -3436,6 +3447,14 @@ BOOL ReadVALUE( EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* r
 		}
 		pos += size;
 		if( ReadVALUE( &val->aimaiFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->notContetFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->notDateFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
 			return FALSE;
 		}
 		pos += size;
@@ -3881,6 +3900,8 @@ DWORD GetVALUESize( REC_FILE_SET_INFO* val )
 
 	size += GetVALUESize(val->recFolder);
 	size += GetVALUESize(val->writePlugIn);
+	size += GetVALUESize(val->recNamePlugIn);
+	size += GetVALUESize(val->recFileName);
 
 	return size;
 }
@@ -3905,6 +3926,14 @@ BOOL WriteVALUE( REC_FILE_SET_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writ
 		}
 		pos += size;
 		if( WriteVALUE( val->writePlugIn, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->recNamePlugIn, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->recFileName, buff + pos, buffSize - pos, &size ) == FALSE ){
 			return FALSE;
 		}
 		pos += size;
@@ -3939,6 +3968,14 @@ BOOL ReadVALUE( REC_FILE_SET_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readS
 		}
 		pos += size;
 		if( ReadVALUE( &val->writePlugIn, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->recNamePlugIn, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->recFileName, buff + pos, buffSize - pos, &size ) == FALSE ){
 			return FALSE;
 		}
 		pos += size;

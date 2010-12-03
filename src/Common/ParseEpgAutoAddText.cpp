@@ -307,11 +307,19 @@ BOOL CParseEpgAutoAddText::Parse1Line(string parseLine, EPG_AUTO_ADD_DATA* item 
 		if( wBuff.size() > 0 ){
 			wstring folder = L"";
 			wstring plugin = L"";
-			Separate( wBuff, L"*", folder, plugin);
+			wstring recname = L"";
+			Separate( wBuff, L"*", folder, wBuff);
+			Separate( wBuff, L"*", plugin, recname);
 
 			REC_FILE_SET_INFO folderItem;
 			folderItem.recFolder = folder;
+			if( plugin.size() == 0 ){
+				folderItem.writePlugIn = L"Write_Default.dll";
+			}else{
+				folderItem.writePlugIn = plugin;
+			}
 			folderItem.writePlugIn = plugin;
+			folderItem.recNamePlugIn = recname;
 
 			item->recSetting.recFolderList.push_back(folderItem);
 		}
@@ -340,6 +348,15 @@ BOOL CParseEpgAutoAddText::Parse1Line(string parseLine, EPG_AUTO_ADD_DATA* item 
 	
 	Separate( parseLine, "\t", strBuff, parseLine);
 
+	//ジャンルNOT扱い
+	item->searchInfo.notContetFlag = (BYTE)atoi(strBuff.c_str());
+	
+	Separate( parseLine, "\t", strBuff, parseLine);
+
+	//時間NOT扱い
+	item->searchInfo.notDateFlag = (BYTE)atoi(strBuff.c_str());
+	
+	Separate( parseLine, "\t", strBuff, parseLine);
 	return TRUE;
 }
 
@@ -504,6 +521,8 @@ BOOL CParseEpgAutoAddText::SaveText(LPCWSTR filePath)
 			path = itr->second->recSetting.recFolderList[i].recFolder;
 			path += L"*";
 			path += itr->second->recSetting.recFolderList[i].writePlugIn;
+			path += L"*";
+			path += itr->second->recSetting.recFolderList[i].recNamePlugIn;
 			WtoA(path, strBuff);
 			strWrite+=strBuff +"\t";
 		}
@@ -518,6 +537,12 @@ BOOL CParseEpgAutoAddText::SaveText(LPCWSTR filePath)
 		strWrite+=strBuff +"\t";
 		//あいまい検索
 		Format(strBuff,"%d",itr->second->searchInfo.aimaiFlag);
+		strWrite+=strBuff +"\t";
+		//ジャンルNOT扱い
+		Format(strBuff,"%d",itr->second->searchInfo.notContetFlag);
+		strWrite+=strBuff +"\t";
+		//時間NOT扱い
+		Format(strBuff,"%d",itr->second->searchInfo.notDateFlag);
 		strWrite+=strBuff +"\t";
 
 		strWrite+="\r\n";

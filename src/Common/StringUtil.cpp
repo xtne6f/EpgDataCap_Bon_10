@@ -80,6 +80,22 @@ void WtoA(wstring strIn, string& strOut)
 	delete[] pszBuff;
 }
 
+void WtoUTF8(wstring strIn, string& strOut)
+{
+	if( strIn.empty() == true ){
+		strOut="";
+		return ;
+	}
+	int iLen = 0;
+	iLen = WideCharToMultiByte( CP_UTF8, 0, strIn.c_str(), -1, NULL, 0, NULL, NULL );
+	char* pszBuff = new char[iLen+1];
+	ZeroMemory(pszBuff, sizeof(char)*(iLen+1));
+	WideCharToMultiByte( CP_UTF8, 0, strIn.c_str(), -1, pszBuff, iLen, NULL, NULL );
+	strOut = pszBuff;
+	
+	delete[] pszBuff;
+}
+
 void AtoW(string strIn, wstring& strOut)
 {
 	if( strIn.empty() == true ){
@@ -90,6 +106,22 @@ void AtoW(string strIn, wstring& strOut)
 	WCHAR* pwszBuff = new WCHAR[iLen+1];
 	ZeroMemory(pwszBuff, sizeof(WCHAR)*(iLen+1));
 	MultiByteToWideChar( 932, 0, strIn.c_str(), -1, pwszBuff, iLen );
+
+	strOut = pwszBuff;
+	
+	delete[] pwszBuff;
+}
+
+void UTF8toW(string strIn, wstring& strOut)
+{
+	if( strIn.empty() == true ){
+		strOut=L"";
+		return ;
+	}
+	int iLen = MultiByteToWideChar( CP_UTF8, 0, strIn.c_str(), -1, NULL, 0 );
+	WCHAR* pwszBuff = new WCHAR[iLen+1];
+	ZeroMemory(pwszBuff, sizeof(WCHAR)*(iLen+1));
+	MultiByteToWideChar( CP_UTF8, 0, strIn.c_str(), -1, pwszBuff, iLen );
 
 	strOut = pwszBuff;
 	

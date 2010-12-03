@@ -41,7 +41,7 @@
         <TextBox Height="24" Margin="99,82,45,0" Name="textBox_title" VerticalAlignment="Top" />
         <Label Content="サービス" Height="28" HorizontalAlignment="Left" Margin="12,114,0,0" Name="label9" VerticalAlignment="Top" />
         <ComboBox Height="24" HorizontalAlignment="Left" Margin="99,114,0,0" Name="comboBox_service" VerticalAlignment="Top" Width="194" />
-        <my:RecSettingView Margin="0,144,0,0" x:Name="recSettingView" VerticalAlignment="Top" />
-        <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="28,626,0,0" Name="button_add" VerticalAlignment="Top" Width="75" Click="button_add_Click" />
+        <my:RecSettingView Margin="0,144,0,0" x:Name="recSettingView" VerticalAlignment="Top" Height="477" />
+        <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="23,0,0,12" Name="button_add" VerticalAlignment="Bottom" Width="75" Click="button_add_Click" />
     </Grid>
 </Window>

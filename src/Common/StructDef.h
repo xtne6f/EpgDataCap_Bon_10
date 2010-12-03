@@ -7,9 +7,13 @@
 typedef struct _REC_FILE_SET_INFO{
 	wstring recFolder;
 	wstring writePlugIn;
+	wstring recNamePlugIn;		//ファイル名変換PlugInの使用
+	wstring recFileName;		//ファイル名個別対応
 	_REC_FILE_SET_INFO & operator= (const _REC_FILE_SET_INFO & o) {
 		recFolder = o.recFolder;
 		writePlugIn = o.writePlugIn;
+		recNamePlugIn = o.recNamePlugIn;
+		recFileName = o.recFileName;
 		return *this;
 	};
 }REC_FILE_SET_INFO;
@@ -586,6 +590,8 @@ typedef struct _EPGDB_SEARCH_KEY_INFO{
 	vector<WORD> videoList;
 	vector<WORD> audioList;
 	BYTE aimaiFlag;
+	BYTE notContetFlag;
+	BYTE notDateFlag;
 	//=オペレーターの処理
 	_EPGDB_SEARCH_KEY_INFO(void){
 		andKey = L"";
@@ -593,6 +599,8 @@ typedef struct _EPGDB_SEARCH_KEY_INFO{
 		regExpFlag = FALSE;
 		titleOnlyFlag = FALSE;
 		aimaiFlag = 0;
+		notContetFlag = 0;
+		notDateFlag = 0;
 	};
 	_EPGDB_SEARCH_KEY_INFO & operator= (const _EPGDB_SEARCH_KEY_INFO & o) {
 		andKey = o.andKey;
@@ -605,6 +613,8 @@ typedef struct _EPGDB_SEARCH_KEY_INFO{
 		videoList = o.videoList;
 		audioList = o.audioList;
 		aimaiFlag = o.aimaiFlag;
+		notContetFlag = o.notContetFlag;
+		notDateFlag = o.notDateFlag;
 		return *this;
 	};
 }EPGDB_SEARCH_KEY_INFO;

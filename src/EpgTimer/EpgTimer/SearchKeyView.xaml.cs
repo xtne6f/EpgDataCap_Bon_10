@@ -103,6 +103,8 @@ namespace EpgTimer
                         defKey.ServiceList.Add((long)info.Key);
                     }
                 }
+                defKey.NotContetFlag = Settings.Instance.SearchKeyNotContent;
+                defKey.NotDateFlag = Settings.Instance.SearchKeyNotDate;
             }
             catch
             {
@@ -149,6 +151,23 @@ namespace EpgTimer
                 foreach (Int64 info in defKey.ServiceList)
                 {
                     key.serviceList.Add(info);
+                }
+
+                if (defKey.NotContetFlag == true)
+                {
+                    key.notContetFlag = 1;
+                }
+                else
+                {
+                    key.notContetFlag = 0;
+                }
+                if (defKey.NotDateFlag == true)
+                {
+                    key.notDateFlag = 1;
+                }
+                else
+                {
+                    key.notDateFlag = 0;
                 }
                 return true;
             }
@@ -215,6 +234,23 @@ namespace EpgTimer
                 key.audioList.Add((UInt16)item);
             }
 
+            if (checkBox_notContent.IsChecked == true)
+            {
+                key.notContetFlag = 1;
+            }
+            else
+            {
+                key.notContetFlag = 0;
+            }
+            if (checkBox_notDate.IsChecked == true)
+            {
+                key.notDateFlag = 1;
+            }
+            else
+            {
+                key.notDateFlag = 0;
+            }
+
             return true;
         }
 
@@ -246,7 +282,8 @@ namespace EpgTimer
                     key.ServiceList.Add(serviceKey);
                 }
             }
-
+            key.NotContetFlag = (bool)checkBox_notContent.IsChecked;
+            key.NotDateFlag = (bool)checkBox_notDate.IsChecked;
         }
 
         public bool GetServiceName(UInt16 original_network_id, UInt16 transport_stream_id, UInt16 service_id, ref String serviceName)
@@ -522,6 +559,23 @@ namespace EpgTimer
                 }
 
                 defKey.ServiceList = key.serviceList;
+
+                if (key.notContetFlag == 1)
+                {
+                    defKey.NotContetFlag = true;
+                }
+                else
+                {
+                    defKey.NotContetFlag = false;
+                }
+                if (key.notDateFlag == 1)
+                {
+                    defKey.NotDateFlag = true;
+                }
+                else
+                {
+                    defKey.NotDateFlag = false;
+                }
             }
             catch
             {
@@ -558,6 +612,8 @@ namespace EpgTimer
                         serviceDict[info].IsSelected = true;
                     }
                 }
+                checkBox_notContent.IsChecked = defKey.NotContetFlag;
+                checkBox_notDate.IsChecked = defKey.NotDateFlag;
             }
         }
 
@@ -635,6 +691,8 @@ namespace EpgTimer
             DateItemList = new List<DateItem>();
             TitleOnly = false;
             ServiceList = new List<long>();
+            NotContetFlag = false;
+            NotDateFlag = false;
         }
         public String AndKey
         {
@@ -672,6 +730,16 @@ namespace EpgTimer
             set;
         }
         public List<Int64> ServiceList
+        {
+            get;
+            set;
+        }
+        public bool NotContetFlag
+        {
+            get;
+            set;
+        }
+        public bool NotDateFlag
         {
             get;
             set;

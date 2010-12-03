@@ -19,10 +19,22 @@ namespace Def {
 		/// 出力PlugIn
 		/// </summary>
 		property String^ WritePlugIn;
+
+		/// <summary>
+		/// ファイル名変換PlugIn
+		/// </summary>
+		property String^ RecNamePlugIn;
+
+		/// <summary>
+		/// ファイル名個別対応
+		/// </summary>
+		property String^ RecFileName;
 	public:
 		RecFileSetInfo(void){
 			RecFolder = gcnew String("");
 			WritePlugIn = gcnew String("");
+			RecNamePlugIn = gcnew String("");
+			RecFileName = gcnew String("");
 		};
 	};
 
@@ -810,6 +822,14 @@ namespace Def {
 		/// あいまい検索を行う
 		/// </summary>
 		property Byte aimaiFlag;
+		/// <summary>
+		/// あいまい検索を行う
+		/// </summary>
+		property Byte notContetFlag;
+		/// <summary>
+		/// あいまい検索を行う
+		/// </summary>
+		property Byte notDateFlag;
 	public:
 		EpgSearchKeyInfo(void){
 			andKey = gcnew String("");
@@ -822,6 +842,8 @@ namespace Def {
 			videoList = gcnew List<UInt16>();
 			audioList = gcnew List<UInt16>();
 			aimaiFlag = 0;
+			notContetFlag = 0;
+			notDateFlag = 0;
 		};
 	};
 

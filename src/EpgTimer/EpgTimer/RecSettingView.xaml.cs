@@ -57,6 +57,7 @@ namespace EpgTimer
                 defKey.BatFilePath = buff.ToString();
 
                 String plugInFile = "Write_Default.dll";
+                String recNamePlugInFile = "";
                 int count = IniFileHandler.GetPrivateProfileInt("REC_DEF_FOLDER", "Count", 0, SettingPath.TimerSrvIniPath);
                 for (int i = 0; i < count; i++)
                 {
@@ -66,6 +67,8 @@ namespace EpgTimer
                     folderInfo.RecFolder = buff.ToString();
                     IniFileHandler.GetPrivateProfileString("REC_DEF_FOLDER", "WritePlugIn" + i.ToString(), "Write_Default.dll", buff, 512, SettingPath.TimerSrvIniPath);
                     folderInfo.WritePlugIn = buff.ToString();
+                    IniFileHandler.GetPrivateProfileString("REC_DEF_FOLDER", "RecNamePlugIn" + i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
+                    folderInfo.RecNamePlugIn = buff.ToString();
 
                     defKey.RecFolderList.Add(folderInfo);
                 }
@@ -94,6 +97,23 @@ namespace EpgTimer
                     comboBox_writePlugIn.SelectedIndex = select;
                 }
 
+                files = Directory.GetFiles(SettingPath.ModulePath + "\\RecName", "RecName*.dll");
+                select = 0;
+                comboBox_recNamePlugIn.Items.Add("なし");
+                foreach (string info in files)
+                {
+                    int index = comboBox_recNamePlugIn.Items.Add(System.IO.Path.GetFileName(info));
+                    if (String.Compare(System.IO.Path.GetFileName(info), recNamePlugInFile, true) == 0)
+                    {
+                        select = index;
+                    }
+                }
+                if (comboBox_recNamePlugIn.Items.Count != 0)
+                {
+                    comboBox_recNamePlugIn.SelectedIndex = select;
+                }
+
+                
                 List<CtrlCmdCLI.Def.TunerReserveInfo> tunerReserveList = new List<CtrlCmdCLI.Def.TunerReserveInfo>();
                 cmd.SendEnumTunerReserve(ref tunerReserveList);
                 tunerList.Add(new TunerSelectInfo("自動", 0));
@@ -241,7 +261,9 @@ namespace EpgTimer
             {
                 foreach (RecFileSetInfoItem info in listBox_recFolder.Items)
                 {
-                    if (String.Compare(textBox_recFolder.Text, info.Info.RecFolder, true) == 0)
+                    if (String.Compare(textBox_recFolder.Text, info.Info.RecFolder, true) == 0 &&
+                        String.Compare((String)comboBox_writePlugIn.SelectedItem, info.Info.WritePlugIn, true) == 0 &&
+                        String.Compare((String)comboBox_recNamePlugIn.SelectedItem, info.Info.RecNamePlugIn, true) == 0)
                     {
                         MessageBox.Show("すでに追加されています");
                         return;
@@ -250,6 +272,11 @@ namespace EpgTimer
                 RecFileSetInfo item = new RecFileSetInfo();
                 item.RecFolder = textBox_recFolder.Text;
                 item.WritePlugIn = (String)comboBox_writePlugIn.SelectedItem;
+                item.RecNamePlugIn = (String)comboBox_recNamePlugIn.SelectedItem;
+                if (String.Compare(item.RecNamePlugIn, "なし", true) == 0)
+                {
+                    item.RecNamePlugIn = "";
+                }
 
                 listBox_recFolder.Items.Add(new RecFileSetInfoItem(item));
             }
@@ -455,6 +482,23 @@ namespace EpgTimer
                 plugin.Setting(filePath, hwnd.Handle);
             }
         }
+
+        private void button_recNamePlugIn_Click(object sender, RoutedEventArgs e)
+        {
+            if (comboBox_recNamePlugIn.SelectedItem != null)
+            {
+                string name = comboBox_recNamePlugIn.SelectedItem as string;
+                if (String.Compare(name, "なし", true) != 0)
+                {
+                    string filePath = SettingPath.ModulePath + "\\RecName\\" + name;
+
+                    RecNamePluginClass plugin = new RecNamePluginClass();
+                    HwndSource hwnd = (HwndSource)HwndSource.FromVisual(this);
+
+                    plugin.Setting(filePath, hwnd.Handle);
+                }
+            }
+        }
     }
 
     public class RecFileSetInfoItem
@@ -474,7 +518,7 @@ namespace EpgTimer
             String view = "";
             if (Info != null)
             {
-                view = Info.RecFolder + " (WritePlugIn:" + Info.WritePlugIn + ")";
+                view = Info.RecFolder + " (WritePlugIn:" + Info.WritePlugIn + " RecNamePlugIn:" + Info.RecNamePlugIn + ")";
             }
             return view;
         }

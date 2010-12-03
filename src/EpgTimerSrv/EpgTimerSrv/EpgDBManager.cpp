@@ -550,23 +550,39 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, EPGDB
 							//2つめのサービス？対象外とする
 							continue;
 						}
-						//ジャンル情報ないので対象外
+						//ジャンル情報ない
 						BOOL findNo = FALSE;
 						for( size_t j=0; j<key->contentList.size(); j++ ){
 							if( key->contentList[j].content_nibble_level_1 == 0xFF && 
 								key->contentList[j].content_nibble_level_2 == 0xFF
 								){
+									//ジャンルなしの指定あり
 									findNo = TRUE;
 									break;
 							}
 						}
-						if( findNo == FALSE ){
-							continue;
+						if( key->notContetFlag == 0 ){
+							if( findNo == FALSE ){
+								continue;
+							}
+						}else{
+							//NOT条件扱い
+							if( findNo == TRUE ){
+								continue;
+							}
 						}
 					}else{
-						if( IsEqualContent(&(key->contentList), &(itrEvent->second->contentInfo->nibbleList)) == FALSE ){
-							//ジャンル違うので対象外
-							continue;
+						BOOL equal = IsEqualContent(&(key->contentList), &(itrEvent->second->contentInfo->nibbleList));
+						if( key->notContetFlag == 0 ){
+							if( equal == FALSE ){
+								//ジャンル違うので対象外
+								continue;
+							}
+						}else{
+							//NOT条件扱い
+							if( equal == TRUE ){
+								continue;
+							}
 						}
 					}
 				}
@@ -615,9 +631,17 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, EPGDB
 						//開始時間不明なので対象外
 						continue;
 					}
-					if( IsInDateTime(&timeList, itrEvent->second->start_time) == FALSE ){
-						//時間範囲外なので対象外
-						continue;
+					BOOL inTime = IsInDateTime(&timeList, itrEvent->second->start_time);
+					if( key->notDateFlag == 0 ){
+						if( inTime == FALSE ){
+							//時間範囲外なので対象外
+							continue;
+						}
+					}else{
+						//NOT条件扱い
+						if( inTime == TRUE ){
+							continue;
+						}
 					}
 				}
 

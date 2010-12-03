@@ -1,7 +1,7 @@
 ﻿<Window x:Class="EpgTimer.SetApp2DefSearchWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="検索条件デフォルト" Height="350" Width="750" xmlns:local="clr-namespace:EpgTimer" ResizeMode="CanResize" WindowStartupLocation="CenterOwner" Closing="Window_Closing" Loaded="Window_Loaded">
+        Title="検索条件デフォルト" Height="480" Width="750" xmlns:local="clr-namespace:EpgTimer" ResizeMode="CanResize" WindowStartupLocation="CenterOwner" Closing="Window_Closing" Loaded="Window_Loaded">
     <Window.Resources>
         <Style TargetType="{x:Type ComboBox}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />

@@ -13,7 +13,11 @@ void Replace(wstring& strBuff, const wstring strOld, const wstring strNew);
 
 void WtoA(wstring strIn, string& strOut);
 
+void WtoUTF8(wstring strIn, string& strOut);
+
 void AtoW(string strIn, wstring& strOut);
+
+void UTF8toW(string strIn, wstring& strOut);
 
 BOOL Separate(string strIn, string strSep, string& strLeft, string& strRight);
 

@@ -171,6 +171,8 @@ namespace EpgTimer
         private bool epgToolTip;
         private string reserveRectColorWarning;
         private bool noToolTip;
+        private bool searchKeyNotContent;
+        private bool searchKeyNotDate;
 
         public bool SearchKeyRegExp
         {
@@ -511,7 +513,17 @@ namespace EpgTimer
             get { return noToolTip; }
             set { noToolTip = value; }
         }
-        
+        public bool SearchKeyNotContent
+        {
+            get { return searchKeyNotContent; }
+            set { searchKeyNotContent = value; }
+        }
+        public bool SearchKeyNotDate
+        {
+            get { return searchKeyNotDate; }
+            set { searchKeyNotDate = value; }
+        }
+
         public Settings()
         {
             searchKeyContentList = new List<ContentKindInfo>();
@@ -560,6 +572,8 @@ namespace EpgTimer
             epgToolTip = true;
             reserveRectColorWarning = "Yellow";
             noToolTip = false;
+            searchKeyNotContent = false;
+            searchKeyNotDate = false;
         }
         [NonSerialized()]
         private static Settings _instance;

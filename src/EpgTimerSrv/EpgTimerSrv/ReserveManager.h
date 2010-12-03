@@ -7,6 +7,7 @@
 #include "../../Common/ParseReserveText.h"
 #include "../../Common/ParseRecInfoText.h"
 #include "../../Common/ParseChText5.h"
+#include "TwitterManager.h"
 
 #include "ReserveInfo.h"
 #include "TunerManager.h"
@@ -162,6 +163,10 @@ public:
 		DWORD mode
 		);
 
+	void SendTweet(
+		wstring text
+		);
+
 protected:
 	HANDLE lockEvent;
 
@@ -190,6 +195,8 @@ protected:
 
 	CTunerManager tunerManager;
 	CBatManager batManager;
+	CTwitterManager twitterManager;
+
 
 	typedef struct _BANK_WORK_INFO{
 		CReserveInfo* reserveInfo;
@@ -243,6 +250,11 @@ protected:
 	vector<wstring> delExtList;
 	vector<wstring> delFolderList;
 	BOOL eventRelay;
+	BOOL useTweet;
+	BOOL useProxy;
+	wstring proxySrv;
+	wstring proxyID;
+	wstring proxyPWD;
 
 	vector<wstring> tvtestUseBon;
 
@@ -310,5 +322,9 @@ protected:
 
 	BOOL _StartEpgCap();
 	BOOL IsEpgCap();
+
+	void _SendTweet(
+		wstring text
+		);
 };
 

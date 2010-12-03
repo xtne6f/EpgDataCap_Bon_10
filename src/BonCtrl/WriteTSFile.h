@@ -58,7 +58,7 @@ public:
 
 protected:
 	//PublicAPI排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
+	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 5*1000);
 	void UnLock(LPCWSTR log = NULL);
 	/*
 	HANDLE OpenFile(
@@ -111,11 +111,13 @@ protected:
 		BOOL overWriteFlag;
 		wstring recFilePath;
 		vector<wstring> subRecPath;
+		wstring recFileName;
 		_SAVE_INFO(void){
 			freeChk = FALSE;
 			overWriteFlag = FALSE;
 			recFilePath = L"";
 			writeUtil = NULL;
+			recFileName = L"";
 		};
 		~_SAVE_INFO(void){
 			if( writeUtil != NULL ){

@@ -17,10 +17,10 @@
         </Style>
     </Window.Resources>
     <Grid>
-        <Button Content="変更" Height="23" HorizontalAlignment="Left" Margin="17,0,0,21" Name="button_change" VerticalAlignment="Bottom" Width="95" Click="button_change_Click" />
-        <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="159,0,0,21" Name="button_delete" VerticalAlignment="Bottom" Width="95" Click="button_dlete_Click" />
-        <Button Content="キャンセル" Height="23" HorizontalAlignment="Left" Margin="328,0,0,21" Name="button_cancel" VerticalAlignment="Bottom" Width="116" Click="button_cancel_Click" />
-        <TabControl Name="tabControl1" TabStripPlacement="Bottom" Margin="0,0,0,50">
+        <Button Content="変更" Height="23" HorizontalAlignment="Left" Margin="12,0,0,0" Name="button_change" VerticalAlignment="Bottom" Width="95" Click="button_change_Click" />
+        <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="154,0,0,0" Name="button_delete" VerticalAlignment="Bottom" Width="95" Click="button_dlete_Click" />
+        <Button Content="キャンセル" Height="23" HorizontalAlignment="Left" Margin="323,0,0,0" Name="button_cancel" VerticalAlignment="Bottom" Width="116" Click="button_cancel_Click" />
+        <TabControl Name="tabControl1" TabStripPlacement="Bottom" Margin="0,0,0,29">
             <TabItem Header="予約変更" Name="tabItem_chgReserve">
                 <Grid>
                     <CheckBox Content="プログラム予約化（一度プログラム予約化したものは元に戻せません）" Height="16" HorizontalAlignment="Left" Margin="12,12,0,0" Name="checkBox_program" VerticalAlignment="Top" Click="checkBox_program_Click" />
@@ -52,7 +52,7 @@
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="380,138,0,0" Name="textBox_end_MM" VerticalAlignment="Top" Width="33" />
                     <Label Content=":" Height="28" HorizontalAlignment="Left" Margin="419,136,0,0" Name="label14" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="440,138,0,0" Name="textBox_end_SS" VerticalAlignment="Top" Width="33" />
-                    <local:RecSettingView Margin="0,168,0,0" x:Name="recSettingView" VerticalAlignment="Top" />
+                    <local:RecSettingView Margin="0,168,0,0" x:Name="recSettingView" VerticalAlignment="Top" Height="480" />
                 </Grid>
             </TabItem>
             <TabItem Header="番組情報" Name="tabItem_pgInfo">

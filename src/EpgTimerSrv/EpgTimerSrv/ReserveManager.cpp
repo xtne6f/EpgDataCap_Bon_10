@@ -64,6 +64,9 @@ CReserveManager::CReserveManager(void)
 	this->NWTVUDP = FALSE;
 	this->NWTVTCP = FALSE;
 
+	this->useTweet = FALSE;
+	this->useProxy = FALSE;
+
 	ReloadSetting();
 }
 
@@ -161,6 +164,7 @@ CReserveManager::~CReserveManager(void)
 		CloseHandle(this->lockEvent);
 		this->lockEvent = NULL;
 	}
+
 }
 
 BOOL CReserveManager::Lock(LPCWSTR log, DWORD timeOut)
@@ -408,6 +412,35 @@ void CReserveManager::ReloadSetting()
 	this->timeSync = GetPrivateProfileInt(L"SET", L"TimeSync", 0, iniAppPath.c_str());
 
 	recInfoText.SetAutoDel(this->autoDelRecInfoNum, this->autoDelRecInfo);
+
+	this->useTweet = GetPrivateProfileInt(L"TWITTER", L"use", 0, iniAppPath.c_str());
+	this->useProxy = GetPrivateProfileInt(L"TWITTER", L"useProxy", 0, iniAppPath.c_str());
+	ZeroMemory(buff, sizeof(WCHAR)*512);
+	GetPrivateProfileStringW(L"TWITTER", L"ProxyServer", L"", buff, 512, iniAppPath.c_str());
+	this->proxySrv = buff;
+	ZeroMemory(buff, sizeof(WCHAR)*512);
+	GetPrivateProfileStringW(L"TWITTER", L"ProxyID", L"", buff, 512, iniAppPath.c_str());
+	this->proxyID = buff;
+	ZeroMemory(buff, sizeof(WCHAR)*512);
+	GetPrivateProfileStringW(L"TWITTER", L"ProxyPWD", L"", buff, 512, iniAppPath.c_str());
+	this->proxyPWD = buff;
+
+	USE_PROXY_INFO proxyInfo;
+	if( this->useProxy == TRUE ){
+		if( this->proxySrv.size() > 0 ){
+			proxyInfo.serverName = new WCHAR[this->proxySrv.size()+1];
+			wcscpy_s(proxyInfo.serverName, this->proxySrv.size()+1, this->proxySrv.c_str());
+		}
+		if( this->proxyID.size() > 0 ){
+			proxyInfo.userName = new WCHAR[this->proxyID.size()+1];
+			wcscpy_s(proxyInfo.userName, this->proxyID.size()+1, this->proxyID.c_str());
+		}
+		if( this->proxyPWD.size() > 0 ){
+			proxyInfo.serverName = new WCHAR[this->proxyPWD.size()+1];
+			wcscpy_s(proxyInfo.password, this->proxyPWD.size()+1, this->proxyPWD.c_str());
+		}
+	}
+	this->twitterManager.SetProxy(this->useProxy, &proxyInfo);
 
 	UnLock();
 }
@@ -2463,78 +2496,6 @@ void CReserveManager::CheckTuijyu()
 							}
 						}
 					}
-					/*
-					if( nowSuccess == TRUE){
-						if(resNowVal.StartTimeFlag == 1 && resNowVal.DurationFlag == 1){
-							if( data.reserveStatus == ADD_RESERVE_NO_FIND ){
-								BOOL chkEvent = FALSE;
-								if( nextSuccess == TRUE ){
-									if( resNextVal.StartTimeFlag != 1 || resNextVal.DurationFlag != 1 ){
-										//次未定なので一応まだ継続
-										if( CheckNotFindChgEvent(&data, itrCtrl->second) == TRUE ){
-											chgReserve = TRUE;
-										}
-										chkEvent = TRUE;
-									}
-								}
-								if( chkEvent == FALSE ){
-									//正常状態に戻ったのでDBからチェック
-									SEARCH_EPG_INFO_PARAM val;
-									val.ONID = data.originalNetworkID;
-									val.TSID = data.transportStreamID;
-									val.SID = data.serviceID;
-									val.eventID = data.eventID;
-									val.pfOnlyFlag = 0;
-									EPGDB_EVENT_INFO resVal;
-									if( itrCtrl->second->SearchEpgInfo(
-										&val,
-										&resVal
-										) == TRUE ){
-											if( resVal.StartTimeFlag == 1 ){
-												if( ConvertI64Time(resVal.start_time) >= ConvertI64Time(data.startTime) ){
-													//開始時間後なので更新されたEPGのはず
-													chgRes = CheckChgEvent(&resVal, &data);
-												}else{
-													//古いEPGなので何もしない
-												}
-											}
-									}
-								}
-							}else{
-								//p/f正常なので通常検索
-								SEARCH_EPG_INFO_PARAM val;
-								val.ONID = data.originalNetworkID;
-								val.TSID = data.transportStreamID;
-								val.SID = data.serviceID;
-								val.eventID = data.eventID;
-								val.pfOnlyFlag = 0;
-								EPGDB_EVENT_INFO resVal;
-								if( itrCtrl->second->SearchEpgInfo(
-									&val,
-									&resVal
-									) == TRUE ){
-										chgRes = CheckChgEvent(&resVal, &data);
-								}else{
-									_OutputDebugString(L"●番組情報みつからず %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
-										data.startTime.wYear,
-										data.startTime.wMonth,
-										data.startTime.wDay,
-										data.startTime.wHour,
-										data.startTime.wMinute,
-										data.startTime.wSecond,
-										data.durationSecond,
-										data.title.c_str(),
-										data.stationName.c_str()
-										);
-								}
-							}
-						}else{
-							//時間未定なので6時間追従モードへ
-							if( CheckNotFindChgEvent(&data, itrCtrl->second) == TRUE ){
-								chgReserve = TRUE;
-							}
-						}
-					}*/
 				}
 				if( endRec == TRUE ){
 					//誤差も加味
@@ -2596,40 +2557,67 @@ BOOL CReserveManager::CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, 
 {
 	BOOL chgRes = FALSE;
 	wstring log = L"";
-	if( info->StartTimeFlag == 1 ){
-		wstring time = L"";
-		Format(time, L"%d/%d/%d %d:%d:%d ",
+	wstring timeLog1 = L"";
+	wstring timeLog2 = L"";
+
+	SYSTEMTIME oldEndTime;
+	GetSumTime(data->startTime, data->durationSecond, &oldEndTime);
+	Format(timeLog1, L"%d/%d/%d %d:%d:%d～%d:%d:%d",
+		data->startTime.wYear,
+		data->startTime.wMonth,
+		data->startTime.wDay,
+		data->startTime.wHour,
+		data->startTime.wMinute,
+		data->startTime.wSecond,
+		oldEndTime.wHour,
+		oldEndTime.wMinute,
+		oldEndTime.wSecond);
+
+	SYSTEMTIME endTime;
+	if( info->StartTimeFlag == 1 && info->DurationFlag == 1){
+		GetSumTime(info->start_time, info->durationSec, &endTime);
+		Format(timeLog2, L"%d/%d/%d %d:%d:%d～%d:%d:%d",
+			info->start_time.wYear,
+			info->start_time.wMonth,
+			info->start_time.wDay,
+			info->start_time.wHour,
+			info->start_time.wMinute,
+			info->start_time.wSecond,
+			endTime.wHour,
+			endTime.wMinute,
+			endTime.wSecond);
+	}else if( info->StartTimeFlag == 1 && info->DurationFlag == 0){
+		Format(timeLog2, L"%d/%d/%d %d:%d:%d～未定",
 			info->start_time.wYear,
 			info->start_time.wMonth,
 			info->start_time.wDay,
 			info->start_time.wHour,
 			info->start_time.wMinute,
 			info->start_time.wSecond);
-		log += time;
+	}else{
+		timeLog2 = L"時間未定";
+	}
+
+	if( info->StartTimeFlag == 1 ){
 		if( ConvertI64Time(data->startTime) != ConvertI64Time(info->start_time) ){
 			//開始時間変わっている
 			chgRes = TRUE;
 			data->startTime = info->start_time;
 
-			log += L"●開始変更 ";
+			log += L"●追従：開始変更 ";
 			if( chgMode != NULL ){
 				*chgMode |= 0x01;
 			}
 		}
-	}else{
-		log += L"開始未定 ";
 	}
 	if( info->DurationFlag == 1 ){
-		wstring time = L"";
-		Format(time, L"%dsec", info->durationSec);
-		log += time;
 		if( data->reserveStatus == ADD_RESERVE_CHG_PF ){
 			//一度変わってるのでマージン追加されてるはず
 			if( data->durationSecond - ((DWORD)this->duraChgMarginMin*60) != info->durationSec ){
 				//総時間が変更されている
 				chgRes = TRUE;
 				data->durationSecond = info->durationSec;
-				log += L"●総時間変更 ";
+				log += L"●追従：総時間変更 ";
 				if( chgMode != NULL ){
 					*chgMode |= 0x02;
 				}
@@ -2639,20 +2627,32 @@ BOOL CReserveManager::CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, 
 				//総時間が変更されている
 				chgRes = TRUE;
 				data->durationSecond = info->durationSec;
-				log += L"●総時間変更 ";
+				log += L"●追従：総時間変更 ";
 				if( chgMode != NULL ){
 					*chgMode |= 0x02;
 				}
 			}
 		}
-	}else{
-		log += L"総時間未定 ";
 	}
 
-	log += data->title;
-	log += L" ";
-	log += data->stationName;
-	log += L"\r\n";
+	if( chgRes == TRUE ){
+		log += data->stationName;
+		log += L" ";
+		log += timeLog1;
+		log += L" → ";
+		log += timeLog2;
+		log += L" ";
+		log += data->title;
+		_SendTweet(log);
+		log += L"\r\n";
+	}else{
+		log += data->stationName;
+		log += L" ";
+		log += timeLog2;
+		log += L" ";
+		log += data->title;
+		log += L"\r\n";
+	}
 
 	OutputDebugString(log.c_str());
 	return chgRes;
@@ -3704,4 +3704,24 @@ void CReserveManager::SetNWTVMode(
 		this->NWTVTCP = FALSE;
 	}
 	UnLock();
+}
+
+void CReserveManager::SendTweet(
+	wstring text
+	)
+{
+	if( Lock(L"SendTweet") == FALSE ) return ;
+
+	_SendTweet(text);
+
+	UnLock();
+}
+
+void CReserveManager::_SendTweet(
+	wstring text
+	)
+{
+	if( this->useTweet == TRUE ){
+		this->twitterManager.SendTweet(TW_TEXT, (void*)text.c_str(), NULL, NULL);
+	}
 }
