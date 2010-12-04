@@ -136,6 +136,8 @@ namespace EpgTimer
                 folderInfo.RecFolder = buff.ToString();
                 IniFileHandler.GetPrivateProfileString("REC_DEF_FOLDER", "WritePlugIn" + i.ToString(), "Write_Default.dll", buff, 512, SettingPath.TimerSrvIniPath);
                 folderInfo.WritePlugIn = buff.ToString();
+                IniFileHandler.GetPrivateProfileString("REC_DEF_FOLDER", "RecNamePlugIn" + i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
+                folderInfo.RecNamePlugIn = buff.ToString();
 
                 recSet.RecFolderList.Add(folderInfo);
             }
@@ -266,6 +268,7 @@ namespace EpgTimer
             {
                 IniFileHandler.WritePrivateProfileString("REC_DEF_FOLDER", i.ToString(), recSet.RecFolderList[i].RecFolder, SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString("REC_DEF_FOLDER", "WritePlugIn" + i.ToString(), recSet.RecFolderList[i].WritePlugIn, SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("REC_DEF_FOLDER", "RecNamePlugIn" + i.ToString(), recSet.RecFolderList[i].RecNamePlugIn, SettingPath.TimerSrvIniPath);
             }
 
             IniFileHandler.WritePrivateProfileString("REC_DEF", "SuspendMode", recSet.SuspendMode.ToString(), SettingPath.TimerSrvIniPath);
