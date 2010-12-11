@@ -884,8 +884,11 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 	case CMD2_VIEW_APP_SET_STANDBY_REC:
 		OutputDebugString(L"CMD2_VIEW_APP_SET_STANDBY_REC");
 		{
-			resParam->param = CMD_SUCCESS;
-			PostMessage(sys->msgWnd, WM_RESERVE_REC_STANDBY, 0, 0);
+			DWORD val = 0;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				resParam->param = CMD_SUCCESS;
+				PostMessage(sys->msgWnd, WM_RESERVE_REC_STANDBY, val, 0);
+			}
 		}
 		break;
 	case CMD2_VIEW_APP_CREATE_CTRL:
@@ -923,6 +926,9 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 		{
 			SET_CTRL_MODE val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				if(val.enableScramble == 0 && sys->nwCtrlID != 0){
+					sys->bonCtrl.SetScramble(sys->nwCtrlID, FALSE);
+				}
 				sys->bonCtrl.SetScramble(val.ctrlID, val.enableScramble);
 				sys->bonCtrl.SetServiceMode(val.ctrlID, val.enableCaption, val.enableData);
 				sys->bonCtrl.SetServiceID(val.ctrlID, val.SID);
@@ -1073,6 +1079,11 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 					}
 				}
 			}
+		}
+		break;
+	case CMD2_VIEW_APP_EXEC_VIEW_APP:
+		{
+			sys->ViewAppOpen();
 		}
 		break;
 	default:

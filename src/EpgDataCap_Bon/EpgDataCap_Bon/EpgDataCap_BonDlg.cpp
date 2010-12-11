@@ -639,9 +639,19 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 		break;
 	case WM_RESERVE_REC_STANDBY:
 		{
-			BtnUpdate(GUI_REC_STANDBY);
-			this->log = L"予約録画待機中\r\n";
-			SetDlgItemText(IDC_EDIT_LOG, this->log);
+			if( wParam == 1 ){
+				BtnUpdate(GUI_REC_STANDBY);
+				this->log = L"予約録画待機中\r\n";
+				SetDlgItemText(IDC_EDIT_LOG, this->log);
+			}else if( wParam == 2 ){
+				BtnUpdate(GUI_NORMAL);
+				this->log = L"視聴モード\r\n";
+				SetDlgItemText(IDC_EDIT_LOG, this->log);
+			}else{
+				BtnUpdate(GUI_NORMAL);
+				this->log = L"";
+				SetDlgItemText(IDC_EDIT_LOG, this->log);
+			}
 		}
 		break;
 	case WM_TRAY_PUSHICON:

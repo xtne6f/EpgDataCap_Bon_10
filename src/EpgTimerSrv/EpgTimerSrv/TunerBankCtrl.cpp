@@ -33,6 +33,7 @@ CTunerBankCtrl::CTunerBankCtrl(void)
 	this->delayTime = 0;
 
 	this->chkSpaceCount = 0;
+	this->twitterManager = NULL;
 
 	ReloadSetting();
 }
@@ -92,6 +93,11 @@ void CTunerBankCtrl::UnLock(LPCWSTR log)
 	if( log != NULL ){
 		OutputDebugString(log);
 	}
+}
+
+void CTunerBankCtrl::SetTwitterCtrl(CTwitterManager* twitterManager)
+{
+	this->twitterManager = twitterManager;
 }
 
 void CTunerBankCtrl::ReloadSetting()
@@ -673,7 +679,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 
 		this->sendCtrl.SendViewSetID(this->tunerID);
 
-		this->sendCtrl.SendViewSetStandbyRec();
+		this->sendCtrl.SendViewSetStandbyRec(1);
 		if( initCh != NULL ){
 			this->sendCtrl.SendViewSetCh(initCh);
 		}
@@ -702,7 +708,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 								if( status == VIEW_APP_ST_NORMAL || status == VIEW_APP_ST_ERR_CH_CHG){
 									this->sendCtrl.SendViewSetID(this->tunerID);
 
-									this->sendCtrl.SendViewSetStandbyRec();
+									this->sendCtrl.SendViewSetStandbyRec(1);
 
 									if( initCh != NULL ){
 										this->sendCtrl.SendViewSetCh(initCh);
@@ -750,7 +756,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 
 								this->sendCtrl.SendViewSetID(this->tunerID);
 
-								this->sendCtrl.SendViewSetStandbyRec();
+								this->sendCtrl.SendViewSetStandbyRec(1);
 								if( initCh != NULL ){
 									this->sendCtrl.SendViewSetCh(initCh);
 								}
@@ -783,7 +789,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 										this->sendCtrl.SendViewEpgCapStop();
 										this->sendCtrl.SendViewSetID(this->tunerID);
 
-										this->sendCtrl.SendViewSetStandbyRec();
+										this->sendCtrl.SendViewSetStandbyRec(1);
 
 										if( initCh != NULL ){
 											this->sendCtrl.SendViewSetCh(initCh);
@@ -823,7 +829,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 										this->sendCtrl.SendViewStopRecAll();
 										this->sendCtrl.SendViewSetID(this->tunerID);
 
-										this->sendCtrl.SendViewSetStandbyRec();
+										this->sendCtrl.SendViewSetStandbyRec(1);
 
 										if( initCh != NULL ){
 											this->sendCtrl.SendViewSetCh(initCh);
@@ -899,7 +905,7 @@ void CTunerBankCtrl::CreateCtrl(multimap<LONGLONG, RESERVE_WORK*>* sortList, LON
 						chgCh.useSID = TRUE;
 						chgCh.useBonCh = FALSE;
 
-						this->sendCtrl.SendViewSetStandbyRec();
+						this->sendCtrl.SendViewSetStandbyRec(1);
 
 						if( this->sendCtrl.SendViewSetCh(&chgCh) != CMD_SUCCESS ){
 							//失敗時もう一度リトライ
@@ -1238,7 +1244,7 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 				//ステータス確認
 				DWORD status = 0;
 				if( this->sendCtrl.SendViewGetStatus(&status) == CMD_SUCCESS ){
-					if( status != VIEW_APP_ST_REC ){
+					if( status != VIEW_APP_ST_REC && data.recSetting.recMode != RECMODE_VIEW){
 						//キャンセルされた？
 						SET_CTRL_REC_STOP_RES_PARAM resVal;
 						resVal.drop = 0;
@@ -1366,6 +1372,14 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve)
 	reserve->reserveInfo->GetData(&data);
 	BOOL ret = TRUE;
 
+	if( data.recSetting.recMode == RECMODE_VIEW ){
+		this->sendCtrl.SendViewSetStandbyRec(2);
+		if( this->recView == TRUE ){
+			this->sendCtrl.SendViewExecViewApp();
+		}
+		return TRUE;
+	}
+
 	for( size_t i=0; i<reserve->ctrlID.size(); i++ ){
 		SET_CTRL_REC_PARAM param;
 		param.ctrlID = reserve->ctrlID[i];
@@ -1492,6 +1506,10 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve)
 				ret = FALSE;
 			}
 		}
+	}
+
+	if( this->twitterManager != NULL ){
+		this->twitterManager->SendTweet(TW_REC_START, &data, NULL, NULL);
 	}
 	return ret;
 }

@@ -2029,6 +2029,7 @@ DWORD CSendCtrlCmd::SendViewGetID(
 //戻り値：
 // エラーコード
 DWORD CSendCtrlCmd::SendViewSetStandbyRec(
+	DWORD keepFlag
 	)
 {
 	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
@@ -2038,6 +2039,13 @@ DWORD CSendCtrlCmd::SendViewSetStandbyRec(
 
 	send.param = CMD2_VIEW_APP_SET_STANDBY_REC;
 	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(keepFlag);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(keepFlag, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
 
 	if( this->tcpFlag == FALSE ){
 		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
@@ -2435,3 +2443,26 @@ DWORD CSendCtrlCmd::SendViewGetEventPF(
 	return ret;
 }
 
+//Viewボタン登録アプリ起動
+//戻り値：
+// エラーコード
+DWORD CSendCtrlCmd::SendViewExecViewApp(
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_VIEW_APP_EXEC_VIEW_APP;
+	send.dataSize = 0;
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+	UnLock();
+	return ret;
+}

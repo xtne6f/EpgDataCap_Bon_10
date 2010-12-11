@@ -21,7 +21,7 @@ BOOL CParseChText4::ParseText(LPCWSTR filePath)
 	this->chList.clear();
 	this->filePath = filePath;
 
-	HANDLE hFile = _CreateFile( filePath, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hFile = _CreateFile2( filePath, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		return FALSE;
 	}

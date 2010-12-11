@@ -442,6 +442,11 @@ void CReserveManager::ReloadSetting()
 	}
 	this->twitterManager.SetProxy(this->useProxy, &proxyInfo);
 
+	map<DWORD, CTunerBankCtrl*>::iterator itr;
+	for(itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+		itr->second->SetTwitterCtrl(&this->twitterManager);
+	}
+
 	UnLock();
 }
 
@@ -952,7 +957,8 @@ BOOL CReserveManager::GetReserveData(
 //引数：
 // reserveList		[IN]予約情報
 BOOL CReserveManager::AddReserveData(
-	vector<RESERVE_DATA>* reserveList
+	vector<RESERVE_DATA>* reserveList,
+	BOOL tweet
 	)
 {
 	if( Lock(L"AddReserveData") == FALSE ) return FALSE;
@@ -961,7 +967,7 @@ BOOL CReserveManager::AddReserveData(
 	//予約追加
 	BOOL add = FALSE;
 	for( size_t i=0; i<reserveList->size(); i++ ){
-		if( _AddReserveData(&(*reserveList)[i]) == TRUE ){
+		if( _AddReserveData(&(*reserveList)[i], tweet) == TRUE ){
 			add = TRUE;
 		}
 	}
@@ -987,7 +993,7 @@ BOOL CReserveManager::AddReserveData(
 	return ret;
 }
 
-BOOL CReserveManager::_AddReserveData(RESERVE_DATA* reserve)
+BOOL CReserveManager::_AddReserveData(RESERVE_DATA* reserve, BOOL tweet)
 {
 	BOOL ret = TRUE;
 
@@ -1019,6 +1025,10 @@ BOOL CReserveManager::_AddReserveData(RESERVE_DATA* reserve)
 				itrData->second->serviceID,
 				itrData->second->eventID);
 			this->reserveInfoIDMap.insert(pair<LONGLONG, DWORD>(keyID, itrData->second->reserveID));
+
+			if( tweet == TRUE ){
+				_SendTweet(TW_ADD_RESERVE, itrData->second, NULL, NULL);
+			}
 		}
 	}
 
@@ -1974,7 +1984,11 @@ void CReserveManager::CheckEndReserve()
 						item.comment = L"開始時間が変更されました";
 					}else{
 						item.recStatus = REC_END_STATUS_NORMAL;
-						item.comment = L"録画終了";
+						if( data.recSetting.recMode == RECMODE_VIEW ){
+							item.comment = L"終了";
+						}else{
+							item.comment = L"録画終了";
+						}
 					}
 				}else if( itrEnd->second->endType == REC_END_STATUS_NOT_FIND_PF ){
 					item.recStatus = REC_END_STATUS_NOT_FIND_PF;
@@ -1999,6 +2013,7 @@ void CReserveManager::CheckEndReserve()
 					item.comment = L"録画中にキャンセルされた可能性があります";
 				}
 				this->recInfoText.AddRecInfo(&item);
+				_SendTweet(TW_REC_END, &item, NULL, NULL);
 
 				//バッチ処理追加
 				if(itrEnd->second->endType == REC_END_STATUS_NORMAL || itrEnd->second->endType == REC_END_STATUS_NEXT_START_END ){
@@ -2145,6 +2160,7 @@ void CReserveManager::CheckErrReserve()
 			item.recStatus = REC_END_STATUS_OPEN_ERR;
 			item.comment = L"チューナーのオープンに失敗しました";
 			this->recInfoText.AddRecInfo(&item);
+			_SendTweet(TW_REC_END, &item, NULL, NULL);
 
 			SAFE_DELETE(NGAddReserve[i]);
 
@@ -2556,6 +2572,9 @@ void CReserveManager::CheckTuijyu()
 BOOL CReserveManager::CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, BYTE* chgMode)
 {
 	BOOL chgRes = FALSE;
+
+	RESERVE_DATA oldData = *data;
+
 	wstring log = L"";
 	wstring timeLog1 = L"";
 	wstring timeLog2 = L"";
@@ -2643,8 +2662,8 @@ BOOL CReserveManager::CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, 
 		log += timeLog2;
 		log += L" ";
 		log += data->title;
-		_SendTweet(log);
 		log += L"\r\n";
+		_SendTweet(TW_CHG_RESERVE_CHK_REC, &oldData, data, info);
 	}else{
 		log += data->stationName;
 		log += L" ";
@@ -2714,6 +2733,7 @@ BOOL CReserveManager::CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* c
 			item.recStatus = REC_END_STATUS_NOT_FIND_6H;
 			item.comment = L"指定時間番組情報が見つかりませんでした";
 			this->recInfoText.AddRecInfo(&item);
+			_SendTweet(TW_REC_END, &item, NULL, NULL);
 
 			vector<DWORD> deleteList;
 			deleteList.push_back(data->reserveID);
@@ -3707,21 +3727,27 @@ void CReserveManager::SetNWTVMode(
 }
 
 void CReserveManager::SendTweet(
-	wstring text
+		SEND_TWEET_MODE mode,
+		void* param1,
+		void* param2,
+		void* param3
 	)
 {
 	if( Lock(L"SendTweet") == FALSE ) return ;
 
-	_SendTweet(text);
+	_SendTweet(mode, param1, param2, param3);
 
 	UnLock();
 }
 
 void CReserveManager::_SendTweet(
-	wstring text
+		SEND_TWEET_MODE mode,
+		void* param1,
+		void* param2,
+		void* param3
 	)
 {
 	if( this->useTweet == TRUE ){
-		this->twitterManager.SendTweet(TW_TEXT, (void*)text.c_str(), NULL, NULL);
+		this->twitterManager.SendTweet(mode, param1, param2, param3);
 	}
 }

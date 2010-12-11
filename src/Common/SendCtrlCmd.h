@@ -479,6 +479,7 @@ public:
 	//戻り値：
 	// エラーコード
 	DWORD SendViewSetStandbyRec(
+		DWORD keepFlag
 		);
 
 	//ストリーム制御用コントロール作成
@@ -577,6 +578,12 @@ public:
 	DWORD SendViewGetEventPF(
 		GET_EPG_PF_INFO_PARAM* val,
 		EPGDB_EVENT_INFO* resVal
+		);
+
+	//Viewボタン登録アプリ起動
+	//戻り値：
+	// エラーコード
+	DWORD SendViewExecViewApp(
 		);
 
 protected:

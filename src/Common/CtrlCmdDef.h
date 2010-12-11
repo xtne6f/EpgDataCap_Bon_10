@@ -90,6 +90,7 @@
 #define CMD2_VIEW_APP_SET_ID				1201 //識別用IDの設定
 #define CMD2_VIEW_APP_GET_ID				1202 //識別用IDの取得
 #define CMD2_VIEW_APP_SET_STANDBY_REC		1203 //予約録画用にGUIキープ
+#define CMD2_VIEW_APP_EXEC_VIEW_APP			1204 //Viewボタン登録アプリの起動
 #define CMD2_VIEW_APP_CREATE_CTRL			1221 //ストリーム制御用コントロール作成
 #define CMD2_VIEW_APP_DELETE_CTRL			1222 //ストリーム制御用コントロール削除
 #define CMD2_VIEW_APP_SET_CTRLMODE			1223 //コントロールの動作を設定（対象サービス、スクランブル、処理対象データ）
