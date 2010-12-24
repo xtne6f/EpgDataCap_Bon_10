@@ -1838,3 +1838,30 @@ BOOL CTunerBankCtrl::ReRec(DWORD reserveID, BOOL deleteFile)
 
 	return ret;
 }
+
+BOOL CTunerBankCtrl::GetRecFilePath(
+	DWORD reserveID,
+	wstring& filePath,
+	DWORD* ctrlID,
+	DWORD* processID
+	)
+{
+	if( Lock() == FALSE ) return FALSE;
+	BOOL ret = FALSE;
+
+	map<DWORD, RESERVE_WORK*>::iterator itr;
+	itr = this->createCtrlList.find(reserveID);
+	if( itr != this->createCtrlList.end() ){
+		wstring recFilePath = L"";
+		if( this->sendCtrl.SendViewGetRecFilePath(itr->second->mainCtrlID, &recFilePath) == CMD_SUCCESS ){
+			filePath = recFilePath;
+			*ctrlID = itr->second->mainCtrlID;
+			*processID = this->processID;
+			ret = TRUE;
+		}
+	}
+	UnLock();
+
+	return ret;
+}
+

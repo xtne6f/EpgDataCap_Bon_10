@@ -3,20 +3,8 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include "BonCtrlDef.h"
+#include "../Common/Util.h"
 #include "../Common/StringUtil.h"
-
-#define SAFE_DELETE(p)       { if(p) { delete (p);     (p)=NULL; } }
-#define SAFE_DELETE_ARRAY(p) { if(p) { delete[] (p);   (p)=NULL; } }
-
-#ifdef _DEBUG
-#undef new
-#endif
-#include <vector>
-#include <map>
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-using namespace std;
 
 class CSendUDP
 {

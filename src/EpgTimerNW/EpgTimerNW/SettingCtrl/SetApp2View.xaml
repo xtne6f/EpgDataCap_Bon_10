@@ -33,7 +33,7 @@
                 <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="436,124,0,0" Name="button_recname" VerticalAlignment="Top" Width="54" Click="button_recname_Click" />
             </Grid>
         </GroupBox>-->
-        <GroupBox Header="その他" Height="148" Margin="12,12,12,0" Name="groupBox2" VerticalAlignment="Top">
+        <GroupBox Header="その他" Height="185" Margin="12,12,12,0" Name="groupBox2" VerticalAlignment="Top">
             <Grid>
                 <CheckBox Content="×ボタンで最小化する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_closeMin" VerticalAlignment="Top" />
                 <CheckBox Content="最小化で起動する" Height="16" HorizontalAlignment="Left" Margin="6,28,0,0" Name="checkBox_minWake" VerticalAlignment="Top" />
@@ -43,6 +43,8 @@
                 <Label Content="ポート" Height="28" HorizontalAlignment="Left" Margin="212,83,0,0" Name="label1" VerticalAlignment="Top" />
                 <TextBox Height="24" HorizontalAlignment="Left" Margin="264,85,0,0" Name="textBox_tcpPort" VerticalAlignment="Top" Width="62" />-->
                 <CheckBox Content="ツールチップの表示を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,79,0,0" Name="checkBox_noToolTips" VerticalAlignment="Top" />
+                <CheckBox Content="起動時に前回接続サーバーに接続する" Height="16" HorizontalAlignment="Left" Margin="6,101,0,0" Name="checkBox_wakeReconnect" VerticalAlignment="Top" />
+                <CheckBox Content="休止/スタンバイ移行時にEpgTimerNWを終了する" Height="16" HorizontalAlignment="Left" Margin="6,123,0,0" Name="checkBox_suspendClose" VerticalAlignment="Top" />
             </Grid>
         </GroupBox>
     </Grid>

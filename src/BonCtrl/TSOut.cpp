@@ -1109,6 +1109,30 @@ void CTSOut::GetErrCount(
 	UnLock();
 }
 
+
+//録画中のファイルの出力サイズを取得する
+//引数：
+// id					[IN]制御識別ID
+// writeSize			[OUT]保存ファイル名
+void CTSOut::GetRecWriteSize(
+	DWORD id,
+	__int64* writeSize
+	)
+{
+	if( Lock() == FALSE ) return ;
+
+	map<DWORD, COneServiceUtil*>::iterator itr;
+	itr = serviceUtilMap.find(id);
+	if( itr == serviceUtilMap.end() ){
+		UnLock();
+		return ;
+	}
+
+	itr->second->GetRecWriteSize(writeSize);
+
+	UnLock();
+}
+
 void CTSOut::ResetErrCount()
 {
 	map<DWORD, COneServiceUtil*>::iterator itr;

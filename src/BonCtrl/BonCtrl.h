@@ -329,6 +329,15 @@ public:
 		wstring filePath
 		);
 
+	//録画中のファイルの出力サイズを取得する
+	//引数：
+	// id					[IN]制御識別ID
+	// writeSize			[OUT]保存ファイル名
+	void GetRecWriteSize(
+		DWORD id,
+		__int64* writeSize
+		);
+
 	//指定サービスの現在or次のEPG情報を取得する
 	//戻り値：
 	// エラーコード

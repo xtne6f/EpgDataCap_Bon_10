@@ -367,7 +367,27 @@ namespace CtrlCmdCLI {
 			UInt32 val
 			);
 
-		//View（TVTest）用
+		/// <summary>
+		/// ストリーム配信用ファイルを開く
+		/// </summary>
+        /// <param name="val">[IN]開くファイルのサーバー側ファイルパス</param>
+        /// <param name="resVal">[OUT]制御用CtrlID</param>
+		UInt32 SendNwPlayOpen(
+			String^ val,
+			UInt32% resVal
+			);
+
+		/// <summary>
+		/// ストリーム配信用ファイルをタイムシフトモードで開く
+		/// </summary>
+        /// <param name="val">[IN]予約ID</param>
+        /// <param name="resVal">[OUT]制御用CtrlID</param>
+		UInt32 SendNwTimeShiftOpen(
+			UInt32 val,
+			Def::NWPlayTimeShiftInfo^% resVal
+			);
+
+//View（TVTest）用
 
 		/// <summary>
 		/// BonDriverの切り替え
@@ -397,6 +417,14 @@ namespace CtrlCmdCLI {
 		/// アプリケーションの終了
 		/// </summary>
 		UInt32 SendViewAppClose(
+			);
+
+		/// <summary>
+		/// ストリーミング配信制御IDの設定
+		/// </summary>
+        /// <param name="val">[IN]ストリーミング配信制御情報</param>
+		UInt32 SendViewSetStreamingInfo(
+			Def::TVTestStreamingInfo^ val
 			);
 
 	private:
@@ -458,5 +486,12 @@ namespace CtrlCmdCLI {
 
 		void CopyData(Def::TvTestChChgInfo^ src, TVTEST_CH_CHG_INFO* dest);
 		void CopyData(TVTEST_CH_CHG_INFO* src, Def::TvTestChChgInfo^% dest);
+
+		void CopyData(Def::TVTestStreamingInfo^ src, TVTEST_STREAMING_INFO* dest);
+		void CopyData(TVTEST_STREAMING_INFO* src, Def::TVTestStreamingInfo^% dest);
+
+		void CopyData(Def::NWPlayTimeShiftInfo^ src, NWPLAY_TIMESHIFT_INFO* dest);
+		void CopyData(NWPLAY_TIMESHIFT_INFO* src, Def::NWPlayTimeShiftInfo^% dest);
+
 	};
 }

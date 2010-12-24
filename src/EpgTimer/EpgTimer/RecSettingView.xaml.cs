@@ -44,50 +44,22 @@ namespace EpgTimer
             try
             {
                 defKey = new RecSettingData();
-                StringBuilder buff = new StringBuilder(512);
-
-                defKey.RecMode = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "RecMode", 1, SettingPath.TimerSrvIniPath);
-                defKey.Priority = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "Priority", 2, SettingPath.TimerSrvIniPath);
-                defKey.TuijyuuFlag = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "TuijyuuFlag", 1, SettingPath.TimerSrvIniPath);
-                defKey.ServiceMode = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "ServiceMode", 0, SettingPath.TimerSrvIniPath);
-                defKey.PittariFlag = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "PittariFlag", 0, SettingPath.TimerSrvIniPath);
-
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString("REC_DEF", "BatFilePath", "", buff, 512, SettingPath.TimerSrvIniPath);
-                defKey.BatFilePath = buff.ToString();
-
+                Settings.GetDefRecSetting(0, ref defKey);
                 String plugInFile = "Write_Default.dll";
                 String recNamePlugInFile = "";
-                int count = IniFileHandler.GetPrivateProfileInt("REC_DEF_FOLDER", "Count", 0, SettingPath.TimerSrvIniPath);
-                for (int i = 0; i < count; i++)
-                {
-                    RecFileSetInfo folderInfo = new RecFileSetInfo();
-                    buff.Clear();
-                    IniFileHandler.GetPrivateProfileString("REC_DEF_FOLDER", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                    folderInfo.RecFolder = buff.ToString();
-                    IniFileHandler.GetPrivateProfileString("REC_DEF_FOLDER", "WritePlugIn" + i.ToString(), "Write_Default.dll", buff, 512, SettingPath.TimerSrvIniPath);
-                    folderInfo.WritePlugIn = buff.ToString();
-                    IniFileHandler.GetPrivateProfileString("REC_DEF_FOLDER", "RecNamePlugIn" + i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                    folderInfo.RecNamePlugIn = buff.ToString();
 
-                    defKey.RecFolderList.Add(folderInfo);
+                List<String> fileList = new List<string>();
+                uint err = cmd.SendEnumPlugIn(2, ref fileList);
+                if (err == 205)
+                {
+                    MessageBox.Show("サーバーに接続できませんでした");
+                    return;
                 }
-
-                defKey.SuspendMode = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "SuspendMode", 0, SettingPath.TimerSrvIniPath);
-                defKey.RebootFlag = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "RebootFlag", 0, SettingPath.TimerSrvIniPath);
-                defKey.UseMargineFlag = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "UseMargineFlag", 0, SettingPath.TimerSrvIniPath);
-                defKey.StartMargine = IniFileHandler.GetPrivateProfileInt("REC_DEF", "StartMargine", 0, SettingPath.TimerSrvIniPath);
-                defKey.EndMargine = IniFileHandler.GetPrivateProfileInt("REC_DEF", "EndMargine", 0, SettingPath.TimerSrvIniPath);
-                defKey.ContinueRecFlag = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "ContinueRec", 0, SettingPath.TimerSrvIniPath);
-                defKey.PartialRecFlag = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "PartialRec", 0, SettingPath.TimerSrvIniPath);
-                defKey.TunerID = (UInt32)IniFileHandler.GetPrivateProfileInt("REC_DEF", "TunerID", 0, SettingPath.TimerSrvIniPath);
-
-                string[] files = Directory.GetFiles(SettingPath.ModulePath + "\\Write", "Write*.dll");
                 int select = 0;
-                foreach (string info in files)
+                foreach (string info in fileList)
                 {
-                    int index = comboBox_writePlugIn.Items.Add(System.IO.Path.GetFileName(info));
-                    if (String.Compare(System.IO.Path.GetFileName(info), plugInFile, true) == 0)
+                    int index = comboBox_writePlugIn.Items.Add(info);
+                    if (String.Compare(info, plugInFile, true) == 0)
                     {
                         select = index;
                     }
@@ -97,13 +69,19 @@ namespace EpgTimer
                     comboBox_writePlugIn.SelectedIndex = select;
                 }
 
-                files = Directory.GetFiles(SettingPath.ModulePath + "\\RecName", "RecName*.dll");
+                fileList.Clear();
+                err = cmd.SendEnumPlugIn(1, ref fileList);
+                if (err == 205)
+                {
+                    MessageBox.Show("サーバーに接続できませんでした");
+                    return;
+                }
                 select = 0;
                 comboBox_recNamePlugIn.Items.Add("なし");
-                foreach (string info in files)
+                foreach (string info in fileList)
                 {
-                    int index = comboBox_recNamePlugIn.Items.Add(System.IO.Path.GetFileName(info));
-                    if (String.Compare(System.IO.Path.GetFileName(info), recNamePlugInFile, true) == 0)
+                    int index = comboBox_recNamePlugIn.Items.Add(info);
+                    if (String.Compare(info, recNamePlugInFile, true) == 0)
                     {
                         select = index;
                     }
@@ -113,9 +91,13 @@ namespace EpgTimer
                     comboBox_recNamePlugIn.SelectedIndex = select;
                 }
 
-                
                 List<CtrlCmdCLI.Def.TunerReserveInfo> tunerReserveList = new List<CtrlCmdCLI.Def.TunerReserveInfo>();
-                cmd.SendEnumTunerReserve(ref tunerReserveList);
+                err = cmd.SendEnumTunerReserve(ref tunerReserveList);
+                if (err == 205)
+                {
+                    MessageBox.Show("サーバーに接続できませんでした");
+                    return;
+                }
                 tunerList.Add(new TunerSelectInfo("自動", 0));
                 foreach (TunerReserveInfo info in tunerReserveList)
                 {

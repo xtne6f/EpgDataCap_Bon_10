@@ -150,7 +150,7 @@ namespace EpgTimer
                     AddInfo.DurationSecond = (uint)((end - start).TotalSeconds);
 
                     RecSettingData recSet = new RecSettingData();
-                    Settings.GetDefRecSetting(ref recSet);
+                    Settings.GetDefRecSetting(0, ref recSet);
                     AddInfo.RecSetting = recSet;
 
                     ret = true;
@@ -249,7 +249,7 @@ namespace EpgTimer
                     AddInfo.DurationSecond = (uint)((end - start).TotalSeconds);
 
                     RecSettingData recSet = new RecSettingData();
-                    Settings.GetDefRecSetting(ref recSet);
+                    Settings.GetDefRecSetting(0, ref recSet);
                     AddInfo.RecSetting = recSet;
                     AddInfo.RecSetting.TuijyuuFlag = 0;
                     AddInfo.RecSetting.PartialRecFlag = 0;

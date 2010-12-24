@@ -17,6 +17,8 @@ using System.Collections;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace EpgTimer
 {
@@ -485,6 +487,126 @@ namespace EpgTimer
                 }
             }
         }
+
+        private void timeShiftPlay_Click(object sender, RoutedEventArgs e)
+        {
+            if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 0)
+            {
+                MessageBox.Show("追っかけ再生を行うには、動作設定でネットワーク接続を許可する必要があります。");
+                return;
+            }
+            if (Settings.Instance.TvTestExe.Length == 0)
+            {
+                MessageBox.Show("TVTest連携でexeのパスが設定されていません。");
+                return;
+            }
+            if (listView_reserve.SelectedItem != null)
+            {
+                ReserveItem info = listView_reserve.SelectedItem as ReserveItem;
+                NWPlayTimeShiftInfo playInfo = new NWPlayTimeShiftInfo();
+                UInt32 err = cmd.SendNwTimeShiftOpen(info.ReserveInfo.ReserveID, ref playInfo);
+                if (err == 1)
+                {
+                    try
+                    {
+                        bool open = false;
+                        CtrlCmdUtil tvTestCmd = new CtrlCmdUtil();
+                        tvTestCmd.SetConnectTimeOut(15 * 1000);
+                        foreach (Process p in Process.GetProcesses())
+                        {
+                            if (String.Compare(p.ProcessName, "tvtest", true) == 0)
+                            {
+                                open = true;
+                                if (p.MainWindowHandle != IntPtr.Zero)
+                                {
+                                    tvTestCmd.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + p.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + p.Id.ToString());
+                                    WakeupWindow(p.MainWindowHandle);
+                                }
+                            }
+                        }
+                        if (open == false)
+                        {
+                            System.Diagnostics.Process process;
+                            String cmdLine = "";
+                            cmdLine += Settings.Instance.TvTestCmd;
+                            if (cmdLine.IndexOf("/d") < 0)
+                            {
+                                if (Settings.Instance.TvTestCmd.Length > 0)
+                                {
+                                    if (cmdLine.Length > 0)
+                                    {
+                                        cmdLine += " ";
+                                    }
+                                }
+                                if (Settings.Instance.NwTvModeUDP == true)
+                                {
+                                    cmdLine = "/d BonDriver_UDP.dll";
+                                }
+                                else if (Settings.Instance.NwTvModeTCP)
+                                {
+                                    cmdLine = "/d BonDriver_TCP.dll";
+                                }
+                            }
+                            process = System.Diagnostics.Process.Start(Settings.Instance.TvTestExe, cmdLine);
+                            tvTestCmd.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + process.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + process.Id.ToString());
+                        }
+
+                        TVTestStreamingInfo sendInfo = new TVTestStreamingInfo();
+                        sendInfo.enableMode = 1;
+                        sendInfo.ctrlID = playInfo.ctrlID;
+                        sendInfo.serverIP = 0x7F000001;
+                        sendInfo.serverPort = (UInt32)IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath);
+                        sendInfo.filePath = playInfo.filePath;
+                        if (Settings.Instance.NwTvModeUDP == true)
+                        {
+                            sendInfo.udpSend = 1;
+                        }
+                        if (Settings.Instance.NwTvModeTCP == true)
+                        {
+                            sendInfo.tcpSend = 1;
+                        }
+                        if (tvTestCmd.SendViewSetStreamingInfo(sendInfo) != 1)
+                        {
+                            System.Threading.Thread.Sleep(5 * 1000);
+                            tvTestCmd.SendViewSetStreamingInfo(sendInfo);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message);
+                    }
+                }
+                else if (err == 205)
+                {
+                    MessageBox.Show("サーバーに接続できませんでした");
+                }
+                else
+                {
+                    MessageBox.Show("まだ録画が開始されていません");
+                }
+            }
+        }
+        // 外部プロセスのウィンドウを起動する
+        public static void WakeupWindow(IntPtr hWnd)
+        {
+            // メイン・ウィンドウが最小化されていれば元に戻す
+            if (IsIconic(hWnd))
+            {
+                ShowWindowAsync(hWnd, SW_RESTORE);
+            }
+
+            // メイン・ウィンドウを最前面に表示する
+            SetForegroundWindow(hWnd);
+        }
+        // 外部プロセスのメイン・ウィンドウを起動するためのWin32 API
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+        [DllImport("user32.dll")]
+        private static extern bool IsIconic(IntPtr hWnd);
+        // ShowWindowAsync関数のパラメータに渡す定義値
+        private const int SW_RESTORE = 9;  // 画面を元の大きさに戻す
     }
 
     public class ReserveItem

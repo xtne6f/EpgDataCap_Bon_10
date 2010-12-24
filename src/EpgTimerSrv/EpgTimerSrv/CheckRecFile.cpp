@@ -29,11 +29,28 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 	}
 
 	map<wstring, ULONGLONG> checkMap;
+	map<wstring, MOUNT_PATH_INFO> mountMap;
 	for( size_t i=0; i<this->chkFolder.size(); i++ ){
 		wstring folder = this->chkFolder[i];
 		transform(folder.begin(), folder.end(), folder.begin(), toupper);
 		ChkFolderPath(folder);
-		checkMap.insert(pair<wstring, ULONGLONG>(folder, 0)).second;
+		checkMap.insert(pair<wstring, ULONGLONG>(folder, 0));
+
+		wstring mountPath = L"";
+		GetChkDrivePath(folder, mountPath);
+		transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+		ChkFolderPath(mountPath);
+
+		map<wstring, MOUNT_PATH_INFO>::iterator itr;
+		itr = mountMap.find(mountPath);
+		if( itr != mountMap.end() ){
+			itr->second.folderPath.push_back(folder);
+		}else{
+			MOUNT_PATH_INFO item;
+			item.totalSize = 0;
+			item.folderPath.push_back(folder);
+			mountMap.insert(pair<wstring, MOUNT_PATH_INFO>(mountPath, item));
+		}
 	}
 
 	LONGLONG now = GetNowI64Time();
@@ -54,17 +71,60 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 			continue;
 		}
 		if( data.recSetting.recFolderList.size() > 0 ){
-			chkFolder = data.recSetting.recFolderList[0].recFolder;
-		}
-		transform(chkFolder.begin(), chkFolder.end(), chkFolder.begin(), toupper);
-		ChkFolderPath(chkFolder);
+			//複数指定あり
+			for( size_t i=0; i< data.recSetting.recFolderList.size(); i++ ){
+				chkFolder = data.recSetting.recFolderList[i].recFolder;
 
-		map<wstring, ULONGLONG>::iterator itr;
-		itr = checkMap.find(chkFolder);
-		if( itr != checkMap.end() ){
-			DWORD bitrate = 0;
-			_GetBitrate(data.originalNetworkID, data.transportStreamID, data.serviceID, &bitrate);
-			itr->second += ((ULONGLONG)(bitrate/8)*1000) * data.durationSecond;
+				transform(chkFolder.begin(), chkFolder.end(), chkFolder.begin(), toupper);
+				ChkFolderPath(chkFolder);
+
+				map<wstring, ULONGLONG>::iterator itr;
+				itr = checkMap.find(chkFolder);
+				if( itr != checkMap.end() ){
+					DWORD bitrate = 0;
+					_GetBitrate(data.originalNetworkID, data.transportStreamID, data.serviceID, &bitrate);
+					itr->second += ((ULONGLONG)(bitrate/8)*1000) * data.durationSecond;
+				}
+
+				wstring mountPath = L"";
+				GetChkDrivePath(chkFolder, mountPath);
+				transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+				ChkFolderPath(mountPath);
+
+				map<wstring, MOUNT_PATH_INFO>::iterator itrMount;
+				itrMount = mountMap.find(mountPath);
+				if( itrMount != mountMap.end() ){
+					DWORD bitrate = 0;
+					_GetBitrate(data.originalNetworkID, data.transportStreamID, data.serviceID, &bitrate);
+					itrMount->second.totalSize += ((ULONGLONG)(bitrate/8)*1000) * data.durationSecond;
+				}
+			}
+		}else{
+			//デフォルト
+			transform(chkFolder.begin(), chkFolder.end(), chkFolder.begin(), toupper);
+			ChkFolderPath(chkFolder);
+
+			map<wstring, ULONGLONG>::iterator itr;
+			itr = checkMap.find(chkFolder);
+			if( itr != checkMap.end() ){
+				DWORD bitrate = 0;
+				_GetBitrate(data.originalNetworkID, data.transportStreamID, data.serviceID, &bitrate);
+				itr->second += ((ULONGLONG)(bitrate/8)*1000) * data.durationSecond;
+			}
+
+			wstring mountPath = L"";
+			GetChkDrivePath(chkFolder, mountPath);
+			transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+			ChkFolderPath(mountPath);
+
+			map<wstring, MOUNT_PATH_INFO>::iterator itrMount;
+			itrMount = mountMap.find(mountPath);
+			if( itrMount != mountMap.end() ){
+				DWORD bitrate = 0;
+				_GetBitrate(data.originalNetworkID, data.transportStreamID, data.serviceID, &bitrate);
+				itrMount->second.totalSize += ((ULONGLONG)(bitrate/8)*1000) * data.durationSecond;
+			}
+
 		}
 	}
 
@@ -82,17 +142,17 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 				map<LONGLONG, TS_FILE_INFO> tsFileList;
 				FindTsFileList(itr->first, &tsFileList);
 				while( free < itr->second ){
-					map<LONGLONG, TS_FILE_INFO>::iterator itr;
-					itr = tsFileList.begin();
-					if( itr != tsFileList.end() ){
-						DeleteFile( itr->second.filePath.c_str() );
+					map<LONGLONG, TS_FILE_INFO>::iterator itrTS;
+					itrTS = tsFileList.begin();
+					if( itrTS != tsFileList.end() ){
+						DeleteFile( itrTS->second.filePath.c_str() );
 
-						_OutputDebugString(L"★Auto Delete : %s", itr->second.filePath.c_str());
+						_OutputDebugString(L"★Auto Delete : %s", itrTS->second.filePath.c_str());
 						for( size_t i=0 ; i<this->delExt.size(); i++ ){
 							wstring delFile = L"";
 							wstring delFileName = L"";
-							GetFileFolder(itr->second.filePath, delFile);
-							GetFileTitle(itr->second.filePath, delFileName);
+							GetFileFolder(itrTS->second.filePath, delFile);
+							GetFileTitle(itrTS->second.filePath, delFileName);
 							delFile += L"\\";
 							delFile += delFileName;
 							delFile += this->delExt[i];
@@ -101,8 +161,54 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 							_OutputDebugString(L"★Auto Delete : %s", delFile.c_str());
 						}
 
-						free += itr->second.fileSize;
-						tsFileList.erase(itr);
+						free += itrTS->second.fileSize;
+						tsFileList.erase(itrTS);
+					}else{
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	//ドライブレベルでのチェック
+	map<wstring, MOUNT_PATH_INFO>::iterator itrMount;
+	for( itrMount = mountMap.begin(); itrMount != mountMap.end(); itrMount++ ){
+		if( itrMount->second.totalSize > 0 ){
+			ULARGE_INTEGER freeBytesAvailable;
+			ULARGE_INTEGER totalNumberOfBytes;
+			ULARGE_INTEGER totalNumberOfFreeBytes;
+			if( _GetDiskFreeSpaceEx(itrMount->first.c_str(), &freeBytesAvailable, &totalNumberOfBytes, &totalNumberOfFreeBytes ) == TRUE ){
+				ULONGLONG free = freeBytesAvailable.QuadPart;
+				if( free > itrMount->second.totalSize ){
+					continue;
+				}
+				map<LONGLONG, TS_FILE_INFO> tsFileList;
+				for( size_t i=0; i<itrMount->second.folderPath.size(); i++ ){
+					FindTsFileList(itrMount->second.folderPath[i], &tsFileList);
+				}
+				while( free < itrMount->second.totalSize ){
+					map<LONGLONG, TS_FILE_INFO>::iterator itrTS;
+					itrTS = tsFileList.begin();
+					if( itrTS != tsFileList.end() ){
+						DeleteFile( itrTS->second.filePath.c_str() );
+
+						_OutputDebugString(L"★Auto Delete2 : %s", itrTS->second.filePath.c_str());
+						for( size_t i=0 ; i<this->delExt.size(); i++ ){
+							wstring delFile = L"";
+							wstring delFileName = L"";
+							GetFileFolder(itrTS->second.filePath, delFile);
+							GetFileTitle(itrTS->second.filePath, delFileName);
+							delFile += L"\\";
+							delFile += delFileName;
+							delFile += this->delExt[i];
+
+							DeleteFile( delFile.c_str() );
+							_OutputDebugString(L"★Auto Delete2 : %s", delFile.c_str());
+						}
+
+						free += itrTS->second.fileSize;
+						tsFileList.erase(itrTS);
 					}else{
 						break;
 					}
@@ -146,17 +252,17 @@ void CCheckRecFile::CheckFreeSpaceLive(RESERVE_DATA* reserve, wstring recFolder)
 			map<LONGLONG, TS_FILE_INFO> tsFileList;
 			FindTsFileList(itr->first, &tsFileList);
 			while( free < itr->second ){
-				map<LONGLONG, TS_FILE_INFO>::iterator itr;
-				itr = tsFileList.begin();
-				if( itr != tsFileList.end() ){
-					DeleteFile( itr->second.filePath.c_str() );
+				map<LONGLONG, TS_FILE_INFO>::iterator itrTS;
+				itrTS = tsFileList.begin();
+				if( itrTS != tsFileList.end() ){
+					DeleteFile( itrTS->second.filePath.c_str() );
 
-					_OutputDebugString(L"★Auto Delete : %s", itr->second.filePath.c_str());
+					_OutputDebugString(L"★Auto Delete : %s", itrTS->second.filePath.c_str());
 					for( size_t i=0 ; i<this->delExt.size(); i++ ){
 						wstring delFile = L"";
 						wstring delFileName = L"";
-						GetFileFolder(itr->second.filePath, delFile);
-						GetFileTitle(itr->second.filePath, delFileName);
+						GetFileFolder(itrTS->second.filePath, delFile);
+						GetFileTitle(itrTS->second.filePath, delFileName);
 						delFile += L"\\";
 						delFile += delFileName;
 						delFile += this->delExt[i];
@@ -165,8 +271,8 @@ void CCheckRecFile::CheckFreeSpaceLive(RESERVE_DATA* reserve, wstring recFolder)
 						_OutputDebugString(L"★Auto Delete : %s", delFile.c_str());
 					}
 
-					free += itr->second.fileSize;
-					tsFileList.erase(itr);
+					free += itrTS->second.fileSize;
+					tsFileList.erase(itrTS);
 				}else{
 					break;
 				}

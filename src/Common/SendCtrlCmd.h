@@ -347,6 +347,81 @@ public:
 		DWORD val
 		);
 
+	//ストリーム配信用ファイルを開く
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]開くファイルのサーバー側ファイルパス
+	// resVal			[OUT]制御用CtrlID
+	DWORD SendNwPlayOpen(
+		wstring val,
+		DWORD* resVal
+		);
+
+	//ストリーム配信用ファイルを閉じる
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]制御用CtrlID
+	DWORD SendNwPlayClose(
+		DWORD val
+		);
+
+	//ストリーム配信開始
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]制御用CtrlID
+	DWORD SendNwPlayStart(
+		DWORD val
+		);
+
+	//ストリーム配信停止
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]制御用CtrlID
+	DWORD SendNwPlayStop(
+		DWORD val
+		);
+
+	//ストリーム配信で現在の送信位置と総ファイルサイズを取得する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN/OUT]サイズ情報
+	DWORD SendNwPlayGetPos(
+		NWPLAY_POS_CMD* val
+		);
+
+	//ストリーム配信で送信位置をシークする
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]サイズ情報
+	DWORD SendNwPlaySetPos(
+		NWPLAY_POS_CMD* val
+		);
+
+	//ストリーム配信で送信先を設定する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]サイズ情報
+	DWORD SendNwPlaySetIP(
+		NWPLAY_PLAY_INFO* val
+		);
+
+	//ストリーム配信用ファイルをタイムシフトモードで開く
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]予約ID
+	// resVal			[OUT]ファイルパスとCtrlID
+	DWORD SendNwTimeShiftOpen(
+		DWORD val,
+		NWPLAY_TIMESHIFT_INFO* resVal
+		);
 
 //タイマーGUI（EpgTimer_Bon.exe）用
 
@@ -368,7 +443,7 @@ public:
 	DWORD SendGUIUpdateEpgData(
 		);
 
-	//Viewアプリ（EpgDataCap_Bon.exe）を起動
+//Viewアプリ（EpgDataCap_Bon.exe）を起動
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -545,6 +620,16 @@ public:
 	DWORD SendViewStopRecAll(
 		);
 
+	//ファイル出力したサイズを取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// resVal					[OUT]ファイル出力したサイズ
+	DWORD SendViewGetWriteSize(
+		DWORD ctrlID,
+		__int64* resVal
+		);
+
 	//EPG取得開始
 	//戻り値：
 	// エラーコード
@@ -584,6 +669,14 @@ public:
 	//戻り値：
 	// エラーコード
 	DWORD SendViewExecViewApp(
+		);
+
+//TVTest連携のストリーミング配信専用
+	//ストリーミング配信制御IDの設定
+	//戻り値：
+	// エラーコード
+	DWORD SendViewSetStreamingInfo(
+		TVTEST_STREAMING_INFO* val
 		);
 
 protected:

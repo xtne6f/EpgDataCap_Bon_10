@@ -123,4 +123,6 @@ public:
 	CEdit editStatus;
 	CButton btnPgNext;
 	afx_msg void OnBnClickedCheckNextpg();
+	CButton btnTimeShift;
+	afx_msg void OnBnClickedButtonTimeshift();
 };

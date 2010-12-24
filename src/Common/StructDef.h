@@ -795,6 +795,72 @@ typedef struct _TVTEST_CH_CHG_INFO{
 } TVTEST_CH_CHG_INFO;
 
 
+typedef struct _TVTEST_STREAMING_INFO{
+	BOOL enableMode;
+	DWORD ctrlID;
+	DWORD serverIP;
+	DWORD serverPort;
+	wstring filePath;
+	BOOL udpSend;
+	BOOL tcpSend;
+	BOOL timeShiftMode;
+	//=オペレーターの処理
+	_TVTEST_STREAMING_INFO & operator= (const _TVTEST_STREAMING_INFO & o) {
+		enableMode = o.enableMode;
+		ctrlID = o.ctrlID;
+		serverIP = o.serverIP;
+		serverPort = o.serverPort;
+		filePath = o.filePath;
+		udpSend = o.udpSend;
+		tcpSend = o.tcpSend;
+		timeShiftMode = o.timeShiftMode;
+		return *this;
+	};
+} TVTEST_STREAMING_INFO;
+
+typedef struct _NWPLAY_PLAY_INFO{
+	DWORD ctrlID;
+	DWORD ip;
+	BYTE udp;
+	BYTE tcp;
+	DWORD udpPort;//outで実際の開始ポート
+	DWORD tcpPort;//outで実際の開始ポート
+	//=オペレーターの処理
+	_NWPLAY_PLAY_INFO & operator= (const _NWPLAY_PLAY_INFO & o) {
+		ctrlID = o.ctrlID;
+		ip = o.ip;
+		udp = o.udp;
+		tcp = o.tcp;
+		udpPort = o.udpPort;
+		tcpPort = o.tcpPort;
+		return *this;
+	};
+} NWPLAY_PLAY_INFO;
+
+typedef struct _NWPLAY_POS_CMD{
+	DWORD ctrlID;
+	__int64 currentPos;
+	__int64 totalPos;//CMD2_EPG_SRV_NWPLAY_SET_POS時は無視
+	//=オペレーターの処理
+	_NWPLAY_POS_CMD & operator= (const _NWPLAY_POS_CMD & o) {
+		ctrlID = o.ctrlID;
+		currentPos = o.currentPos;
+		totalPos = o.totalPos;
+		return *this;
+	};
+} NWPLAY_POS_CMD;
+
+typedef struct _NWPLAY_TIMESHIFT_INFO{
+	DWORD ctrlID;
+	wstring filePath;
+	//=オペレーターの処理
+	_NWPLAY_TIMESHIFT_INFO & operator= (const _NWPLAY_TIMESHIFT_INFO & o) {
+		ctrlID = o.ctrlID;
+		filePath = o.filePath;
+		return *this;
+	};
+} NWPLAY_TIMESHIFT_INFO;
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用
 typedef struct _OLD_RESERVE_DATA{

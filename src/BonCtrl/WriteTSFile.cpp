@@ -11,7 +11,7 @@ CWriteTSFile::CWriteTSFile(void)
 
     this->outThread = NULL;
     this->outStopEvent = _CreateEvent(FALSE, FALSE, NULL);
-
+	this->writeTotalSize = 0;
 }
 
 CWriteTSFile::~CWriteTSFile(void)
@@ -105,6 +105,7 @@ BOOL CWriteTSFile::StartSave(
 	}
 
 	if( this->outThread == NULL || this->fileList.size() == 0 ){
+		this->writeTotalSize = 0;
 		this->subRecFlag = FALSE;
 		this->saveFileName = fileName;
 		this->overWriteFlag = overWriteFlag;
@@ -349,6 +350,7 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 					DWORD write = 0;
 					if( sys->fileList[i]->writeUtil->AddTSBuff( data->data, data->size, &write) == FALSE ){
 						//空きがなくなった
+						sys->writeTotalSize = -1;
 						sys->fileList[i]->writeUtil->StopSave();
 
 						if( sys->fileList[i]->freeChk == TRUE ){
@@ -372,6 +374,8 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 								}
 							}
 						}
+					}else{
+						sys->writeTotalSize += write;
 					}
 				}
 			}
@@ -402,3 +406,17 @@ void CWriteTSFile::GetSaveFilePath(
 	UnLock();
 }
 
+//録画中のファイルの出力サイズを取得する
+//引数：
+// writeSize			[OUT]保存ファイル名
+void CWriteTSFile::GetRecWriteSize(
+	__int64* writeSize
+	)
+{
+	if( Lock() == FALSE ) return ;
+
+	if( writeSize != NULL ){
+		*writeSize = this->writeTotalSize;
+	}
+	UnLock();
+}

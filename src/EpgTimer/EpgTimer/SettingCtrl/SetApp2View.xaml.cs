@@ -127,36 +127,7 @@ namespace EpgTimer
             {
             }
 
-            recSet.RecMode = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "RecMode", 1, SettingPath.TimerSrvIniPath);
-            recSet.Priority = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "Priority", 2, SettingPath.TimerSrvIniPath);
-            recSet.TuijyuuFlag = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "TuijyuuFlag", 1, SettingPath.TimerSrvIniPath);
-            recSet.ServiceMode = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "ServiceMode", 0, SettingPath.TimerSrvIniPath);
-            recSet.PittariFlag = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "PittariFlag", 0, SettingPath.TimerSrvIniPath);
-
-            buff.Clear();
-            IniFileHandler.GetPrivateProfileString("REC_DEF", "BatFilePath", "", buff, 512, SettingPath.TimerSrvIniPath);
-            recSet.BatFilePath = buff.ToString();
-
-            count = IniFileHandler.GetPrivateProfileInt("REC_DEF_FOLDER", "Count", 0, SettingPath.TimerSrvIniPath);
-            for (int i = 0; i < count; i++)
-            {
-                RecFileSetInfo folderInfo = new RecFileSetInfo();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString("REC_DEF_FOLDER", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.RecFolder = buff.ToString();
-                IniFileHandler.GetPrivateProfileString("REC_DEF_FOLDER", "WritePlugIn" + i.ToString(), "Write_Default.dll", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.WritePlugIn = buff.ToString();
-                IniFileHandler.GetPrivateProfileString("REC_DEF_FOLDER", "RecNamePlugIn" + i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.RecNamePlugIn = buff.ToString();
-
-                recSet.RecFolderList.Add(folderInfo);
-            }
-
-            recSet.SuspendMode = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "SuspendMode", 0, SettingPath.TimerSrvIniPath);
-            recSet.RebootFlag = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "RebootFlag", 0, SettingPath.TimerSrvIniPath);
-            recSet.UseMargineFlag = (Byte)IniFileHandler.GetPrivateProfileInt("REC_DEF", "UseMargineFlag", 0, SettingPath.TimerSrvIniPath);
-            recSet.StartMargine = IniFileHandler.GetPrivateProfileInt("REC_DEF", "StartMargine", 0, SettingPath.TimerSrvIniPath);
-            recSet.EndMargine = IniFileHandler.GetPrivateProfileInt("REC_DEF", "EndMargine", 0, SettingPath.TimerSrvIniPath);
+            Settings.GetDefRecSetting(0, ref recSet);
 
             if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 1)
             {
@@ -290,7 +261,6 @@ namespace EpgTimer
             IniFileHandler.WritePrivateProfileString("REC_DEF", "ServiceMode", recSet.ServiceMode.ToString(), SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("REC_DEF", "PittariFlag", recSet.PittariFlag.ToString(), SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("REC_DEF", "BatFilePath", recSet.BatFilePath, SettingPath.TimerSrvIniPath);
-            IniFileHandler.WritePrivateProfileString("REC_DEF", "RecMode", recSet.RecMode.ToString(), SettingPath.TimerSrvIniPath);
 
             IniFileHandler.WritePrivateProfileString("REC_DEF_FOLDER", "Count", recSet.RecFolderList.Count.ToString(), SettingPath.TimerSrvIniPath);
             for (int i = 0; i < recSet.RecFolderList.Count; i++)
@@ -305,6 +275,9 @@ namespace EpgTimer
             IniFileHandler.WritePrivateProfileString("REC_DEF", "UseMargineFlag", recSet.UseMargineFlag.ToString(), SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("REC_DEF", "StartMargine", recSet.StartMargine.ToString(), SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("REC_DEF", "EndMargine", recSet.EndMargine.ToString(), SettingPath.TimerSrvIniPath);
+            IniFileHandler.WritePrivateProfileString("REC_DEF", "ContinueRec", recSet.ContinueRecFlag.ToString(), SettingPath.TimerSrvIniPath);
+            IniFileHandler.WritePrivateProfileString("REC_DEF", "PartialRec", recSet.PartialRecFlag.ToString(), SettingPath.TimerSrvIniPath);
+            IniFileHandler.WritePrivateProfileString("REC_DEF", "TunerID", recSet.TunerID.ToString(), SettingPath.TimerSrvIniPath);
 
             Settings.Instance.SearchKeyRegExp = searchSet.RegExp;
             Settings.Instance.SearchKeyAimaiFlag = searchSet.AimaiFlag;

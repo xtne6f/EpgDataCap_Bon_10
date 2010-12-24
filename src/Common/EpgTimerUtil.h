@@ -27,4 +27,7 @@ BOOL _GetBitrate(WORD ONID, WORD TSID, WORD SID, DWORD* bitrate);
 //EPG情報をTextに変換
 void _ConvertEpgInfoText(EPGDB_EVENT_INFO* info, wstring& text);
 
+//フォルダパスから実際のドライブパスを取得
+void GetChkDrivePath(wstring directoryPath, wstring& mountPath);
+
 #endif

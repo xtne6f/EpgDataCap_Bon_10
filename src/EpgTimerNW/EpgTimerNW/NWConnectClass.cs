@@ -62,7 +62,9 @@ namespace EpgTimerNW
 
         private bool connectFlag;
         private UInt32 serverPort;
-        private TcpListener server = null; 
+        private TcpListener server = null;
+
+        private String connectedIP;
 
         public CtrlCmdUtil cmd;
 
@@ -74,6 +76,13 @@ namespace EpgTimerNW
             }
         }
 
+        public String ConnectedIP
+        {
+            get
+            {
+                return connectedIP;
+            }
+        }
 
         private static NWConnect _instance;
         public static NWConnect Instance
@@ -137,6 +146,7 @@ namespace EpgTimerNW
             else
             {
                 connectFlag = true;
+                connectedIP = srvIP;
                 return true;
             }
         }

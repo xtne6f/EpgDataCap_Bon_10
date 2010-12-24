@@ -1101,5 +1101,67 @@ namespace Def {
 			ComponentType = componentType;
 		};
 	};
+
+	/// <summary>
+	/// ストリーミング配信制御IDの情報
+	/// </summary>
+	public ref class TVTestStreamingInfo{
+	public:
+		/// <summary>
+		/// 有効/無効
+		/// </summary>
+		property UInt32 enableMode;
+		/// <summary>
+		/// 制御ID
+		/// </summary>
+		property UInt32 ctrlID;
+		/// <summary>
+		/// サーバーIP
+		/// </summary>
+		property UInt32 serverIP;
+		/// <summary>
+		/// サーバー待ち受けポート
+		/// </summary>
+		property UInt32 serverPort;
+		/// <summary>
+		/// 再生ファイルパス
+		/// </summary>
+		property String^ filePath;
+		/// <summary>
+		/// UDP送信
+		/// </summary>
+		property UInt32 udpSend;
+		/// <summary>
+		/// TCP送信
+		/// </summary>
+		property UInt32 tcpSend;
+		/// <summary>
+		/// TCP送信
+		/// </summary>
+		property UInt32 timeShiftMode;
+	public:
+		TVTestStreamingInfo(void){
+			filePath = gcnew String("");
+		};
+	};
+
+	/// <summary>
+	/// ストリーミング配信制御IDの情報
+	/// </summary>
+	public ref class NWPlayTimeShiftInfo{
+	public:
+		/// <summary>
+		/// 制御ID
+		/// </summary>
+		property UInt32 ctrlID;
+		/// <summary>
+		/// 再生ファイルパス
+		/// </summary>
+		property String^ filePath;
+	public:
+		NWPlayTimeShiftInfo(void){
+			filePath = gcnew String("");
+		};
+	};
 }
 }

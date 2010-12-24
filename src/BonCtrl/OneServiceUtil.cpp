@@ -545,3 +545,15 @@ void COneServiceUtil::SetSignalLevel(
 {
 	this->dropCount.SetSignal(signalLv);
 }
+
+//録画中のファイルの出力サイズを取得する
+//引数：
+// writeSize			[OUT]保存ファイル名
+void COneServiceUtil::GetRecWriteSize(
+	__int64* writeSize
+	)
+{
+	if( this->writeFile != NULL ){
+		this->writeFile->GetRecWriteSize(writeSize);
+	}
+}

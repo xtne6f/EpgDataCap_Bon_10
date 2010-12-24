@@ -1521,6 +1521,21 @@ void CBonCtrl::SaveErrCount(
 	UnLock();
 }
 
+//録画中のファイルの出力サイズを取得する
+//引数：
+// id					[IN]制御識別ID
+// writeSize			[OUT]保存ファイル名
+void CBonCtrl::GetRecWriteSize(
+	DWORD id,
+	__int64* writeSize
+	)
+{
+	if( Lock() == FALSE ) return ;
+	this->tsOut.GetRecWriteSize(id, writeSize);
+
+	UnLock();
+}
+
 //バックグラウンドでのEPG取得設定
 //引数：
 // enableLive	[IN]視聴中に取得する

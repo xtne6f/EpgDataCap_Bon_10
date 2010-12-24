@@ -69,7 +69,8 @@ public:
 	//引数：
 	// reserveList		[IN]予約情報
 	BOOL AddReserveData(
-		vector<RESERVE_DATA>* reserveList
+		vector<RESERVE_DATA>* reserveList,
+		BOOL tweet = FALSE
 		);
 
 	//予約情報を変更する
@@ -164,7 +165,17 @@ public:
 		);
 
 	void SendTweet(
-		wstring text
+		SEND_TWEET_MODE mode,
+		void* param1,
+		void* param2,
+		void* param3
+		);
+
+	BOOL GetRecFilePath(
+		DWORD reserveID,
+		wstring& filePath,
+		DWORD* ctrlID,
+		DWORD* processID
 		);
 
 protected:
@@ -224,6 +235,7 @@ protected:
 	int defEndMargine;
 
 	BOOL backPriorityFlag;
+	BOOL sameChPriorityFlag;
 
 	map<DWORD, CTunerBankCtrl*> tunerBankMap; //キー bonID<<16 | tunerID
 
@@ -281,7 +293,7 @@ protected:
 	void NotifyUnLock(LPCWSTR log = NULL);
 
 
-	BOOL _AddReserveData(RESERVE_DATA* reserve);
+	BOOL _AddReserveData(RESERVE_DATA* reserve, BOOL tweet = FALSE);
 	BOOL _ChgReserveData(RESERVE_DATA* reserve, BOOL chgTime);
 
 	void _ReloadBankMap();
@@ -291,6 +303,7 @@ protected:
 	DWORD ReChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
 	DWORD ChkInsertNGStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
 	BOOL ChangeNGReserve(BANK_WORK_INFO* inItem);
+	DWORD ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
 
 	void _SendNotifyUpdate();
 	static UINT WINAPI SendNotifyThread(LPVOID param);
@@ -324,7 +337,10 @@ protected:
 	BOOL IsEpgCap();
 
 	void _SendTweet(
-		wstring text
+		SEND_TWEET_MODE mode,
+		void* param1,
+		void* param2,
+		void* param3
 		);
 };
 

@@ -744,6 +744,41 @@ void CEpgDataCap_BonMain::StopServer()
 	this->pipeServer.StopServer();
 }
 
+void CEpgDataCap_BonMain::StartTimeShift()
+{
+	wstring saveFile = L"";
+	DWORD ctrlID = 0;
+	if( this->recCtrlID != 0 ){
+		BOOL subRec = FALSE;
+		this->bonCtrl.GetSaveFilePath(this->recCtrlID, &saveFile, &subRec);
+		ctrlID = this->recCtrlID;
+	}else if(this->bonCtrl.IsRec() == TRUE){
+		map<DWORD,DWORD>::iterator itr;
+		itr = this->ctrlMap.begin();
+		BOOL subRec = FALSE;
+		this->bonCtrl.GetSaveFilePath(itr->second, &saveFile, &subRec);
+		ctrlID = itr->second;
+	}
+	if( saveFile.size() > 0 ){
+		wstring appPath = L"";
+		GetModuleFolderPath(appPath);
+		appPath += L"\\FilePlay.exe";
+
+		PROCESS_INFORMATION pi;
+		STARTUPINFO si;
+		ZeroMemory(&si,sizeof(si));
+		si.cb=sizeof(si);
+
+		CString strOpen;
+		strOpen.Format(L"\"%s\" \"%s\" -pid %d -ctrlid %d", appPath.c_str(), saveFile.c_str(), GetCurrentProcessId(), ctrlID);
+
+		CreateProcess( NULL, strOpen.GetBuffer(0), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi );
+
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+	}
+}
+
 int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)
 {
 	CEpgDataCap_BonMain* sys = (CEpgDataCap_BonMain*)param;
@@ -1084,6 +1119,20 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 	case CMD2_VIEW_APP_EXEC_VIEW_APP:
 		{
 			sys->ViewAppOpen();
+		}
+		break;
+	case CMD2_VIEW_APP_REC_WRITE_SIZE:
+		{
+			DWORD val = 0;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				__int64 writeSize = -1;
+				sys->bonCtrl.GetRecWriteSize(val, &writeSize);
+				resParam->dataSize = GetVALUESize(writeSize);
+				resParam->data = new BYTE[resParam->dataSize];
+				if( WriteVALUE(writeSize, resParam->data, resParam->dataSize, NULL) == TRUE ){
+					resParam->param = CMD_SUCCESS;
+				}
+			}
 		}
 		break;
 	default:

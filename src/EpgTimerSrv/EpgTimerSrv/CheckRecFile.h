@@ -25,6 +25,11 @@ protected:
 		wstring filePath;
 	}TS_FILE_INFO;
 
+	typedef struct _MOUNT_PATH_INFO{
+		LONGLONG totalSize;
+		vector<wstring> folderPath;
+	}MOUNT_PATH_INFO;
+
 protected:
 	void FindTsFileList(wstring findFolder, map<LONGLONG, TS_FILE_INFO>* findList);
 };

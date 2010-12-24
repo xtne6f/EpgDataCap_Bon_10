@@ -7,6 +7,8 @@
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
 
+extern HINSTANCE g_hinstDLL;
+
 // プラグインクラスのインスタンスを生成する
 TVTest::CTVTestPlugin *CreatePluginClass()
 {
@@ -16,8 +18,22 @@ TVTest::CTVTestPlugin *CreatePluginClass()
 
 CEpgTimerPlugIn::CEpgTimerPlugIn()
 {
+	this->nwMode = FALSE;
+	this->ctrlDlg = NULL;
+	this->fullScreen = FALSE;
+	this->showNormal = TRUE;
 }
 
+CEpgTimerPlugIn::~CEpgTimerPlugIn()
+{
+	if( this->nwMode == TRUE ){
+		this->cmd.SendNwPlayClose(this->nwModeInfo.ctrlID);
+	}
+	if( this->ctrlDlg != NULL ){
+		this->ctrlDlg->CloseStreamCtrlDialog();
+		SAFE_DELETE(this->ctrlDlg);
+	}
+}
 
 // プラグインの情報を返す
 bool CEpgTimerPlugIn::GetPluginInfo(TVTest::PluginInfo *pInfo)
@@ -37,21 +53,55 @@ bool CEpgTimerPlugIn::Initialize()
 	// イベントコールバック関数を登録
 	m_pApp->SetEventCallback(EventCallback, this);
 
+	if( this->ctrlDlg == NULL ){
+		this->ctrlDlg = new CStreamCtrlDlg;
+		this->ctrlDlg->CreateStreamCtrlDialog(g_hinstDLL, this->m_pApp->GetAppWindow());
+	}
+
 	return true;
 }
 
-void CEpgTimerPlugIn::InitializePlugin()
+void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 {
-	wstring pipeName = L"";
-	wstring eventName = L"";
+	this->showNormal = TRUE;
 
-	Format(pipeName, L"%s%d", CMD2_TVTEST_CTRL_PIPE, GetCurrentProcessId());
-	Format(eventName, L"%s%d", CMD2_TVTEST_CTRL_WAIT_CONNECT, GetCurrentProcessId());
+	if( enable == TRUE ){
+		OutputDebugString(L"EnablePlugin");
+		if(this->m_pApp->SetWindowMessageCallback(WindowMsgeCallback, this)==false){
+			OutputDebugString(L"●TVTest Version Err::SetWindowMessageCallback");
+		}
 
-	OutputDebugString(pipeName.c_str());
-	OutputDebugString(eventName.c_str());
-	this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), CtrlCmdCallback, this, 0, GetCurrentProcessId());
+		wstring pipeName = L"";
+		wstring eventName = L"";
 
+		Format(pipeName, L"%s%d", CMD2_TVTEST_CTRL_PIPE, GetCurrentProcessId());
+		Format(eventName, L"%s%d", CMD2_TVTEST_CTRL_WAIT_CONNECT, GetCurrentProcessId());
+
+		OutputDebugString(pipeName.c_str());
+		OutputDebugString(eventName.c_str());
+		this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), CtrlCmdCallback, this, 0, GetCurrentProcessId());
+
+		if( this->nwMode == TRUE ){
+			this->ctrlDlg->SetCtrlCmd(&this->cmd, this->nwModeInfo.ctrlID, this->nwModeInfo.udpSend, this->nwModeInfo.tcpSend, FALSE, this->nwModeInfo.timeShiftMode);
+		}
+		if( this->m_pApp->GetFullscreen() == true ){
+			this->fullScreen = TRUE;
+			if( this->ctrlDlg != NULL ){
+				this->ctrlDlg->StartFullScreenMouseChk();
+			}
+		}else{
+			this->fullScreen = FALSE;
+		}
+		this->ResetStreamingCtrlView();
+	}else{
+		this->m_pApp->SetWindowMessageCallback(NULL, NULL);
+		this->pipeServer.StopServer();
+
+		if( this->ctrlDlg != NULL ){
+			this->ctrlDlg->ShowCtrlDlg(SW_HIDE);
+			this->ctrlDlg->StopTimer();
+		}
+	}
 	return ;
 }
 
@@ -59,6 +109,11 @@ void CEpgTimerPlugIn::InitializePlugin()
 bool CEpgTimerPlugIn::Finalize()
 {
 	this->pipeServer.StopServer();
+
+	if( this->ctrlDlg != NULL ){
+		this->ctrlDlg->CloseStreamCtrlDialog();
+		SAFE_DELETE(this->ctrlDlg);
+	}
 	return true;
 }
 
@@ -70,11 +125,25 @@ LRESULT CALLBACK CEpgTimerPlugIn::EventCallback(UINT Event,LPARAM lParam1,LPARAM
 	switch (Event) {
 	case TVTest::EVENT_PLUGINENABLE:
 		if (lParam1!=0) {
-			pThis->InitializePlugin();
+			pThis->EnablePlugin(TRUE);
 			return TRUE;
 		}else{
-			pThis->pipeServer.StopServer();
+			pThis->EnablePlugin(FALSE);
 			return TRUE;
+		}
+		break;
+	case TVTest::EVENT_FULLSCREENCHANGE:
+		if (lParam1!=0) {
+			pThis->fullScreen = TRUE;
+			if( pThis->ctrlDlg != NULL ){
+				pThis->ctrlDlg->StartFullScreenMouseChk();
+			}
+		}else{
+			pThis->fullScreen = FALSE;
+			if( pThis->ctrlDlg != NULL ){
+				pThis->ctrlDlg->StopFullScreenMouseChk();
+				pThis->ResetStreamingCtrlView();
+			}
 		}
 		break;
 	default:
@@ -155,7 +224,49 @@ int CALLBACK CEpgTimerPlugIn::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam,
 	case CMD2_VIEW_APP_CLOSE:
 		OutputDebugString(L"TvTest:CMD2_VIEW_APP_CLOSE");
 		{
+			if( sys->nwMode == TRUE ){
+				sys->cmd.SendNwPlayClose(sys->nwModeInfo.ctrlID);
+			}
 			sys->m_pApp->Close(1);
+		}
+		break;
+	case CMD2_VIEW_APP_TT_SET_CTRL:
+		OutputDebugString(L"TvTest:CMD2_VIEW_APP_TT_SET_CTRL");
+		{
+			if( sys->nwMode == TRUE ){
+				sys->cmd.SendNwPlayClose(sys->nwModeInfo.ctrlID);
+				if( sys->ctrlDlg != NULL ){
+					sys->ctrlDlg->StopTimer();
+				}
+			}
+			if( ReadVALUE(&sys->nwModeInfo, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				resParam->param = CMD_SUCCESS;
+
+				if( sys->nwModeInfo.enableMode == TRUE ){
+					sys->nwMode = TRUE;
+
+					wstring ip = L"";
+					Format(ip, L"%d.%d.%d.%d",
+						(sys->nwModeInfo.serverIP&0xFF000000)>>24,
+						(sys->nwModeInfo.serverIP&0x00FF0000)>>16,
+						(sys->nwModeInfo.serverIP&0x0000FF00)>>8,
+						(sys->nwModeInfo.serverIP&0x000000FF));
+
+					sys->cmd.SetSendMode(TRUE);
+					sys->cmd.SetNWSetting(ip,sys->nwModeInfo.serverPort);
+					sys->cmd.SetConnectTimeOut(15*1000);
+
+					if( sys->ctrlDlg != NULL ){
+						sys->ctrlDlg->SetCtrlCmd(&sys->cmd, sys->nwModeInfo.ctrlID, sys->nwModeInfo.udpSend, sys->nwModeInfo.tcpSend, TRUE, sys->nwModeInfo.timeShiftMode);
+					}
+					sys->ResetStreamingCtrlView();
+				}else{
+					sys->nwMode = FALSE;
+					if( sys->ctrlDlg != NULL ){
+						sys->ctrlDlg->ShowCtrlDlg(SW_HIDE);
+					}
+				}
+			}
 		}
 		break;
 	default:
@@ -167,4 +278,74 @@ int CALLBACK CEpgTimerPlugIn::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam,
 	return 0;
 }
 
+void CEpgTimerPlugIn::ResetStreamingCtrlView()
+{
+	if( this->ctrlDlg == NULL ){
+		return;
+	}
+	WINDOWPLACEMENT info;
+	info.length = sizeof(WINDOWPLACEMENT);
+
+	if( GetWindowPlacement(this->m_pApp->GetAppWindow(), &info) == FALSE ){
+		_OutputDebugString(L"GetWindowPlacement err");
+		return;
+	}
+	if( this->fullScreen == FALSE ){
+		if( info.showCmd == SW_SHOWNORMAL ){
+			RECT rc;
+			GetWindowRect(this->m_pApp->GetAppWindow(), &rc);
+
+			int x = rc.left;
+			int y = rc.bottom+3;
+			int cx = rc.right - rc.left;
+			int cy = 65;
+
+			this->ctrlDlg->ShowCtrlDlg(SW_SHOW);
+			SetWindowPos(this->ctrlDlg->GetDlgHWND(), this->m_pApp->GetAppWindow(), x, y, cx, cy, SWP_SHOWWINDOW);
+			this->showNormal = TRUE;
+		}else if( info.showCmd == SW_SHOWMAXIMIZED ){
+			RECT rc;
+			GetWindowRect(this->m_pApp->GetAppWindow(), &rc);
+
+			POINT pos;
+			GetCursorPos(&pos);
+
+			if( pos.y > rc.bottom - 65 ){
+				int x = rc.left;
+				int y = rc.bottom-65;
+				int cx = rc.right - rc.left;
+				int cy = 65;
+
+				this->ctrlDlg->ShowCtrlDlg(SW_SHOW);
+				SetWindowPos(this->ctrlDlg->GetDlgHWND(), HWND_TOPMOST, x, y, cx, cy, SWP_SHOWWINDOW);
+			}else{
+				this->ctrlDlg->ShowCtrlDlg(SW_HIDE);
+			}
+			this->showNormal = FALSE;
+		}
+	}
+}
+
+BOOL CALLBACK CEpgTimerPlugIn::WindowMsgeCallback(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam,LRESULT *pResult,void *pUserData)
+{
+	CEpgTimerPlugIn* sys = (CEpgTimerPlugIn*)pUserData;
+	if( sys->nwMode == TRUE ){
+		switch(uMsg){
+		case WM_SIZE:
+			sys->ResetStreamingCtrlView();
+			break;
+		case WM_MOVE:
+			sys->ResetStreamingCtrlView();
+			break;
+		case WM_MOUSEMOVE:
+			if( sys->showNormal == FALSE ){
+				sys->ResetStreamingCtrlView();
+			}
+			break;
+		default:
+			break;
+		}
+	}
+	return FALSE;
+}
 

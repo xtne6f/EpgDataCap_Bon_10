@@ -14,3 +14,7 @@
 
 
 // TODO: プログラムに必要な追加ヘッダーをここで参照してください。
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#pragma comment(lib, "wsock32.lib")
+#pragma comment(lib, "Ws2_32.lib")

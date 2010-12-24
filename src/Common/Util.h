@@ -44,7 +44,6 @@ BOOL _GetDiskFreeSpaceEx(
   PULARGE_INTEGER lpTotalNumberOfBytes,    // ディスク全体のバイト数
   PULARGE_INTEGER lpTotalNumberOfFreeBytes // ディスク全体の空きバイト数
 );
-
 void _OutputDebugString(const TCHAR *pOutputString, ...);
 
 

@@ -77,6 +77,7 @@ void CEpgDataCap_BonDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_PG_INFO, pgInfo);
 	DDX_Control(pDX, IDC_EDIT_STATUS, editStatus);
 	DDX_Control(pDX, IDC_CHECK_NEXTPG, btnPgNext);
+	DDX_Control(pDX, IDC_BUTTON_TIMESHIFT, btnTimeShift);
 }
 
 BEGIN_MESSAGE_MAP(CEpgDataCap_BonDlg, CDialogEx)
@@ -101,6 +102,7 @@ BEGIN_MESSAGE_MAP(CEpgDataCap_BonDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CHECK_TCP, &CEpgDataCap_BonDlg::OnBnClickedCheckTcp)
 	ON_BN_CLICKED(IDC_CHECK_REC_SET, &CEpgDataCap_BonDlg::OnBnClickedCheckRecSet)
 	ON_BN_CLICKED(IDC_CHECK_NEXTPG, &CEpgDataCap_BonDlg::OnBnClickedCheckNextpg)
+	ON_BN_CLICKED(IDC_BUTTON_TIMESHIFT, &CEpgDataCap_BonDlg::OnBnClickedButtonTimeshift)
 END_MESSAGE_MAP()
 
 
@@ -587,7 +589,7 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 	switch(message){
 	case WM_RESERVE_REC_START:
 		{
-			BtnUpdate(GUI_CANCEL_ONLY);
+			BtnUpdate(GUI_OTHER_CTRL);
 			if( this->log.Find(L"予約録画中") < 0 ){
 				this->log = L"予約録画中\r\n";
 				SetDlgItemText(IDC_EDIT_LOG, this->log);
@@ -812,6 +814,7 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			this->btnView.EnableWindow(TRUE);
 			this->chkUDP.EnableWindow(TRUE);
 			this->chkTCP.EnableWindow(TRUE);
+			this->btnTimeShift.EnableWindow(FALSE);
 			break;
 		case GUI_CANCEL_ONLY:
 			this->combTuner.EnableWindow(FALSE);
@@ -827,6 +830,7 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			this->btnView.EnableWindow(TRUE);
 			this->chkUDP.EnableWindow(TRUE);
 			this->chkTCP.EnableWindow(TRUE);
+			this->btnTimeShift.EnableWindow(FALSE);
 			break;
 		case GUI_OPEN_FAIL:
 			this->combTuner.EnableWindow(TRUE);
@@ -842,6 +846,7 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			this->btnView.EnableWindow(TRUE);
 			this->chkUDP.EnableWindow(FALSE);
 			this->chkTCP.EnableWindow(FALSE);
+			this->btnTimeShift.EnableWindow(FALSE);
 			break;
 		case GUI_REC:
 			this->combTuner.EnableWindow(FALSE);
@@ -858,6 +863,7 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			this->btnView.EnableWindow(TRUE);
 			this->chkUDP.EnableWindow(TRUE);
 			this->chkTCP.EnableWindow(TRUE);
+			this->btnTimeShift.EnableWindow(TRUE);
 			break;
 		case GUI_REC_SET_TIME:
 			this->combTuner.EnableWindow(FALSE);
@@ -873,6 +879,7 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			this->btnView.EnableWindow(TRUE);
 			this->chkUDP.EnableWindow(TRUE);
 			this->chkTCP.EnableWindow(TRUE);
+			this->btnTimeShift.EnableWindow(TRUE);
 			break;
 		case GUI_OTHER_CTRL:
 			this->combTuner.EnableWindow(FALSE);
@@ -884,10 +891,11 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			this->combRecH.EnableWindow(FALSE);
 			this->combRecM.EnableWindow(FALSE);
 			this->chkRecSet.EnableWindow(FALSE);
-			this->btnCancel.EnableWindow(FALSE);
+			this->btnCancel.EnableWindow(TRUE);
 			this->btnView.EnableWindow(TRUE);
 			this->chkUDP.EnableWindow(TRUE);
 			this->chkTCP.EnableWindow(TRUE);
+			this->btnTimeShift.EnableWindow(TRUE);
 			break;
 		case GUI_REC_STANDBY:
 			this->combTuner.EnableWindow(FALSE);
@@ -903,6 +911,7 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			this->btnView.EnableWindow(TRUE);
 			this->chkUDP.EnableWindow(TRUE);
 			this->chkTCP.EnableWindow(TRUE);
+			this->btnTimeShift.EnableWindow(FALSE);
 			break;
 		default:
 			break;
@@ -1189,3 +1198,10 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckNextpg()
 	}
 }
 
+
+
+void CEpgDataCap_BonDlg::OnBnClickedButtonTimeshift()
+{
+	// TODO: ここにコントロール通知ハンドラー コードを追加します。
+	this->main.StartTimeShift();
+}

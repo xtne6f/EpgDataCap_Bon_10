@@ -71,6 +71,15 @@
 #define CMD2_EPG_SRV_NWTV_CLOSE				1071 //ネットワークモードで起動中のEpgDataCap_Bonを終了
 #define CMD2_EPG_SRV_NWTV_MODE				1072 //ネットワークモードで起動するときのモード（1:UDP 2:TCP 3:UDP+TCP）
 
+#define CMD2_EPG_SRV_NWPLAY_OPEN			1080 //ストリーム配信用ファイルを開く
+#define CMD2_EPG_SRV_NWPLAY_CLOSE			1081 //ストリーム配信用ファイルを閉じる
+#define CMD2_EPG_SRV_NWPLAY_PLAY			1082 //ストリーム配信開始
+#define CMD2_EPG_SRV_NWPLAY_STOP			1083 //ストリーム配信停止
+#define CMD2_EPG_SRV_NWPLAY_GET_POS			1084 //ストリーム配信で現在の送信位置と総ファイルサイズを取得する
+#define CMD2_EPG_SRV_NWPLAY_SET_POS			1085 //ストリーム配信で送信位置をシークする
+#define CMD2_EPG_SRV_NWPLAY_SET_IP			1086 //ストリーム配信で送信先を設定する
+#define CMD2_EPG_SRV_NWPLAY_TF_OPEN			1087 //ストリーム配信用ファイルをタイムシフトモードで開く
+
 //タイマーGUI（EpgTimer_Bon.exe）用
 #define CMD2_TIMER_GUI_SHOW_DLG				101 //ダイアログを前面に表示
 #define CMD2_TIMER_GUI_UPDATE_RESERVE		102 //予約一覧の情報が更新された
@@ -98,10 +107,14 @@
 #define CMD2_VIEW_APP_REC_STOP_CTRL			1225 //録画処理停止
 #define CMD2_VIEW_APP_REC_FILE_PATH			1226 //録画ファイルパスを取得
 #define CMD2_VIEW_APP_REC_STOP_ALL			1227 //即時録画を停止
+#define CMD2_VIEW_APP_REC_WRITE_SIZE		1228 //ファイル出力したサイズを取得
 #define CMD2_VIEW_APP_EPGCAP_START			1241 //EPG取得開始
 #define CMD2_VIEW_APP_EPGCAP_STOP			1242 //EPG取得停止
 #define CMD2_VIEW_APP_SEARCH_EVENT			1251 //EPG情報の検索
 #define CMD2_VIEW_APP_GET_EVENT_PF			1252 //現在or次の番組情報を取得する
+//TVTest連携のストリーミング配信専用
+#define CMD2_VIEW_APP_TT_SET_CTRL			1261 //ストリーミング配信制御IDの設定
+
 
 //旧バージョン互換コマンド
 #define CMD_EPG_SRV_GET_RESERVE_INFO	12 //予約情報取得

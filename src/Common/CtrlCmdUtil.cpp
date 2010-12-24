@@ -5877,6 +5877,420 @@ BOOL ReadVALUE( TVTEST_CH_CHG_INFO* val, BYTE* buff, DWORD buffSize, DWORD* read
 	return TRUE;
 }
 
+DWORD GetVALUESize( NWPLAY_PLAY_INFO* val )
+{
+	DWORD size = sizeof(DWORD);
+	if( val == NULL ){
+		return size;
+	}
+
+	size += GetVALUESize(val->ctrlID);
+	size += GetVALUESize(val->ip);
+	size += GetVALUESize(val->udp);
+	size += GetVALUESize(val->tcp);
+	size += GetVALUESize(val->udpPort);
+	size += GetVALUESize(val->tcpPort);
+
+	return size;
+}
+
+BOOL WriteVALUE( NWPLAY_PLAY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize( val );
+	if( buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	if(val != NULL ){
+		if( WriteVALUE( val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->ip, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->udp, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->tcp, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->udpPort, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->tcpPort, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+	}
+
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	return TRUE;
+}
+
+BOOL ReadVALUE( NWPLAY_PLAY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+
+	if( pos < valSize ){
+		if( ReadVALUE( &val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->ip, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->udp, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->tcp, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->udpPort, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->tcpPort, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+	}
+
+	if( readSize != NULL ){
+		*readSize = pos;
+	}
+
+	return TRUE;
+}
+
+DWORD GetVALUESize( NWPLAY_POS_CMD* val )
+{
+	DWORD size = sizeof(DWORD);
+	if( val == NULL ){
+		return size;
+	}
+
+	size += GetVALUESize(val->ctrlID);
+	size += GetVALUESize(val->currentPos);
+	size += GetVALUESize(val->totalPos);
+
+	return size;
+}
+
+BOOL WriteVALUE( NWPLAY_POS_CMD* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize( val );
+	if( buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	if(val != NULL ){
+		if( WriteVALUE( val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->currentPos, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->totalPos, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+	}
+
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	return TRUE;
+}
+
+BOOL ReadVALUE( NWPLAY_POS_CMD* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+
+	if( pos < valSize ){
+		if( ReadVALUE( &val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->currentPos, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->totalPos, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+	}
+
+	if( readSize != NULL ){
+		*readSize = pos;
+	}
+
+	return TRUE;
+}
+
+DWORD GetVALUESize( TVTEST_STREAMING_INFO* val )
+{
+	DWORD size = sizeof(DWORD);
+	if( val == NULL ){
+		return size;
+	}
+
+	size += GetVALUESize(val->enableMode);
+	size += GetVALUESize(val->ctrlID);
+	size += GetVALUESize(val->serverIP);
+	size += GetVALUESize(val->serverPort);
+	size += GetVALUESize(val->filePath);
+	size += GetVALUESize(val->udpSend);
+	size += GetVALUESize(val->tcpSend);
+	size += GetVALUESize(val->timeShiftMode);
+
+	return size;
+}
+
+BOOL WriteVALUE( TVTEST_STREAMING_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize( val );
+	if( buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	if(val != NULL ){
+		if( WriteVALUE( val->enableMode, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->serverIP, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->serverPort, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->filePath, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->udpSend, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->tcpSend, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->timeShiftMode, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+	}
+
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	return TRUE;
+}
+
+BOOL ReadVALUE( TVTEST_STREAMING_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+
+	if( pos < valSize ){
+		if( ReadVALUE( &val->enableMode, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->serverIP, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->serverPort, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->filePath, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->udpSend, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->tcpSend, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->timeShiftMode, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+	}
+
+	if( readSize != NULL ){
+		*readSize = pos;
+	}
+
+	return TRUE;
+}
+
+DWORD GetVALUESize( NWPLAY_TIMESHIFT_INFO* val )
+{
+	DWORD size = sizeof(DWORD);
+	if( val == NULL ){
+		return size;
+	}
+
+	size += GetVALUESize(val->ctrlID);
+	size += GetVALUESize(val->filePath);
+
+	return size;
+}
+
+BOOL WriteVALUE( NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize( val );
+	if( buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	if(val != NULL ){
+		if( WriteVALUE( val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->filePath, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+	}
+
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	return TRUE;
+}
+
+BOOL ReadVALUE( NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+
+	if( pos < valSize ){
+		if( ReadVALUE( &val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->filePath, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+	}
+
+	if( readSize != NULL ){
+		*readSize = pos;
+	}
+
+	return TRUE;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用バイナリ作成関数

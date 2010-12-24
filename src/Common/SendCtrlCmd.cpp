@@ -1538,6 +1538,310 @@ DWORD CSendCtrlCmd::SendNwTVMode(
 	return ret;
 }
 
+//ストリーム配信用ファイルを開く
+//戻り値：
+// エラーコード
+//引数：
+// val				[IN]開くファイルのサーバー側ファイルパス
+// resVal			[OUT]制御用CtrlID
+DWORD CSendCtrlCmd::SendNwPlayOpen(
+	wstring val,
+	DWORD* resVal
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_EPG_SRV_NWPLAY_OPEN;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(val);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+	if( ret == CMD_SUCCESS ){
+		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
+			UnLock();
+			return CMD_ERR;
+		}
+	}
+
+	UnLock();
+	return ret;
+}
+
+//ストリーム配信用ファイルを閉じる
+//戻り値：
+// エラーコード
+//引数：
+// val				[IN]制御用CtrlID
+DWORD CSendCtrlCmd::SendNwPlayClose(
+	DWORD val
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_EPG_SRV_NWPLAY_CLOSE;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(val);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+	UnLock();
+	return ret;
+}
+
+//ストリーム配信開始
+//戻り値：
+// エラーコード
+//引数：
+// val				[IN]制御用CtrlID
+DWORD CSendCtrlCmd::SendNwPlayStart(
+	DWORD val
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_EPG_SRV_NWPLAY_PLAY;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(val);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+	UnLock();
+	return ret;
+}
+
+//ストリーム配信停止
+//戻り値：
+// エラーコード
+//引数：
+// val				[IN]制御用CtrlID
+DWORD CSendCtrlCmd::SendNwPlayStop(
+	DWORD val
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_EPG_SRV_NWPLAY_STOP;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(val);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+	UnLock();
+	return ret;
+}
+
+//ストリーム配信で現在の送信位置と総ファイルサイズを取得する
+//戻り値：
+// エラーコード
+//引数：
+// val				[IN/OUT]サイズ情報
+DWORD CSendCtrlCmd::SendNwPlayGetPos(
+	NWPLAY_POS_CMD* val
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_EPG_SRV_NWPLAY_GET_POS;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(val);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+	if( ret == CMD_SUCCESS ){
+		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
+			UnLock();
+			return CMD_ERR;
+		}
+	}
+
+	UnLock();
+	return ret;
+}
+
+//ストリーム配信で送信位置をシークする
+//戻り値：
+// エラーコード
+//引数：
+// val				[IN]サイズ情報
+DWORD CSendCtrlCmd::SendNwPlaySetPos(
+	NWPLAY_POS_CMD* val
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_EPG_SRV_NWPLAY_SET_POS;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(val);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+	UnLock();
+	return ret;
+}
+
+//ストリーム配信で送信先を設定する
+//戻り値：
+// エラーコード
+//引数：
+// val				[IN]サイズ情報
+DWORD CSendCtrlCmd::SendNwPlaySetIP(
+	NWPLAY_PLAY_INFO* val
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_EPG_SRV_NWPLAY_SET_IP;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(val);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+	
+	if( ret == CMD_SUCCESS ){
+		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
+			UnLock();
+			return CMD_ERR;
+		}
+	}
+
+	UnLock();
+	return ret;
+}
+
+//ストリーム配信用ファイルをタイムシフトモードで開く
+//戻り値：
+// エラーコード
+//引数：
+// val				[IN]予約ID
+// resVal			[OUT]ファイルパスとCtrlID
+DWORD CSendCtrlCmd::SendNwTimeShiftOpen(
+	DWORD val,
+	NWPLAY_TIMESHIFT_INFO* resVal
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_EPG_SRV_NWPLAY_TF_OPEN;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(val);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+	if( ret == CMD_SUCCESS ){
+		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
+			UnLock();
+			return CMD_ERR;
+		}
+	}
+
+	UnLock();
+	return ret;
+}
+
 //ダイアログを前面に表示
 //戻り値：
 // エラーコード
@@ -2301,6 +2605,48 @@ DWORD CSendCtrlCmd::SendViewStopRecAll(
 	return ret;
 }
 
+//ファイル出力したサイズを取得
+//戻り値：
+// エラーコード
+//引数：
+// resVal					[OUT]ファイル出力したサイズ
+DWORD CSendCtrlCmd::SendViewGetWriteSize(
+	DWORD ctrlID,
+	__int64* resVal
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_VIEW_APP_REC_WRITE_SIZE;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(ctrlID);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(ctrlID, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+	if( ret == CMD_SUCCESS ){
+		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
+			UnLock();
+			return CMD_ERR;
+		}
+	}
+
+	UnLock();
+	return ret;
+}
+
 //EPG取得開始
 //戻り値：
 // エラーコード
@@ -2466,3 +2812,36 @@ DWORD CSendCtrlCmd::SendViewExecViewApp(
 	UnLock();
 	return ret;
 }
+
+//ストリーミング配信制御IDの設定
+//戻り値：
+// エラーコード
+DWORD CSendCtrlCmd::SendViewSetStreamingInfo(
+	TVTEST_STREAMING_INFO* val
+	)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	send.param = CMD2_VIEW_APP_TT_SET_CTRL;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize(val);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+	UnLock();
+	return ret;
+}
+

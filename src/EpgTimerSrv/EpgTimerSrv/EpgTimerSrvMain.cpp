@@ -453,6 +453,7 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 			continue;
 		}
 
+		RESERVE_DATA oldData = *(reserveList[i]);
 		EPGDB_EVENT_INFO* info;
 		if( this->epgDB.SearchEpg(
 			reserveList[i]->originalNetworkID,
@@ -461,6 +462,7 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 			reserveList[i]->eventID,
 			&info
 			) == TRUE){
+
 				BOOL chgRes = FALSE;
 				if( info->StartTimeFlag == 1 ){
 					if( ConvertI64Time(reserveList[i]->startTime) != ConvertI64Time(info->start_time) ){
@@ -484,17 +486,7 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 				}
 				if( chgRes == TRUE ){
 					chgList.push_back(*(reserveList[i]));
-					_OutputDebugString(L"●EPG読み込み：登録変更 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
-						reserveList[i]->startTime.wYear,
-						reserveList[i]->startTime.wMonth,
-						reserveList[i]->startTime.wDay,
-						reserveList[i]->startTime.wHour,
-						reserveList[i]->startTime.wMinute,
-						reserveList[i]->startTime.wSecond,
-						reserveList[i]->durationSecond,
-						reserveList[i]->title.c_str(),
-						reserveList[i]->stationName.c_str()
-						);
+					this->reserveManager.SendTweet(TW_CHG_RESERVE_RELOADEPG, &oldData, reserveList[i], NULL);
 				}
 		}else{
 			//IDで見つからなかったので時間で検索してみる
@@ -506,6 +498,7 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 				reserveList[i]->durationSecond,
 				&info
 				) == TRUE){
+
 					reserveList[i]->eventID = info->event_id;
 
 					if( chkTime == FALSE ){
@@ -513,17 +506,8 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 						if( info->shortInfo != NULL ){
 							if( CompareNoCase(reserveList[i]->title, info->shortInfo->event_name) == 0 ){
 								chgList.push_back(*(reserveList[i]));
-								_OutputDebugString(L"●EPG読み込み：ID変更 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
-									reserveList[i]->startTime.wYear,
-									reserveList[i]->startTime.wMonth,
-									reserveList[i]->startTime.wDay,
-									reserveList[i]->startTime.wHour,
-									reserveList[i]->startTime.wMinute,
-									reserveList[i]->startTime.wSecond,
-									reserveList[i]->durationSecond,
-									reserveList[i]->title.c_str(),
-									reserveList[i]->stationName.c_str()
-									);
+
+								this->reserveManager.SendTweet(TW_CHG_RESERVE_RELOADEPG, &oldData, reserveList[i], NULL);
 							}
 						}
 					}else{
@@ -536,17 +520,9 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 							}
 						}
 						chgList.push_back(*(reserveList[i]));
-						_OutputDebugString(L"●EPG読み込み：ID番組名変更 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
-							reserveList[i]->startTime.wYear,
-							reserveList[i]->startTime.wMonth,
-							reserveList[i]->startTime.wDay,
-							reserveList[i]->startTime.wHour,
-							reserveList[i]->startTime.wMinute,
-							reserveList[i]->startTime.wSecond,
-							reserveList[i]->durationSecond,
-							reserveList[i]->title.c_str(),
-							reserveList[i]->stationName.c_str()
-							);
+
+						this->reserveManager.SendTweet(TW_CHG_RESERVE_RELOADEPG, &oldData, reserveList[i], NULL);
+
 					}
 			}
 		}
@@ -681,7 +657,7 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 	}
 	addMap.clear();
 	if( setList.size() > 0 ){
-		this->reserveManager.AddReserveData(&setList);
+		this->reserveManager.AddReserveData(&setList, TRUE);
 		setList.clear();
 	}
 
@@ -1562,6 +1538,120 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				sys->reserveManager.SetNWTVMode(val);
 				resParam->param = CMD_SUCCESS;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_NWPLAY_OPEN:
+		{
+			wstring val;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				DWORD id=0;
+				if( sys->streamingManager.OpenFile(val.c_str(), &id) == TRUE ){
+					resParam->param = CMD_SUCCESS;
+					resParam->dataSize = GetVALUESize(id);
+					resParam->data = new BYTE[resParam->dataSize];
+					if( WriteVALUE(id, resParam->data, resParam->dataSize, NULL) == FALSE ){
+						_OutputDebugString(L"err Write res CMD2_EPG_SRV_NWPLAY_OPEN\r\n");
+						resParam->dataSize = 0;
+						resParam->param = CMD_ERR;
+					}
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_NWPLAY_CLOSE:
+		{
+			DWORD val;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				if( sys->streamingManager.CloseFile(val) == TRUE ){
+					resParam->param = CMD_SUCCESS;
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_NWPLAY_PLAY:
+		{
+			DWORD val;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				if( sys->streamingManager.StartSend(val) == TRUE ){
+					resParam->param = CMD_SUCCESS;
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_NWPLAY_STOP:
+		{
+			DWORD val;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				if( sys->streamingManager.StopSend(val) == TRUE ){
+					resParam->param = CMD_SUCCESS;
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_NWPLAY_GET_POS:
+		{
+			NWPLAY_POS_CMD val;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				if( sys->streamingManager.GetPos(&val) == TRUE ){
+					resParam->param = CMD_SUCCESS;
+					resParam->dataSize = GetVALUESize(&val);
+					resParam->data = new BYTE[resParam->dataSize];
+					if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
+						_OutputDebugString(L"err Write res CMD2_EPG_SRV_NWPLAY_GET_POS\r\n");
+						resParam->dataSize = 0;
+						resParam->param = CMD_ERR;
+					}
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_NWPLAY_SET_POS:
+		{
+			NWPLAY_POS_CMD val;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				if( sys->streamingManager.SetPos(&val) == TRUE ){
+					resParam->param = CMD_SUCCESS;
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_NWPLAY_SET_IP:
+		{
+			NWPLAY_PLAY_INFO val;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				if( sys->streamingManager.SetIP(&val) == TRUE ){
+					resParam->param = CMD_SUCCESS;
+					resParam->dataSize = GetVALUESize(&val);
+					resParam->data = new BYTE[resParam->dataSize];
+					if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
+						_OutputDebugString(L"err Write res CMD2_EPG_SRV_NWPLAY_SET_IP\r\n");
+						resParam->dataSize = 0;
+						resParam->param = CMD_ERR;
+					}
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_NWPLAY_TF_OPEN:
+		{
+			DWORD val;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				NWPLAY_TIMESHIFT_INFO resVal;
+				DWORD ctrlID = 0;
+				DWORD processID = 0;
+				if( sys->reserveManager.GetRecFilePath(val, resVal.filePath, &ctrlID, &processID) == TRUE ){
+					if( sys->streamingManager.OpenTimeShift(resVal.filePath.c_str(), processID, ctrlID, &resVal.ctrlID) == TRUE ){
+						resParam->param = CMD_SUCCESS;
+						resParam->dataSize = GetVALUESize(&resVal);
+						resParam->data = new BYTE[resParam->dataSize];
+						if( WriteVALUE(&resVal, resParam->data, resParam->dataSize, NULL) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_NWPLAY_TF_OPEN\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}
+					}
+				}
 			}
 		}
 		break;

@@ -3,6 +3,7 @@
 #include "EpgDBManager.h"
 #include "ReserveManager.h"
 #include "SleepUtil.h"
+#include "FileStreamingManager.h"
 
 #include "../../Common/ParseEpgAutoAddText.h"
 #include "../../Common/ParseManualAutoAddText.h"
@@ -41,6 +42,7 @@ protected:
 	CEpgDBManager epgDB;
 	CReserveManager reserveManager;
 	CSleepUtil sleepUtil;
+	CFileStreamingManager streamingManager;
 
 	CParseEpgAutoAddText epgAutoAdd;
 	CParseManualAutoAddText manualAutoAdd;

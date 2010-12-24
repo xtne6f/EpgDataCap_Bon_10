@@ -327,3 +327,18 @@ void _ConvertEpgInfoText(EPGDB_EVENT_INFO* info, wstring& text)
 	text += buff;
 }
 
+void GetChkDrivePath(wstring directoryPath, wstring& mountPath)
+{
+	WCHAR szVolumePathName[MAX_PATH] = L"";
+	if( GetVolumePathName( directoryPath.c_str(), szVolumePathName, MAX_PATH) == FALSE ){
+		mountPath = directoryPath;
+		return ;
+	}
+	WCHAR szMount[MAX_PATH] = L"";
+	if( GetVolumeNameForVolumeMountPoint(szVolumePathName, szMount, MAX_PATH) == FALSE ){
+		mountPath = szVolumePathName;
+		return ;
+	}
+	mountPath = szMount;
+}
+

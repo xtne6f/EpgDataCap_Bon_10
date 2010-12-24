@@ -31,6 +31,7 @@ namespace EpgTimerNW
         private bool closeFlag = false;
         private Dictionary<string, Button> buttonList = new Dictionary<string, Button>();
         private CtrlCmdUtil cmd = EpgTimerNW.NWConnect.Instance.cmd;
+        private bool needUnRegist = true;
 
         public MainWindow()
         {
@@ -175,6 +176,11 @@ namespace EpgTimerNW
 
             ResetTaskMenu();
 
+            if (Settings.Instance.WakeReconnectNW == false)
+            {
+                return;
+            }
+
             if (NWConnect.Instance.ConnectServer(Settings.Instance.NWServerIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, OutsideCmdCallback, this) == false)
             {
                 if (ConnectCmd(false) == false)
@@ -241,11 +247,11 @@ namespace EpgTimerNW
             {
                 reserveView.SaveSize();
                 recInfoView.SaveSize();
-                if (NWConnect.Instance.IsConnected == true)
+                if (NWConnect.Instance.IsConnected == true && needUnRegist == true)
                 {
                     if (NWConnect.Instance.cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
                     {
-                        MessageBox.Show("サーバーに接続できませんでした");
+                        //MessageBox.Show("サーバーに接続できませんでした");
                     }
                 }
                 Settings.SaveToXmlFile();
@@ -504,7 +510,24 @@ namespace EpgTimerNW
                 }
                 else
                 {
-                    NWConnect.Instance.cmd.SendSuspend(0xFF02);
+                    if (Settings.Instance.SuspendCloseNW == true)
+                    {
+                        if (NWConnect.Instance.IsConnected == true)
+                        {
+                            if (NWConnect.Instance.cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
+                            {
+
+                            }
+                            NWConnect.Instance.cmd.SendSuspend(0xFF02);
+                            closeFlag = true;
+                            needUnRegist = false;
+                            Close();
+                        }
+                    }
+                    else
+                    {
+                        NWConnect.Instance.cmd.SendSuspend(0xFF02);
+                    }
                 }
             }
         }
@@ -529,7 +552,24 @@ namespace EpgTimerNW
                 }
                 else
                 {
-                    NWConnect.Instance.cmd.SendSuspend(0xFF01);
+                    if (Settings.Instance.SuspendCloseNW == true)
+                    {
+                        if (NWConnect.Instance.IsConnected == true)
+                        {
+                            if (NWConnect.Instance.cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
+                            {
+
+                            }
+                            NWConnect.Instance.cmd.SendSuspend(0xFF01);
+                            closeFlag = true;
+                            needUnRegist = false;
+                            Close();
+                        }
+                    }
+                    else
+                    {
+                        NWConnect.Instance.cmd.SendSuspend(0xFF01);
+                    }
                 }
             }
         }
@@ -689,6 +729,14 @@ namespace EpgTimerNW
                 {
                     if (buttonList.ContainsKey(info) == true)
                     {
+                        if (String.Compare(info, "カスタム１") == 0)
+                        {
+                            buttonList[info].Content = Settings.Instance.Cust1BtnName;
+                        }
+                        if (String.Compare(info, "カスタム２") == 0)
+                        {
+                            buttonList[info].Content = Settings.Instance.Cust2BtnName;
+                        }
                         stackPanel_button.Children.Add(buttonList[info]);
                     }
                 }

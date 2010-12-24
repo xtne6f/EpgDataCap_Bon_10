@@ -179,6 +179,13 @@ public:
 		float signalLv
 		);
 
+	//録画中のファイルの出力サイズを取得する
+	//引数：
+	// writeSize			[OUT]保存ファイル名
+	void GetRecWriteSize(
+		__int64* writeSize
+		);
+
 protected:
 	DWORD id;
 	WORD SID;

@@ -245,6 +245,8 @@ public:
 	void StartServer();
 	void StopServer();
 
+	void StartTimeShift();
+
 protected:
 	HWND msgWnd;
 

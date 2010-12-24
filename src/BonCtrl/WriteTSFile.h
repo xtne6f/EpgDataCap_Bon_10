@@ -56,6 +56,13 @@ public:
 		BOOL* subRecFlag
 		);
 
+	//録画中のファイルの出力サイズを取得する
+	//引数：
+	// writeSize			[OUT]保存ファイル名
+	void GetRecWriteSize(
+		__int64* writeSize
+		);
+
 protected:
 	//PublicAPI排他制御用
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 5*1000);
@@ -134,6 +141,6 @@ protected:
 	vector<wstring> saveFolderSub;
 
 	BOOL subRecFlag;
-
+	__int64 writeTotalSize;
 };
 

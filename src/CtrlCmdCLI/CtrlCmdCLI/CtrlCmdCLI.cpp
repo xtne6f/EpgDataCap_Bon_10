@@ -959,6 +959,47 @@ void CtrlCmdUtil::CopyData(TVTEST_CH_CHG_INFO* src, Def::TvTestChChgInfo^% dest)
 	CopyData(&src->chInfo, dest->chInfo);
 }
 
+void CtrlCmdUtil::CopyData(Def::TVTestStreamingInfo^ src, TVTEST_STREAMING_INFO* dest)
+{
+	pin_ptr<const wchar_t> filePathPin = PtrToStringChars(src->filePath);
+
+	dest->filePath = filePathPin;
+
+	dest->enableMode = src->enableMode;
+	dest->ctrlID = src->ctrlID;
+	dest->serverIP = src->serverIP;
+	dest->serverPort = src->serverPort;
+	dest->udpSend = src->udpSend;
+	dest->tcpSend = src->tcpSend;
+	dest->timeShiftMode = src->timeShiftMode;
+}
+
+void CtrlCmdUtil::CopyData(TVTEST_STREAMING_INFO* src, Def::TVTestStreamingInfo^% dest)
+{
+	dest->filePath = gcnew String(src->filePath.c_str());
+	dest->enableMode = src->enableMode;
+	dest->ctrlID = src->ctrlID;
+	dest->serverIP = src->serverIP;
+	dest->serverPort = src->serverPort;
+	dest->udpSend = src->udpSend;
+	dest->tcpSend = src->tcpSend;
+	dest->timeShiftMode = src->timeShiftMode;
+}
+
+void CtrlCmdUtil::CopyData(Def::NWPlayTimeShiftInfo^ src, NWPLAY_TIMESHIFT_INFO* dest)
+{
+	pin_ptr<const wchar_t> filePathPin = PtrToStringChars(src->filePath);
+
+	dest->filePath = filePathPin;
+	dest->ctrlID = src->ctrlID;
+}
+
+void CtrlCmdUtil::CopyData(NWPLAY_TIMESHIFT_INFO* src, Def::NWPlayTimeShiftInfo^% dest)
+{
+	dest->filePath = gcnew String(src->filePath.c_str());
+	dest->ctrlID = src->ctrlID;
+}
+
 /// <summary>
 /// コマンド送信方法の設定
 /// </summary>
@@ -1712,6 +1753,60 @@ UInt32 CtrlCmdUtil::SendViewAppClose(
 	)
 {
 	DWORD ret = this->sendCmd->SendViewAppClose();
+
+	return ret;
+}
+
+/// <summary>
+/// ストリーム配信用ファイルを開く
+/// </summary>
+/// <param name="val">[IN]開くファイルのサーバー側ファイルパス</param>
+/// <param name="resVal">[OUT]制御用CtrlID</param>
+UInt32 CtrlCmdUtil::SendNwPlayOpen(
+	String^ val,
+	UInt32% resVal
+	)
+{
+	pin_ptr<const wchar_t> valPin = PtrToStringChars(val);
+	std::wstring _val(valPin);
+
+	DWORD ctrlID = 0;
+	DWORD ret = this->sendCmd->SendNwPlayOpen(valPin, &ctrlID);
+	resVal = ctrlID;
+
+	return ret;
+}
+
+/// <summary>
+/// ストリーミング配信制御IDの設定
+/// </summary>
+/// <param name="val">[IN]ストリーミング配信制御情報</param>
+UInt32 CtrlCmdUtil::SendViewSetStreamingInfo(
+	Def::TVTestStreamingInfo^ val
+	)
+{
+	TVTEST_STREAMING_INFO info;
+	CopyData(val, &info);
+	DWORD ret = this->sendCmd->SendViewSetStreamingInfo(&info);
+
+	return ret;
+}
+
+/// <summary>
+/// ストリーム配信用ファイルをタイムシフトモードで開く
+/// </summary>
+/// <param name="val">[IN]予約ID</param>
+/// <param name="resVal">[OUT]制御用CtrlID</param>
+UInt32 CtrlCmdUtil::SendNwTimeShiftOpen(
+	UInt32 val,
+	Def::NWPlayTimeShiftInfo^% resVal
+	)
+{
+	NWPLAY_TIMESHIFT_INFO _resVal;
+	DWORD ret = this->sendCmd->SendNwTimeShiftOpen(val, &_resVal);
+	if( ret == CMD_SUCCESS ){
+		CopyData(&_resVal, resVal);
+	}
 
 	return ret;
 }

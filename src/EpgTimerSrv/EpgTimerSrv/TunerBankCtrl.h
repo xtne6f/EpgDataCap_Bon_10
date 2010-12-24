@@ -11,6 +11,7 @@
 #include "ReserveInfo.h"
 #include "TunerCtrl.h"
 #include "EpgTimerSrvDef.h"
+#include "TwitterManager.h"
 
 class CTunerBankCtrl
 {
@@ -18,6 +19,7 @@ public:
 	CTunerBankCtrl(void);
 	~CTunerBankCtrl(void);
 
+	void SetTwitterCtrl(CTwitterManager* twitterManager);
 	void ReloadSetting();
 	void SetRegistGUI(map<DWORD, DWORD> registGUIMap);
 
@@ -89,9 +91,16 @@ public:
 
 	BOOL ReRec(DWORD reserveID, BOOL deleteFile);
 
+	BOOL GetRecFilePath(
+		DWORD reserveID,
+		wstring& filePath,
+		DWORD* ctrlID,
+		DWORD* processID
+		);
 protected:
 	HANDLE lockEvent;
 
+	CTwitterManager* twitterManager;
 	CTunerCtrl tunerCtrl;
 	DWORD tunerID;
 	wstring bonFileName;
@@ -130,7 +139,7 @@ protected:
 		_RESERVE_WORK(void){
 			reserveInfo = NULL;
 			reserveID = 0;
-			//ctrlID = 0;
+			mainCtrlID = 0;
 			recStartFlag = FALSE;
 			stratTime = 0;
 			endTime = 0;

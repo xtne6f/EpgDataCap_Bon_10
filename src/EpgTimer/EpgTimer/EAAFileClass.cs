@@ -95,7 +95,7 @@ namespace EpgTimer
                             searchKey.aimaiFlag = Convert.ToByte(list[7]);
 
 
-                            Settings.GetDefRecSetting(ref recSetKey);
+                            Settings.GetDefRecSetting(0, ref recSetKey);
 
                             AddKey.searchInfo = searchKey;
                             AddKey.recSetting = recSetKey;
