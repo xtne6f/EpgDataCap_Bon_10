@@ -14,90 +14,96 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="ヘッダー ファイル\Common">
-      <UniqueIdentifier>{89019d43-e96a-4475-9f39-ff58eec164e0}</UniqueIdentifier>
+      <UniqueIdentifier>{6567a98a-2089-41cb-b2e8-68e23759cd1b}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\Common">
-      <UniqueIdentifier>{17d5043f-d3b0-4f44-954b-415836eb0374}</UniqueIdentifier>
+      <UniqueIdentifier>{4904b9bb-3344-47b7-8c1b-a0941cc101a1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CtrlCmdCLI.h">
+    <None Include="ReadMe.txt" />
+    <None Include="twitter.def">
+      <Filter>ソース ファイル</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Stdafx.h">
+    <ClInclude Include="targetver.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="WinHTTPUtil.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="CtrlCmdCLIDef.h">
+    <ClInclude Include="ProxyUtil.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\CtrlCmdDef.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\CtrlCmdUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\StringUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\StructDef.h">
+    <ClInclude Include="..\..\Common\NWStructDef.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\Util.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\SendCtrlCmd.h">
+    <ClInclude Include="twitter.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="OAuthUtil.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\StringUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\twitterUtil.h">
+    <ClInclude Include="TwitterMain.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="twitterDef.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\ErrDef.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\NWStructDef.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
+    <ClInclude Include="RequestUtil.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CtrlCmdCLI.cpp">
+    <ClCompile Include="stdafx.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="AssemblyInfo.cpp">
+    <ClCompile Include="twitter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Stdafx.cpp">
+    <ClCompile Include="dllmain.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
+    <ClCompile Include="WinHTTPUtil.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\StringUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
+    <ClCompile Include="ProxyUtil.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\Util.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\SendCtrlCmd.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="CtrlCmdCLIDef.cpp">
+    <ClCompile Include="OAuthUtil.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\twitterUtil.cpp">
+    <ClCompile Include="..\..\Common\StringUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
-    <ClCompile Include="TwitterPlugInUtil.cpp">
+    <ClCompile Include="TwitterMain.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="RequestUtil.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-    <None Include="app.ico">
-      <Filter>リソース ファイル</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="app.rc">
+    <ResourceCompile Include="twitter.rc">
       <Filter>リソース ファイル</Filter>
     </ResourceCompile>
   </ItemGroup>

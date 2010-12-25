@@ -4,12 +4,12 @@
 
 #include "CtrlCmdCLIDef.h"
 #include "../../Common/SendCtrlCmd.h"
+#include "../../Common/twitterUtil.h"
 
 using namespace System;
 using namespace System::Collections::Generic;
 
 namespace CtrlCmdCLI {
-
 	public ref class CtrlCmdUtil
 	{
 		// TODO: このクラスの、ユーザーのメソッドをここに追加してください。
@@ -493,5 +493,59 @@ namespace CtrlCmdCLI {
 		void CopyData(Def::NWPlayTimeShiftInfo^ src, NWPLAY_TIMESHIFT_INFO* dest);
 		void CopyData(NWPLAY_TIMESHIFT_INFO* src, Def::NWPlayTimeShiftInfo^% dest);
 
+	};
+
+	public ref class TwitterPlugInUtil
+	{
+		// TODO: このクラスの、ユーザーのメソッドをここに追加してください。
+	public:
+		TwitterPlugInUtil(void);
+		~TwitterPlugInUtil(void);
+		!TwitterPlugInUtil(void);
+
+		UInt32 Initialize();
+		UInt32 UnInitialize();
+
+		bool GetIEProxyConfig(
+			Def::CurrentUserIEProxyConfig^% proxyConfig
+			);
+
+		bool GetProxyAutoDetect(
+			Def::ProxyConfig^% proxyConfig
+			);
+
+		bool GetProxyAutoScript(
+			String^ scriptURL,
+			Def::ProxyConfig^% proxyConfig
+			);
+
+		void SetProxy(
+			bool useProxy,
+			Def::UseProxyInfo^ proxyInfo
+			);
+
+		bool GetAuthorizationUrl(
+			String^% url
+			);
+
+		bool SetAuthorizationPWD(
+			String^ password
+			);
+
+		bool SendTweet(
+			bool asyncMode,
+			String^ text
+			);
+
+	private:
+		CTwitterUtil* util;
+
+	private:
+		void CopyData(Def::CurrentUserIEProxyConfig^ src, CURRENT_USER_IE_PROXY_CONFIG* dest);
+		void CopyData(CURRENT_USER_IE_PROXY_CONFIG* src, Def::CurrentUserIEProxyConfig^% dest);
+		void CopyData(Def::ProxyConfig^ src, PROXY_CONFIG* dest);
+		void CopyData(PROXY_CONFIG* src, Def::ProxyConfig^% dest);
+		void CopyData(Def::UseProxyInfo^ src, USE_PROXY_INFO* dest);
+		void CopyData(USE_PROXY_INFO* src, Def::UseProxyInfo^% dest);
 	};
 }

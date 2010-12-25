@@ -42,6 +42,7 @@ namespace EpgTimer
             setTVTestView.SaveSetting();
             setCustBtnView.SaveSetting();
             setIEPG1View.SaveSetting();
+            setTwitterView.SaveSetting();
             Settings.SaveToXmlFile();
             ChSet5.SaveFile();
 

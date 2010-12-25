@@ -3,6 +3,10 @@
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/StringUtil.h"
 
+
+#define WM_RESET_GUI (WM_USER+0x1001)
+#define WM_CHG_PORT (WM_USER+0x1101)
+
 class CStreamCtrlDlg
 {
 public:
@@ -29,6 +33,7 @@ protected:
 
 protected:
 	HWND hwnd;
+	HWND parentHwnd;
 	CSendCtrlCmd* cmd;
 	DWORD ctrlID;
 	BOOL iniTCP;

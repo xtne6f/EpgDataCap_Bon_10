@@ -219,6 +219,11 @@ int CALLBACK CEpgTimerPlugIn::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam,
 					}
 				}
 			}
+			if( sys->nwMode == TRUE ){
+				sys->cmd.SendNwPlayClose(sys->nwModeInfo.ctrlID);
+				sys->nwMode = FALSE;
+				sys->ResetStreamingCtrlView();
+			}
 		}
 		break;
 	case CMD2_VIEW_APP_CLOSE:
@@ -226,6 +231,7 @@ int CALLBACK CEpgTimerPlugIn::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam,
 		{
 			if( sys->nwMode == TRUE ){
 				sys->cmd.SendNwPlayClose(sys->nwModeInfo.ctrlID);
+				sys->nwMode = FALSE;
 			}
 			sys->m_pApp->Close(1);
 		}
@@ -282,6 +288,10 @@ void CEpgTimerPlugIn::ResetStreamingCtrlView()
 {
 	if( this->ctrlDlg == NULL ){
 		return;
+	}
+	if( this->nwMode == FALSE ){
+		this->ctrlDlg->ShowCtrlDlg(SW_HIDE);
+		return ;
 	}
 	WINDOWPLACEMENT info;
 	info.length = sizeof(WINDOWPLACEMENT);
@@ -340,6 +350,28 @@ BOOL CALLBACK CEpgTimerPlugIn::WindowMsgeCallback(HWND hwnd,UINT uMsg,WPARAM wPa
 		case WM_MOUSEMOVE:
 			if( sys->showNormal == FALSE ){
 				sys->ResetStreamingCtrlView();
+			}
+			break;
+		case WM_CHG_PORT:
+			{
+				WCHAR buff[512] = L"";
+				sys->m_pApp->GetDriverFullPathName(buff, 512);
+				wstring bonName;
+				GetFileName(buff, bonName );
+				if( lParam != 0){
+					if( CompareNoCase(bonName, L"BonDriver_TCP.dll") != 0 ){
+						sys->m_pApp->SetDriverName(L"BonDriver_TCP.dll");
+					}
+					DWORD ch = (DWORD)lParam-2230;
+					sys->m_pApp->SetChannel(0, ch);
+				}else
+				if( wParam != 0){
+					if( CompareNoCase(bonName, L"BonDriver_UDP.dll") != 0 ){
+						sys->m_pApp->SetDriverName(L"BonDriver_UDP.dll");
+					}
+					DWORD ch = (DWORD)wParam-1234;
+					sys->m_pApp->SetChannel(0, ch);
+				}
 			}
 			break;
 		default:

@@ -6,7 +6,6 @@
 #include <Iphlpapi.h>
 #pragma comment(lib, "IPHLPAPI.lib")
 
-#define WM_RESET_GUI (WM_USER+1000)
 
 CStreamCtrlDlg::CStreamCtrlDlg(void)
 {
@@ -41,6 +40,7 @@ DWORD CStreamCtrlDlg::CreateStreamCtrlDialog(HINSTANCE hInstance, HWND parentHWN
 	if( this->hwnd == NULL ){
 		return FALSE;
 	}
+	this->parentHwnd = parentHWND;
 	return TRUE;
 }
 
@@ -116,6 +116,16 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 					case IDC_CHECK_TCP:
 						sys->SetNWModeSend();
 						sys->UpdateLog();
+						break;
+					case IDC_BUTTON_CLOSE:
+						KillTimer(hDlgWnd, 1000);
+						KillTimer(hDlgWnd, 1010);
+						sys->cmd->SendNwPlayStop(sys->ctrlID);
+						SetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), L"停止");
+						SendMessage(GetDlgItem(sys->hwnd, IDC_CHECK_UDP), BM_SETCHECK, BST_UNCHECKED, 0);
+						SendMessage(GetDlgItem(sys->hwnd, IDC_CHECK_TCP), BM_SETCHECK, BST_UNCHECKED, 0);
+						sys->SetNWModeSend();
+						ShowWindow(hDlgWnd, SW_HIDE);
 						break;
 					default:
 						break;
@@ -278,6 +288,16 @@ void CStreamCtrlDlg::SetNWModeSend()
 	nwPlayInfo.tcp = (BYTE)SendMessage(GetDlgItem(this->hwnd, IDC_CHECK_TCP), BM_GETCHECK, 0, 0);
 	nwPlayInfo.ip = _wtoi(ip1.c_str())<<24 | _wtoi(ip2.c_str())<<16 | _wtoi(ip3.c_str())<<8 | _wtoi(ip4.c_str());
 	this->cmd->SendNwPlaySetIP(&nwPlayInfo);
+
+	DWORD udpPort = 0;
+	if( nwPlayInfo.udp == 1 ){
+		udpPort = nwPlayInfo.udpPort;
+	}
+	DWORD tcpPort = 0;
+	if( nwPlayInfo.tcp == 1 ){
+		tcpPort = nwPlayInfo.tcpPort;
+	}
+	PostMessage(this->parentHwnd, WM_CHG_PORT, udpPort, tcpPort);
 }
 
 void CStreamCtrlDlg::EnumIP()

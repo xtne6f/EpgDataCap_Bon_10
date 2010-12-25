@@ -1163,5 +1163,85 @@ namespace Def {
 			filePath = gcnew String("");
 		};
 	};
+
+	/// <summary>
+	/// IEのProxy設定
+	/// </summary>
+	public ref class CurrentUserIEProxyConfig{
+	public:
+		/// <summary>
+		/// 設定を自動的に検出するかどうか
+		/// </summary>
+		property UInt32 autoDetect;
+		/// <summary>
+		/// 自動構成スクリプトのURL
+		/// </summary>
+		property String^ autoConfigUrl;
+		/// <summary>
+		/// サーバー名（アドレス:ポート番号）
+		/// </summary>
+		property String^ proxy;
+		/// <summary>
+		/// Proxyの例外設定
+		/// </summary>
+		property String^ proxyBypass;
+	public:
+		CurrentUserIEProxyConfig(void){
+			autoConfigUrl = gcnew String("");
+			proxy = gcnew String("");
+			proxyBypass = gcnew String("");
+		};
+	};
+
+	/// <summary>
+	/// Proxyの情報
+	/// </summary>
+	public ref class ProxyConfig{
+	public:
+		/// <summary>
+		/// サーバー名（アドレス:ポート番号）
+		/// </summary>
+		property String^ proxy;
+		/// <summary>
+		/// Proxyの例外設定
+		/// </summary>
+		property String^ proxyBypass;
+	public:
+		ProxyConfig(void){
+			proxy = gcnew String("");
+			proxyBypass = gcnew String("");
+		};
+	};
+
+	/// <summary>
+	/// 接続時に使用するProxyの情報
+	/// </summary>
+	public ref class UseProxyInfo{
+	public:
+		/// <summary>
+		/// サーバー名（アドレス:ポート番号）
+		/// </summary>
+		property String^ serverName;
+		/// <summary>
+		/// Proxyの例外設定
+		/// </summary>
+		property String^ proxyBypass;
+		/// <summary>
+		/// 認証Proxyユーザー名
+		/// </summary>
+		property String^ userName;
+		/// <summary>
+		/// 認証Proxyパスワード
+		/// </summary>
+		property String^ password;
+	public:
+		UseProxyInfo(void){
+			serverName = gcnew String("");
+			proxyBypass = gcnew String("");
+			userName = gcnew String("");
+			password = gcnew String("");
+		};
+	};
+
 }
 }

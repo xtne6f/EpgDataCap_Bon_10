@@ -244,6 +244,9 @@
     <Compile Include="SettingCtrl\SetTVTestView.xaml.cs">
       <DependentUpon>SetTVTestView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="SettingCtrl\SetTwitterView.xaml.cs">
+      <DependentUpon>SetTwitterView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="SuspendCheckWindow.xaml.cs">
       <DependentUpon>SuspendCheckWindow.xaml</DependentUpon>
     </Compile>
@@ -420,6 +423,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="SettingCtrl\SetTVTestView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SettingCtrl\SetTwitterView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -35,6 +35,10 @@ namespace EpgTimer
             {
                 checkBox_back_priority.IsChecked = true;
             }
+            if (IniFileHandler.GetPrivateProfileInt("SET", "SameChPriority", 0, SettingPath.TimerSrvIniPath) == 1)
+            {
+                checkBox_sameChPriority.IsChecked = true;
+            }
             if (IniFileHandler.GetPrivateProfileInt("SET", "EventRelay", 0, SettingPath.TimerSrvIniPath) == 1)
             {
                 checkBox_enable_relay.IsChecked = true;
@@ -171,6 +175,14 @@ namespace EpgTimer
             else
             {
                 IniFileHandler.WritePrivateProfileString("SET", "BackPriority", "0", SettingPath.TimerSrvIniPath);
+            }
+            if (checkBox_sameChPriority.IsChecked == true)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "SameChPriority", "1", SettingPath.TimerSrvIniPath);
+            }
+            else
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "SameChPriority", "0", SettingPath.TimerSrvIniPath);
             }
             if (checkBox_enable_relay.IsChecked == true)
             {

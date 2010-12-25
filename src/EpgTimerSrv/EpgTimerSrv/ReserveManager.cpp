@@ -365,7 +365,7 @@ void CReserveManager::ReloadSetting()
 	}
 
 	this->backPriorityFlag = (BOOL)GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniAppPath.c_str());
-	this->sameChPriorityFlag = (BOOL)GetPrivateProfileInt(L"SET", L"SameChPriority", 1, iniAppPath.c_str());
+	this->sameChPriorityFlag = (BOOL)GetPrivateProfileInt(L"SET", L"SameChPriority", 0, iniAppPath.c_str());
 
 	this->eventRelay = (BOOL)GetPrivateProfileInt(L"SET", L"EventRelay", 0, iniAppPath.c_str());
 
