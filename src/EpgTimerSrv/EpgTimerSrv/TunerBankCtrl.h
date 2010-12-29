@@ -225,7 +225,7 @@ protected:
 	void ErrStop();
 	void AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTRL_REC_STOP_RES_PARAM resVal);
 	void CheckRec(LONGLONG delay, BOOL* needShortCheck);
-	BOOL RecStart(LONGLONG nowTime, RESERVE_WORK* reserve);
+	BOOL RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL sendTweet);
 	BOOL CloseTuner();
 
 	BOOL ContinueRec(RESERVE_WORK* info);

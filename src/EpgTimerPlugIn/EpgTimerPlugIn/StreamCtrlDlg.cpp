@@ -126,6 +126,7 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 						SendMessage(GetDlgItem(sys->hwnd, IDC_CHECK_TCP), BM_SETCHECK, BST_UNCHECKED, 0);
 						sys->SetNWModeSend();
 						ShowWindow(hDlgWnd, SW_HIDE);
+						PostMessage(sys->parentHwnd, WM_PLAY_CLOSE, 0, 0);
 						break;
 					default:
 						break;

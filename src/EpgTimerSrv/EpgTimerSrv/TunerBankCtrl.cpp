@@ -1201,7 +1201,7 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 		}else if( chkStartTime <= nowTime && nowTime < chkEndTime-30*I64_1SEC){
 			if( itr->second->recStartFlag == FALSE ){
 				//開始時間過ぎているので録画開始
-				if( RecStart(nowTime, itr->second) == TRUE ){
+				if( RecStart(nowTime, itr->second, TRUE) == TRUE ){
 					itr->second->recStartFlag = TRUE;
 					if( chkStartTime + 60*I64_1SEC < nowTime ){
 						//途中から開始された
@@ -1366,7 +1366,7 @@ void CTunerBankCtrl::SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, B
 	}
 }
 
-BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve)
+BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL sendTweet)
 {
 	RESERVE_DATA data;
 	reserve->reserveInfo->GetData(&data);
@@ -1508,7 +1508,7 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve)
 		}
 	}
 
-	if( this->twitterManager != NULL ){
+	if( this->twitterManager != NULL && sendTweet == TRUE){
 		this->twitterManager->SendTweet(TW_REC_START, &data, NULL, NULL);
 	}
 	return ret;
@@ -1829,7 +1829,7 @@ BOOL CTunerBankCtrl::ReRec(DWORD reserveID, BOOL deleteFile)
 			}
 		}
 		//開始時間過ぎているので録画開始
-		if( RecStart(nowTime, itr->second) == TRUE ){
+		if( RecStart(nowTime, itr->second, FALSE) == TRUE ){
 			itr->second->recStartFlag = TRUE;
 		}
 	}

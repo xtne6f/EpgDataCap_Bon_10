@@ -133,13 +133,25 @@ LRESULT CALLBACK CEpgTimerPlugIn::EventCallback(UINT Event,LPARAM lParam1,LPARAM
 		}
 		break;
 	case TVTest::EVENT_FULLSCREENCHANGE:
-		if (lParam1!=0) {
-			pThis->fullScreen = TRUE;
-			if( pThis->ctrlDlg != NULL ){
-				pThis->ctrlDlg->StartFullScreenMouseChk();
+		if( pThis->nwMode == TRUE ){
+			if (lParam1!=0) {
+				pThis->fullScreen = TRUE;
+				if( pThis->ctrlDlg != NULL ){
+					pThis->ctrlDlg->StartFullScreenMouseChk();
+				}
+			}else{
+				pThis->fullScreen = FALSE;
+				if( pThis->ctrlDlg != NULL ){
+					pThis->ctrlDlg->StopFullScreenMouseChk();
+					pThis->ResetStreamingCtrlView();
+				}
 			}
 		}else{
-			pThis->fullScreen = FALSE;
+			if (lParam1!=0) {
+				pThis->fullScreen = TRUE;
+			}else{
+				pThis->fullScreen = FALSE;
+			}
 			if( pThis->ctrlDlg != NULL ){
 				pThis->ctrlDlg->StopFullScreenMouseChk();
 				pThis->ResetStreamingCtrlView();
@@ -373,6 +385,11 @@ BOOL CALLBACK CEpgTimerPlugIn::WindowMsgeCallback(HWND hwnd,UINT uMsg,WPARAM wPa
 					sys->m_pApp->SetChannel(0, ch);
 				}
 			}
+			break;
+		case WM_PLAY_CLOSE:
+			sys->cmd.SendNwPlayClose(sys->nwModeInfo.ctrlID);
+			sys->nwMode = FALSE;
+			sys->ResetStreamingCtrlView();
 			break;
 		default:
 			break;

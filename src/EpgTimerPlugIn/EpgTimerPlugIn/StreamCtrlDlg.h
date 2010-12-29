@@ -6,6 +6,7 @@
 
 #define WM_RESET_GUI (WM_USER+0x1001)
 #define WM_CHG_PORT (WM_USER+0x1101)
+#define WM_PLAY_CLOSE (WM_USER+0x1102)
 
 class CStreamCtrlDlg
 {

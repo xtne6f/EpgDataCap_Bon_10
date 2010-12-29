@@ -228,6 +228,7 @@ namespace EpgTimer
                 IniFileHandler.WritePrivateProfileString("DEL_CHK", i.ToString(), delChkFolderList[i], SettingPath.TimerSrvIniPath);
             }
             */
+            IniFileHandler.WritePrivateProfileString("REC_DEF", "RecMode", recSet.RecMode.ToString(), SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("REC_DEF", "Priority", recSet.Priority.ToString(), SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("REC_DEF", "TuijyuuFlag", recSet.TuijyuuFlag.ToString(), SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("REC_DEF", "ServiceMode", recSet.ServiceMode.ToString(), SettingPath.TimerSrvIniPath);
