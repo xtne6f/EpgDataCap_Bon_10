@@ -96,6 +96,35 @@ DWORD CFileStreamingManager::GetNextID()
 	return nextID;
 }
 
+BOOL CFileStreamingManager::CloseAllFile(
+	)
+{
+	if( Lock() == FALSE ) return FALSE;
+
+	map<DWORD, CFileStreamingUtil*>::iterator itr;
+	for( itr = this->utilMap.begin(); itr != this->utilMap.end(); itr++ ){
+		itr->second->StopSend();
+		SAFE_DELETE(itr->second);
+	}
+	this->utilMap.clear();
+
+	UnLock();
+	return TRUE;
+}
+
+BOOL CFileStreamingManager::IsStreaming()
+{
+	if( Lock() == FALSE ) return FALSE;
+
+	BOOL ret = FALSE;
+	if( this->utilMap.size() > 0 ){
+		ret = TRUE;
+	}
+
+	UnLock();
+	return ret;
+}
+
 BOOL CFileStreamingManager::OpenTimeShift(
 	LPCWSTR filePath,
 	DWORD processID,

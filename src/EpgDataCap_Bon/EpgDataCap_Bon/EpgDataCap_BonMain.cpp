@@ -792,6 +792,7 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 		{
 			wstring val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				sys->CloseBonDriver();
 				if( sys->OpenBonDriver(val.c_str()) == NO_ERR ){
 					resParam->param = CMD_SUCCESS;
 					PostMessage(sys->msgWnd, WM_CHG_TUNER, 0, 0);

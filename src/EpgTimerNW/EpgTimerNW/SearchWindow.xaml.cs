@@ -132,10 +132,14 @@ namespace EpgTimer
             if (err == 205)
             {
                 MessageBox.Show("サーバーに接続できませんでした");
-            } 
-            else if ( err != 1)
+            }
+            else if (err != 1)
             {
                 MessageBox.Show("変更に失敗しました");
+            }
+            else
+            {
+                SearchPg();
             }
         }
 
@@ -162,6 +166,10 @@ namespace EpgTimer
             else if (err != 1)
             {
                 MessageBox.Show("追加に失敗しました");
+            }
+            else
+            {
+                SearchPg();
             }
         }
 
@@ -214,6 +222,10 @@ namespace EpgTimer
             if (err == 205)
             {
                 MessageBox.Show("サーバーに接続できませんでした");
+            }
+            else
+            {
+                SearchPg();
             }
         }
         
@@ -270,6 +282,7 @@ namespace EpgTimer
                         info.event_id == info2.EventID)
                     {
                         item.IsReserved = true;
+                        item.ReserveInfo = info2;
                         break;
                     }
                 }
@@ -368,15 +381,67 @@ namespace EpgTimer
             dataView.Refresh();
         }
 
+        private void listView_result_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                SearchItem select = listView_result.SelectedItem as SearchItem;
+                if (select.IsReserved == false)
+                {
+                    //通常
+                    AddReserveWindow addDlg = new AddReserveWindow();
+                    addDlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                    addDlg.SetEpgEventInfo(select.EventInfo);
+                    if (addDlg.ShowDialog() == true)
+                    {
+                        SearchPg();
+                    }
+                }
+                else
+                {
+                    ChangeReserveWindow dlg = new ChangeReserveWindow();
+                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                    dlg.SetReserve(select.ReserveInfo);
+                    if (select.EventInfo != null)
+                    {
+                        dlg.SetEpgEventInfo(select.EventInfo);
+                    }
+                    if (dlg.ShowDialog() == true)
+                    {
+                        if (dlg.DeleteEnd == false)
+                        {
+                            List<ReserveData> addList = new List<ReserveData>();
+                            addList.Add(dlg.setInfo);
+                            cmd.SendChgReserve(addList);
+                        }
+                        else
+                        {
+                            List<UInt32> deleteList = new List<uint>();
+                            deleteList.Add(select.ReserveInfo.ReserveID);
+                            cmd.SendDelReserve(deleteList);
+                        }
+                        SearchPg();
+                    }
+                }
+            }
+        }
+
     }
 
     class SearchItem
     {
         private EpgEventInfo eventInfo = null;
+        private ReserveData reserveData = null;
+
         public EpgEventInfo EventInfo
         {
             get { return eventInfo; }
             set { eventInfo = value; }
+        }
+        public ReserveData ReserveInfo
+        {
+            get { return reserveData; }
+            set { reserveData = value; }
         }
         public String EventName
         {

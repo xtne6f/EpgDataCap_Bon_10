@@ -37,6 +37,7 @@ void CSetDlgApp::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_CHECK_EPGCAP_REC, btnEpgCapRec);
 	DDX_Control(pDX, IDC_CHECK_TASKMIN, btnTaskMin);
 	DDX_Control(pDX, IDC_CHECK_EMM, btnEnableEMM);
+	DDX_Control(pDX, IDC_CHECK_OPENLAST, btnOpenLast);
 }
 
 
@@ -66,6 +67,7 @@ BOOL CSetDlgApp::OnInitDialog()
 	btnEpgCapLive.SetCheck( GetPrivateProfileInt( L"SET", L"EpgCapLive", 1, appIniPath ) );
 	btnEpgCapRec.SetCheck( GetPrivateProfileInt( L"SET", L"EpgCapRec", 1, appIniPath ) );
 	btnTaskMin.SetCheck( GetPrivateProfileInt( L"SET", L"MinTask", 0, appIniPath ) );
+	btnOpenLast.SetCheck( GetPrivateProfileInt( L"SET", L"OpenLast", 1, appIniPath ) );
 
 	UpdateData(FALSE);
 
@@ -103,6 +105,8 @@ void CSetDlgApp::SaveIni(void)
 	WritePrivateProfileString( L"SET", L"EpgCapRec", val.GetBuffer(0), appIniPath );
 	val.Format(L"%d",btnTaskMin.GetCheck());
 	WritePrivateProfileString( L"SET", L"MinTask", val.GetBuffer(0), appIniPath );
+	val.Format(L"%d",btnOpenLast.GetCheck());
+	WritePrivateProfileString( L"SET", L"OpenLast", val.GetBuffer(0), appIniPath );
 }
 
 

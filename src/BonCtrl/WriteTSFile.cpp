@@ -371,6 +371,11 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 									sys->fileList[i]->writeUtil->GetSaveFilePath(saveFilePath, &saveFilePathSize);
 									sys->fileList[i]->subRecPath.push_back(saveFilePath);
 									sys->subRecFlag = TRUE;
+
+									if( data->size > write ){
+										sys->fileList[i]->writeUtil->AddTSBuff( data->data+write, data->size-write, &write);
+									}
+									sys->writeTotalSize += data->size;
 								}
 							}
 						}

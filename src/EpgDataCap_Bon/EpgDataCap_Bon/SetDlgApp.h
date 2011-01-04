@@ -43,4 +43,5 @@ public:
 	CButton btnEpgCapRec;
 	CButton btnTaskMin;
 	CButton btnEnableEMM;
+	CButton btnOpenLast;
 };

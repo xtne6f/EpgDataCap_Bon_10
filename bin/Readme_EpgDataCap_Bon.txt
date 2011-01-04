@@ -131,6 +131,10 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこと�
 　　・最小化時にタスクトレイに入れる
 　　　　最小化したときにタスクトレイに入れます。
 
+　　・次回起動時に終了前のサービスで起動する
+　　　　次回起動時に終了前のBonDriverとサービスが選択された状態で起動し
+　　　　ます。
+
 　●EPG取得設定タブ
 　　※設定値はEpgTimer.exeと共通となります。
 　　・EPG取得対象サービス
@@ -243,7 +247,8 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこと�
 ＝＞B25Decoder.dllを削除してください。削除しても動作します。
 
 ・ネットワークリモコンは？
-＝＞需要はないと判断したため削除しました。
+＝＞需要はないと判断したため削除しました。EpgTimerのNetWorkTVモードを
+　　使用してください。
 
 ・「BonDeiverのオープンができませんでした」と出る
 ＝＞OSがチューナーが認識していない、別のアプリで使用中などが考えられます。
@@ -273,3 +278,15 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこと�
 
 　　OriginalNetworkID 0x0004はデフォルトB25Decoder.dllで解除
 　　OriginalNetworkID 0x0004 TransportStreamID 0x0001はB25Decoder2.dllで解除
+
+■強制的に起動時のBonDriverとサービス指定を行う■
+　この設定はEpgDataCap_Bon.exeを単独で起動したときのみ、有効な設定にな
+　ります。予約録画時などは無視されます。
+　動作設定で「次回起動時に終了前のサービスで起動する」のチェックがOFFの
+　場合、EpgDataCap_Bon.iniのSETに以下のものを追加することで起動時の
+　BonDriverとサービスを指定できます。
+　　OpenFix：1で機能を有効、0で機能を無効
+　　FixBon：BonDriverのファイル名（拡張子含む）
+　　FixONID：OriginalNetworkIDの10進数
+　　FixTSID：TransportStreamIDの10進数
+　　FixSID：ServiceIDの10進数

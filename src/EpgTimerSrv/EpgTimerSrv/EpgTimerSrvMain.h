@@ -72,6 +72,7 @@ protected:
 	int autoAddDays;
 	BOOL chkGroupEvent;
 	BYTE rebootDef;
+	BOOL ngFileStreaming;
 
 	vector<OLD_EVENT_INFO_DATA3> oldSearchList;
 protected:

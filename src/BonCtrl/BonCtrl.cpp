@@ -410,6 +410,18 @@ DWORD CBonCtrl::_SetCh(
 			ret = this->bonUtil.SetCh(space, ch);
 
 			StartBackgroundEpgCap();
+		}else{
+			BOOL chChgErr = FALSE;
+			if( this->tsOut.IsChChanging(&chChgErr) == TRUE ){
+				if( chChgErr == TRUE ){
+					//エラーの時は再設定
+					this->tsOut.SetChChangeEvent();
+					_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
+					ret = this->bonUtil.SetCh(space, ch);
+
+					StartBackgroundEpgCap();
+				}
+			}
 		}
 	}else{
 		OutputDebugString(L"Err GetNowCh");

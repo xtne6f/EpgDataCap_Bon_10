@@ -54,6 +54,21 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg(CWnd* pParent /*=NULL*/)
 	this->iniTCP = FALSE;
 	
 	this->minTask = GetPrivateProfileInt( L"Set", L"MinTask", 0, this->moduleIniPath );
+	this->openLastCh = GetPrivateProfileInt( L"Set", L"OpenLast", 1, this->moduleIniPath );
+	if( this->openLastCh == 0 ){
+		if( GetPrivateProfileInt( L"Set", L"OpenFix", 0, this->moduleIniPath ) == 1){
+			this->initONID = GetPrivateProfileInt( L"Set", L"FixONID", -1, this->moduleIniPath );
+			this->initTSID = GetPrivateProfileInt( L"Set", L"FixTSID", -1, this->moduleIniPath );
+			this->initSID = GetPrivateProfileInt( L"Set", L"FixSID", -1, this->moduleIniPath );
+			GetPrivateProfileString( L"Set", L"FixBon", L"", buff, 512, this->moduleIniPath );
+			this->iniBonDriver = buff;
+		}else{
+			this->initONID = -1;
+			this->initTSID = -1;
+			this->initSID = -1;
+			this->iniBonDriver = L"";
+		}
+	}
 }
 
 void CEpgDataCap_BonDlg::DoDataExchange(CDataExchange* pDX)
@@ -958,9 +973,18 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonSet()
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	CSettingDlg setDlg;
 	if( setDlg.DoModal() == IDOK ){
+
 		this->main.ReloadSetting();
 
 		ReloadNWSet();
+
+		WORD ONID;
+		WORD TSID;
+		WORD SID;
+		this->main.GetCh(&ONID, &TSID, &SID);
+		this->initONID = ONID;
+		this->initTSID = TSID;
+		this->initSID = SID;
 		ReloadServiceList();
 		
 		this->minTask = GetPrivateProfileInt( L"Set", L"MinTask", 0, this->moduleIniPath );

@@ -524,9 +524,10 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 			}
 		}
 	}
-	CloseHandle(file);
 
 Err_End:
+	CloseHandle(file);
+
 	//無効PAT送って次回送信時にリセットされるようにする
 	BYTE endBuff[188*512];
 	memset(endBuff, 0xFF, 188*512);

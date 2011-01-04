@@ -18,7 +18,12 @@ public:
 
 
 	void UnInit();
-	void SetInitBon(CString bonFile){ iniBonDriver = bonFile; };
+	void SetInitBon(CString bonFile){
+		iniBonDriver = bonFile;
+		initONID = -1;
+		initTSID = -1;
+		initSID = -1;
+	};
 	void SetIniMin(BOOL minFlag){ iniMin = minFlag; };
 	void SetIniNW(BOOL networkFlag){ iniNetwork = networkFlag; };
 	void SetIniView(BOOL viewFlag){ iniView = viewFlag; };
@@ -72,6 +77,7 @@ protected:
 	BOOL iniNetwork;
 	BOOL iniUDP;
 	BOOL iniTCP;
+	int openLastCh;
 
 	CEpgDataCap_BonMain main;
 

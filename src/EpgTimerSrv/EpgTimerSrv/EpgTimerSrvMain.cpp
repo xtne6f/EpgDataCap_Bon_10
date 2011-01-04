@@ -138,7 +138,14 @@ void CEpgTimerSrvMain::StartMain(
 				this->reserveManager.SendNotifyEpgReload();
 
 				//リロードタイミングで予約始まったかもしれないのでチェック
-				if( this->reserveManager.IsSuspendOK() == TRUE ){
+				BOOL streamingChk = TRUE;
+				if( this->ngFileStreaming == TRUE ){
+					if( this->streamingManager.IsStreaming() == TRUE ){
+						streamingChk = FALSE;
+					}
+				}
+
+				if( this->reserveManager.IsSuspendOK() == TRUE && streamingChk == TRUE){
 					if( this->suspendMode != 0xFF && this->rebootFlag != 0xFF ){
 						//問い合わせ
 						if( this->suspendMode != 0 && this->suspendMode != 4 ){
@@ -166,7 +173,13 @@ void CEpgTimerSrvMain::StartMain(
 		}
 
 		if( countChkSuspend > 10 ){
-			if( this->reserveManager.IsSuspendOK() == FALSE ){
+			BOOL streamingChk = TRUE;
+			if( this->ngFileStreaming == TRUE ){
+				if( this->streamingManager.IsStreaming() == TRUE ){
+					streamingChk = FALSE;
+				}
+			}
+			if( this->reserveManager.IsSuspendOK() == FALSE || streamingChk == FALSE){
 				SetThreadExecutionState(ES_SYSTEM_REQUIRED);
 			}
 			countChkSuspend = 0;
@@ -205,6 +218,7 @@ void CEpgTimerSrvMain::ReloadSetting()
 	this->autoAddDays = GetPrivateProfileInt(L"SET", L"AutoAddDays", 8, iniPath.c_str());
 	this->chkGroupEvent = GetPrivateProfileInt(L"SET", L"ChkGroupEvent", 1, iniPath.c_str());
 	this->rebootDef = (BYTE)GetPrivateProfileInt(L"SET", L"Reboot", 0, iniPath.c_str());
+	this->ngFileStreaming = (BYTE)GetPrivateProfileInt(L"NO_SUSPEND", L"NoFileStreaming", 0, iniPath.c_str());
 }
 
 //メイン処理停止
@@ -251,6 +265,9 @@ UINT WINAPI CEpgTimerSrvMain::SleepThread(void* param)
 		GetTimeString(retTime, strTime);
 		_OutputDebugString(L"ReturnTime: %s", strTime.c_str());
 		if( sys->sleepUtil.SetReturnTime(returnTime, sys->rebootFlagWork, sys->wakeMargin) == TRUE ){
+			//ストリーミングを終了する
+			sys->streamingManager.CloseAllFile();
+
 			if( sys->suspendModeWork == 1 ){
 				sys->sleepUtil.SetStandby(TRUE);
 				if( sys->rebootFlagWork == 1 ){
@@ -282,6 +299,9 @@ UINT WINAPI CEpgTimerSrvMain::SleepThread(void* param)
 			}
 		}
 	}else{
+		//ストリーミングを終了する
+		sys->streamingManager.CloseAllFile();
+
 		if( sys->suspendModeWork == 1 ){
 			sys->sleepUtil.SetStandby(TRUE);
 			if( sys->rebootFlagWork == 1 ){
@@ -421,8 +441,16 @@ BOOL CEpgTimerSrvMain::IsSuspending()
 // TRUE（構わない）、FALSE（移行しては駄目）
 BOOL CEpgTimerSrvMain::ChkSuspend()
 {
-	BOOL ret = TRUE;
-	ret = this->reserveManager.IsSuspendOK();
+	BOOL ret = FALSE;
+	BOOL streamingChk = TRUE;
+	if( this->ngFileStreaming == TRUE ){
+		if( this->streamingManager.IsStreaming() == TRUE ){
+			streamingChk = FALSE;
+		}
+	}
+	if( streamingChk == TRUE ){
+		ret = this->reserveManager.IsSuspendOK();
+	}
 	return ret;
 }
 
@@ -1098,7 +1126,13 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_CHK_SUSPEND:
 		{
-			if( sys->reserveManager.IsSuspendOK() == TRUE ){
+			BOOL streamingChk = TRUE;
+			if( sys->ngFileStreaming == TRUE ){
+				if( sys->streamingManager.IsStreaming() == TRUE ){
+					streamingChk = FALSE;
+				}
+			}
+			if( sys->reserveManager.IsSuspendOK() == TRUE && streamingChk == TRUE){
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -1112,7 +1146,14 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					reboot = sys->rebootDef;
 				}
 				BYTE suspendMode = val&0x00FF;
-				if( sys->reserveManager.IsSuspendOK() == TRUE ){
+
+				BOOL streamingChk = TRUE;
+				if( sys->ngFileStreaming == TRUE ){
+					if( sys->streamingManager.IsStreaming() == TRUE ){
+						streamingChk = FALSE;
+					}
+				}
+				if( sys->reserveManager.IsSuspendOK() == TRUE && streamingChk == TRUE){
 					if( sys->Lock() == TRUE ){
 						sys->StartSleep(reboot, suspendMode);
 						sys->UnLock();

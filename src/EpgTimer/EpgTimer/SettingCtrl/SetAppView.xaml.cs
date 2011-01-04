@@ -22,6 +22,8 @@ namespace EpgTimer
     {
         private List<String> ngProcessList = new List<String>();
         private String ngMin = "10";
+        public bool ngFileStreaming = false;
+
         public SetAppView()
         {
             InitializeComponent();
@@ -103,7 +105,10 @@ namespace EpgTimer
             buff.Clear();
             IniFileHandler.GetPrivateProfileString("NO_SUSPEND", "NoStandbyTime", "10", buff, 512, SettingPath.TimerSrvIniPath);
             ngMin = buff.ToString();
-
+            if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoFileStreaming", 0, SettingPath.TimerSrvIniPath) == 1)
+            {
+                ngFileStreaming = true;
+            }
 
             comboBox_process.Items.Add("リアルタイム");
             comboBox_process.Items.Add("高");
@@ -208,6 +213,14 @@ namespace EpgTimer
             }
 
             IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoStandbyTime", ngMin, SettingPath.TimerSrvIniPath);
+            if (ngFileStreaming == true)
+            {
+                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoFileStreaming", "1", SettingPath.TimerSrvIniPath);
+            }
+            else
+            {
+                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoFileStreaming", "0", SettingPath.TimerSrvIniPath);
+            }
 
             IniFileHandler.WritePrivateProfileString("SET", "ProcessPriority", comboBox_process.SelectedIndex.ToString(), SettingPath.TimerSrvIniPath);
         }
@@ -217,11 +230,13 @@ namespace EpgTimer
             SetAppCancelWindow dlg = new SetAppCancelWindow();
             dlg.processList = this.ngProcessList;
             dlg.ngMin = this.ngMin;
+            dlg.ngFileStreaming = this.ngFileStreaming;
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
             dlg.ShowDialog();
 
             this.ngProcessList = dlg.processList;
             this.ngMin = dlg.ngMin;
+            this.ngFileStreaming = dlg.ngFileStreaming;
         }
     }
 }

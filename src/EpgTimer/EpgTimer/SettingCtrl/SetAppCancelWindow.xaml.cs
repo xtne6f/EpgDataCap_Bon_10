@@ -20,6 +20,7 @@ namespace EpgTimer
     {
         public List<String> processList = new List<string>();
         public String ngMin = "30";
+        public bool ngFileStreaming = false;
 
         public SetAppCancelWindow()
         {
@@ -58,6 +59,14 @@ namespace EpgTimer
                 processList.Add(info);
             }
             ngMin = textBox_ng_min.Text;
+            if (checkBox_ng_fileStreaming.IsChecked == true)
+            {
+                ngFileStreaming = true;
+            }
+            else
+            {
+                ngFileStreaming = false;
+            }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -68,6 +77,7 @@ namespace EpgTimer
             }
 
             textBox_ng_min.Text = ngMin;
+            checkBox_ng_fileStreaming.IsChecked = ngFileStreaming;
 
         }
     }

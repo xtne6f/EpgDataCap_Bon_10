@@ -179,7 +179,7 @@ namespace EpgTimer
                 }
                 if ((defKey.dayOfWeekFlag & 0x40) != 0)
                 {
-                    checkBox_week5.IsChecked = true;
+                    checkBox_week6.IsChecked = true;
                 }
 
                 UInt32 hh = defKey.startTime / (60 * 60);

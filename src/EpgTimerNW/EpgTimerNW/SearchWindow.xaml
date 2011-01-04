@@ -48,7 +48,7 @@
         <Button Grid.Row="1" Content="自動予約登録条件に追加" Height="23" HorizontalAlignment="Left" Margin="259,6,0,0" Name="button_add_epgAutoAdd" VerticalAlignment="Top" Width="182" Click="button_add_epgAutoAdd_Click" />
         <Button Grid.Row="1" Content="自動予約登録条件を変更" Height="23" HorizontalAlignment="Left" Margin="464,6,0,0" Name="button_chg_epgAutoAdd" VerticalAlignment="Top" Width="182" Click="button_chg_epgAutoAdd_Click" Visibility="Hidden" />
         <GridSplitter Grid.Row="0" Height="2" HorizontalAlignment="Stretch" Name="gridSplitter1" VerticalAlignment="Bottom" BorderBrush="DarkGray" Background="DarkGray" />
-        <ListView Grid.Row="2" Name="listView_result" Margin="10" SelectionMode="Single" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click">
+        <ListView Grid.Row="2" Name="listView_result" Margin="10" SelectionMode="Single" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" MouseDoubleClick="listView_result_MouseDoubleClick">
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />

@@ -9,6 +9,10 @@ public:
 	CFileStreamingManager(void);
 	~CFileStreamingManager(void);
 
+	BOOL CloseAllFile(
+		);
+	BOOL IsStreaming();
+
 	BOOL OpenTimeShift(
 		LPCWSTR filePath,
 		DWORD processID,
