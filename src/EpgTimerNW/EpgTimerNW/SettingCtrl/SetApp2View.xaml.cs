@@ -146,6 +146,7 @@ namespace EpgTimer
                 checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
                 checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
                 checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
+                checkBox_ngAutoEpgLoad.IsChecked = Settings.Instance.NgAutoEpgLoadNW;
 
             }
             catch
@@ -312,6 +313,14 @@ namespace EpgTimer
             else
             {
                 Settings.Instance.SuspendCloseNW = false;
+            }
+            if (checkBox_ngAutoEpgLoad.IsChecked == true)
+            {
+                Settings.Instance.NgAutoEpgLoadNW = true;
+            }
+            else
+            {
+                Settings.Instance.NgAutoEpgLoadNW = false;
             }
             
         }

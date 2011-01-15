@@ -1148,6 +1148,11 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 void CEpgDataCap_BonDlg::OnBnClickedButtonCancel()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
+	if( this->main.IsRec() == TRUE ){
+		if( AfxMessageBox( L"録画を停止しますか？", MB_YESNO ) == IDNO ){
+			return ;
+		}
+	}
 	this->log = L"キャンセルされました\r\n";
 	SetDlgItemText(IDC_EDIT_LOG, this->log);
 

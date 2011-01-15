@@ -192,7 +192,7 @@ BOOL CParseChText4::SaveChText(LPCWSTR filePath)
 		return FALSE;
 	}
 
-	HANDLE hFile = _CreateFile( loadFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hFile = _CreateFile2( loadFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		return FALSE;
 	}

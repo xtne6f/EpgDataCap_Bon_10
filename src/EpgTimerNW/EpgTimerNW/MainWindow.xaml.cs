@@ -32,6 +32,7 @@ namespace EpgTimerNW
         private Dictionary<string, Button> buttonList = new Dictionary<string, Button>();
         private CtrlCmdUtil cmd = EpgTimerNW.NWConnect.Instance.cmd;
         private bool needUnRegist = true;
+        private bool reloadEpgFlag = false;
 
         public MainWindow()
         {
@@ -209,9 +210,11 @@ namespace EpgTimerNW
                 epgView.SetReserveList(reserveList);
                 recInfoView.ReloadRecInfo();
                 autoAddView.ReloadData();
-
-                epgView.ReloadEpgData();
-                epgView.ReDrawReserve();
+                if (Settings.Instance.NgAutoEpgLoadNW == false)
+                {
+                    epgView.ReloadEpgData();
+                    epgView.ReDrawReserve();
+                }
                 
                 List<CtrlCmdCLI.Def.TunerReserveInfo> tunerReserveList = new List<CtrlCmdCLI.Def.TunerReserveInfo>();
                 cmd.SendEnumTunerReserve(ref tunerReserveList);
@@ -427,8 +430,11 @@ namespace EpgTimerNW
                         recInfoView.ReloadRecInfo();
                         autoAddView.ReloadData();
 
-                        epgView.ReloadEpgData();
-                        epgView.ReDrawReserve();
+                        if (Settings.Instance.NgAutoEpgLoadNW == false)
+                        {
+                            epgView.ReloadEpgData();
+                            epgView.ReDrawReserve();
+                        }
 
                         List<CtrlCmdCLI.Def.TunerReserveInfo> tunerReserveList = new List<CtrlCmdCLI.Def.TunerReserveInfo>();
                         cmd.SendEnumTunerReserve(ref tunerReserveList);
@@ -469,6 +475,10 @@ namespace EpgTimerNW
             else if (err != 1)
             {
                 MessageBox.Show("EPG再読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
+            }
+            else
+            {
+                reloadEpgFlag = true;
             }
         }
 
@@ -821,15 +831,23 @@ namespace EpgTimerNW
                         pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
                         if (Dispatcher.CheckAccess() == true)
                         {
-                            epgView.ReloadEpgData();
-                            epgView.ReDrawReserve();
+                            if (Settings.Instance.NgAutoEpgLoadNW == false || reloadEpgFlag == true)
+                            {
+                                epgView.ReloadEpgData();
+                                epgView.ReDrawReserve();
+                                reloadEpgFlag = false;
+                            }
                         }
                         else
                         {
                             Dispatcher.BeginInvoke(new Action(() =>
                             {
-                                epgView.ReloadEpgData();
-                                epgView.ReDrawReserve();
+                                if (Settings.Instance.NgAutoEpgLoadNW == false || reloadEpgFlag == true)
+                                {
+                                    epgView.ReloadEpgData();
+                                    epgView.ReDrawReserve();
+                                    reloadEpgFlag = false;
+                                }
                             }));
                         }
                     }

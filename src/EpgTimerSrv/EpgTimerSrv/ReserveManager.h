@@ -284,6 +284,8 @@ protected:
 	CSendCtrlCmd sendCtrlNWTV;
 	BOOL NWTVUDP;
 	BOOL NWTVTCP;
+
+	int reloadBankMapAlgo;
 protected:
 	//PublicAPI排他制御用
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
@@ -297,6 +299,8 @@ protected:
 	BOOL _ChgReserveData(RESERVE_DATA* reserve, BOOL chgTime);
 
 	void _ReloadBankMap();
+	void _ReloadBankMapAlgo0();
+	void _ReloadBankMapAlgo1();
 	void CheckOverTimeReserve();
 	void CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* workInfo, BOOL backPriority, DWORD reserveCount, DWORD reserveNum);
 	DWORD ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);

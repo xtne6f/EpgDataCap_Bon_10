@@ -175,6 +175,7 @@ namespace EpgTimer
         private bool searchKeyNotDate;
         private bool wakeReconnectNW;
         private bool suspendCloseNW;
+        private bool ngAutoEpgLoadNW;
 
         public bool SearchKeyRegExp
         {
@@ -535,6 +536,11 @@ namespace EpgTimer
             get { return suspendCloseNW; }
             set { suspendCloseNW = value; }
         }
+        public bool NgAutoEpgLoadNW
+        {
+            get { return ngAutoEpgLoadNW; }
+            set { ngAutoEpgLoadNW = value; }
+        }
 
         public Settings()
         {
@@ -588,6 +594,7 @@ namespace EpgTimer
             searchKeyNotDate = false;
             wakeReconnectNW = false;
             suspendCloseNW = false;
+            ngAutoEpgLoadNW = false;
         }
         [NonSerialized()]
         private static Settings _instance;
