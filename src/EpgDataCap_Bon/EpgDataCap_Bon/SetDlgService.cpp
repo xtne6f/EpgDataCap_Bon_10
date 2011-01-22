@@ -257,7 +257,7 @@ void CSetDlgService::OnBnClickedButtonDel()
 		map<wstring, CH_SET_INFO*>::iterator itr;
 		itr = chList.find(key);
 		if( itr != chList.end()){
-			itr->second->chSet.DelCh(chSet->space, chSet->ch);
+			itr->second->chSet.DelChService(chSet->space, chSet->ch, chSet->serviceID);
 			ReloadList();
 		}
 	}

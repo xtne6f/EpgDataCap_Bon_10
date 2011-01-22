@@ -179,6 +179,21 @@ BOOL CParseChText4::DelCh(
 	return TRUE;
 }
 
+BOOL CParseChText4::DelChService(
+	WORD space,
+	WORD ch,
+	WORD serviceID)
+{
+	multimap<LONGLONG, CH_DATA4>::iterator itrF;
+	for( itrF = this->chList.begin(); itrF != this->chList.end(); itrF++ ){
+		if( itrF->second.space == space && itrF->second.ch == ch && itrF->second.serviceID == serviceID){
+			this->chList.erase(itrF);
+			break;
+		}
+	}
+	return TRUE;
+}
+
 BOOL CParseChText4::SaveChText(LPCWSTR filePath)
 {
 	wstring loadFilePath = L"";

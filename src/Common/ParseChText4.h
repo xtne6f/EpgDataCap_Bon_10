@@ -60,6 +60,18 @@ public:
 		WORD space,
 		WORD ch);
 
+	//チャンネル情報を削除
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// space		[IN]物理チャンネル
+	// ch			[IN]物理チャンネル
+	// serviceID				[IN]ServiceID
+	BOOL DelChService(
+		WORD space,
+		WORD ch,
+		WORD serviceID);
+
 	//現在の情報をChSet4.txtに上書き保存する
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
