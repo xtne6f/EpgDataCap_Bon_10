@@ -562,20 +562,23 @@ UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
 			if( size != 0 ){
 				TS_DATA* item = new TS_DATA;
 				if( sys->packetInit.GetTSData(data, size, &item->data, &item->size) == TRUE ){
-					if( WaitForSingleObject( sys->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
-						if(sys->TSBuff.size()>5000){
-							for( size_t i=4900; i<sys->TSBuff.size(); i++ ){
+					if( WaitForSingleObject( sys->buffLockEvent, 50000 ) == WAIT_OBJECT_0 ){
+						if(sys->TSBuff.size()>10000){
+							for( size_t i=9000; i<sys->TSBuff.size(); i++ ){
 								SAFE_DELETE(sys->TSBuff[i]);
 							}
 							vector<TS_DATA*>::iterator itr;
 							itr = sys->TSBuff.begin();
-							advance(itr,4900);
-							sys->TSBuff.erase( sys->TSBuff.begin(), itr );
+							advance(itr,9000);
+							sys->TSBuff.erase( itr, sys->TSBuff.end() );
 						}
 						sys->TSBuff.push_back(item);
 						if( sys->buffLockEvent != NULL ){
 							SetEvent(sys->buffLockEvent);
 						}
+					}else{
+						delete item;
+						_OutputDebugString(L"★★Buff Write TimeOut");
 					}
 				}else{
 					delete item;
@@ -603,14 +606,14 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 
 		//バッファからデータ取り出し
 		TS_DATA* data = NULL;
-		if( WaitForSingleObject( sys->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
-			if(sys->TSBuff.size()>2000){
-				for( size_t i=1900; i<sys->TSBuff.size(); i++ ){
+		if( WaitForSingleObject( sys->buffLockEvent, 5000 ) == WAIT_OBJECT_0 ){
+			if(sys->TSBuff.size()>10000){
+				for( size_t i=9000; i<sys->TSBuff.size(); i++ ){
 					SAFE_DELETE(sys->TSBuff[i]);
 				}
 				vector<TS_DATA*>::iterator itr;
 				itr = sys->TSBuff.begin();
-				advance(itr,1900);
+				advance(itr,9000);
 				sys->TSBuff.erase( itr, sys->TSBuff.end() );
 			}
 			if( sys->TSBuff.size() != 0 ){

@@ -1793,6 +1793,7 @@ BOOL CReserveManager::ChangeNGReserve(BANK_WORK_INFO* inItem)
 					//同一チャンネルなのでかぶりではない
 					continue;
 				}
+
 				//時間かぶっている予約かチェック
 				if( itrWork->second->startTime <= inItem->startTime && 
 					inItem->startTime < itrWork->second->endTime){
@@ -1821,6 +1822,16 @@ BOOL CReserveManager::ChangeNGReserve(BANK_WORK_INFO* inItem)
 			vector<BANK_WORK_INFO*> tempIn;
 			for( size_t i=0; i<chkReserve.size(); i++ ){
 				BOOL inFlag = FALSE;
+
+				//録画中の予約とかぶるとこのバンクは無理
+				BOOL recWaitFlag = FALSE;
+				DWORD tunerID = 0;
+				chkReserve[i]->reserveInfo->GetRecWaitMode(&recWaitFlag, &tunerID);
+				if( recWaitFlag == TRUE ){
+					moveOK = FALSE;
+					break;
+				}
+
 				map<DWORD, BANK_INFO*>::iterator itrBank2;
 				//まず問題なく入る場所を探す
 				for( itrBank2 = this->bankMap.begin(); itrBank2 != this->bankMap.end(); itrBank2++ ){
@@ -2420,13 +2431,30 @@ void CReserveManager::CheckErrReserve()
 			itrCtrl->second->GetOpenErrReserve(&reserveInfo);
 
 			for( size_t i=0 ;i<reserveInfo.size(); i++ ){
+				//バンクから削除
+				RESERVE_DATA data;
+				reserveInfo[i]->GetData(&data);
+
+				map<DWORD, BANK_INFO*>::iterator itrBank;
+				itrBank = this->bankMap.find(itrCtrl->first);
+				if( itrBank != this->bankMap.end()){
+					map<DWORD, BANK_WORK_INFO*>::iterator itrWork;
+					itrWork = itrBank->second->reserveList.find(data.reserveID);
+					if( itrWork != itrBank->second->reserveList.end()){
+						SAFE_DELETE(itrWork->second);
+						itrBank->second->reserveList.erase(itrWork);
+					}
+				}
+
+
 				BANK_WORK_INFO* item = new BANK_WORK_INFO;
 				CreateWorkData(reserveInfo[i], item, this->backPriorityFlag, 0, 0);
+				reserveInfo[i]->AddNGTunerID(itrCtrl->first);
+				reserveInfo[i]->SetRecWaitMode(FALSE, 0);
 
 				BOOL insert = FALSE;
 				//チューナー固定でエラーのものは空き探さない
 				if( item->useTunerID == 0 ){
-					map<DWORD, BANK_INFO*>::iterator itrBank;
 
 					//まずそのまま入るところ
 					for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
@@ -2482,7 +2510,6 @@ void CReserveManager::CheckErrReserve()
 			list.push_back(addReserve[i]->reserveInfo);
 			itrCtrl->second->AddReserve(&list);
 		}
-		SAFE_DELETE(addReserve[i]);
 	}
 
 	//移動できないものエラーとして削除
@@ -2533,6 +2560,7 @@ void CReserveManager::CheckErrReserve()
 	}
 
 	if( needNotify == TRUE ){
+		_ReloadBankMap();
 		_SendNotifyUpdate();
 	}
 }

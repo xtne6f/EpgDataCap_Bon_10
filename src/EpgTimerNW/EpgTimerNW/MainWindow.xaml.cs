@@ -37,6 +37,7 @@ namespace EpgTimerNW
         public MainWindow()
         {
             Settings.LoadFromXmlFile();
+            ChSet5.LoadFile();
             NWConnect.Instance.cmd.SetSendMode(true);
             NWConnect.Instance.cmd.SetNWSetting(Settings.Instance.NWServerIP, Settings.Instance.NWServerPort);
 

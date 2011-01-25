@@ -80,6 +80,7 @@ namespace EpgTimer
             }
 
             Typeface typeface = null;
+            GlyphTypeface glyphTypeface = null;
             try
             {
                 if (Settings.Instance.FontName.Length > 0)
@@ -89,20 +90,29 @@ namespace EpgTimer
                                                  FontWeights.Normal,
                                                  FontStretches.Normal);
                 }
-            }
-            finally
-            {
+                if (!typeface.TryGetGlyphTypeface(out glyphTypeface))
+                {
+                    typeface = null;
+                }
+
                 if (typeface == null)
                 {
                     typeface = new Typeface(new FontFamily("MS UI Gothic"),
                                                  FontStyles.Normal,
                                                  FontWeights.Normal,
                                                  FontStretches.Normal);
+                    if (!typeface.TryGetGlyphTypeface(out glyphTypeface))
+                    {
+                        MessageBox.Show("フォント指定が不正です");
+                        return;
+                    }
                 }
             }
-            GlyphTypeface glyphTypeface;
-            if (!typeface.TryGetGlyphTypeface(out glyphTypeface))
-                throw new InvalidOperationException("No glyphtypeface found");
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+            
             double size = Settings.Instance.FontSize;
             foreach (ProgramViewItem info in ItemsSource)
             {

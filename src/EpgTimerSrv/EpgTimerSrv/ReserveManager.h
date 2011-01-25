@@ -228,7 +228,7 @@ protected:
 		DWORD tunerID;
 		map<DWORD, BANK_WORK_INFO*> reserveList; //キー 予約ID
 	}BANK_INFO;
-	map<DWORD, BANK_INFO*> bankMap;
+	map<DWORD, BANK_INFO*> bankMap; //キー チューナーID
 	map<DWORD, BANK_WORK_INFO*> NGReserveMap;
 
 	int defStartMargine;
