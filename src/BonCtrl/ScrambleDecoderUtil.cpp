@@ -75,8 +75,9 @@ void CScrambleDecoderUtil::UnLoadDll()
 	this->currentDll = L"";
 }
 
-void CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
+BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 {
+	BOOL ret = FALSE;
 	wstring folderPath;
 	GetModuleFolderPath( folderPath );
 
@@ -124,8 +125,11 @@ void CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 			this->currentDll = L"";
 		}else{
 			this->currentDll = dllPath;
+			ret = TRUE;
 		}
 	}
+
+	return ret;
 }
 
 BOOL CScrambleDecoderUtil::Decode(BYTE* src, DWORD srcSize, BYTE** dest, DWORD* destSize)

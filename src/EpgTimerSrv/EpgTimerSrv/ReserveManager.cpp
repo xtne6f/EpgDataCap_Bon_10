@@ -447,7 +447,11 @@ void CReserveManager::ReloadSetting()
 
 	map<DWORD, CTunerBankCtrl*>::iterator itr;
 	for(itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
-		itr->second->SetTwitterCtrl(&this->twitterManager);
+		if(this->useTweet == 1 ){
+			itr->second->SetTwitterCtrl(&this->twitterManager);
+		}else{
+			itr->second->SetTwitterCtrl(NULL);
+		}
 	}
 
 	this->reloadBankMapAlgo = GetPrivateProfileInt(L"SET", L"ReloadBankMapAlgo", 0, iniAppPath.c_str());

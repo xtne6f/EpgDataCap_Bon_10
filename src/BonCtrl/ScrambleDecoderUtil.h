@@ -17,7 +17,7 @@ public:
 
 	void UnLoadDll();
 
-	void SetNetwork(WORD ONID, WORD TSID);
+	BOOL SetNetwork(WORD ONID, WORD TSID);
 
 	BOOL Decode(BYTE* src, DWORD srcSize, BYTE** dest, DWORD* destSize);
 

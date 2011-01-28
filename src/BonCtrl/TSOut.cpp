@@ -202,7 +202,11 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 						this->lastONID = onid;
 						this->lastTSID = tsid;
 						this->epgUtil.ClearSectionStatus();
-						this->decodeUtil.SetNetwork(onid, tsid);
+						if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
+							OutputDebugString(L"★★Decode DLL load err\r\n");
+							Sleep(100);
+							this->decodeUtil.SetNetwork(onid, tsid);
+						}
 						this->decodeUtil.SetEmm(this->emmEnableFlag);
 						ResetErrCount();
 					}else if( GetTimeCount() > this->chChangeTime + 15 ){
@@ -309,10 +313,11 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 			}
 		}
 	}
-	
+
 	if( this->deocdeBuffWriteSize > 0 ){
 		if( this->enableDecodeFlag == TRUE){
 			//デコード必要
+
 			if( decodeUtil.Decode(this->decodeBuff, this->deocdeBuffWriteSize, &decodeData, &decodeSize) == FALSE ){
 				//デコード失敗
 				decodeData = this->decodeBuff;
@@ -420,7 +425,7 @@ BOOL CTSOut::IsNeedPID(CTSPacketUtil* packet)
 	if( packet == NULL ){
 		return FALSE;
 	}
-	if( packet->PID < 0x30 ){
+	if( packet->PID <= 0x30 ){
 		return TRUE;
 	}
 	map<WORD,WORD>::iterator itrPID;

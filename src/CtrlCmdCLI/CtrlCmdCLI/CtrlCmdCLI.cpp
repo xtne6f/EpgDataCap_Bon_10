@@ -263,7 +263,9 @@ DateTime CtrlCmdUtil::ConvertTime(SYSTEMTIME* src)
 	SystemTimeToFileTime( src, &fTime );
 	__int64 i64Time = 0;
 	i64Time = ((__int64)fTime.dwHighDateTime)<<32 | fTime.dwLowDateTime;
-
+	if( i64Time <= 0 ){
+		return DateTime::MinValue;
+	}
 	return DateTime::FromFileTimeUtc(i64Time);
 }
 /*

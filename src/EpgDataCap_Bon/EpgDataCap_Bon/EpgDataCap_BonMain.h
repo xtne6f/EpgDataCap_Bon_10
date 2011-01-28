@@ -247,6 +247,16 @@ public:
 
 	void StartTimeShift();
 
+	BOOL GetViewStatusInfo(
+		float* signal,
+		DWORD* space,
+		DWORD* ch,
+		ULONGLONG* drop,
+		ULONGLONG* scramble,
+		vector<NW_SEND_INFO>* sendUdpList,
+		vector<NW_SEND_INFO>* sendTcpList
+		);
+
 protected:
 	HWND msgWnd;
 

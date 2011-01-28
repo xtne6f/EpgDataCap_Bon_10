@@ -392,23 +392,22 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				SetThreadExecutionState(ES_SYSTEM_REQUIRED);
 
 				int iLine = this->editStatus.GetFirstVisibleLine();
-				ULONGLONG drop = 0;
-				ULONGLONG scramble = 0;
-				this->main.GetErrCount(&drop, &scramble);
-
+				float signal = 0;
 				DWORD space = 0;
 				DWORD ch = 0;
-				if(this->main.GetCh(&space, &ch)==TRUE){
+				ULONGLONG drop = 0;
+				ULONGLONG scramble = 0;
+				vector<NW_SEND_INFO> udpSendList;
+				vector<NW_SEND_INFO> tcpSendList;
+
+				BOOL ret = this->main.GetViewStatusInfo(&signal, &space, &ch, &drop, &scramble, &udpSendList, &tcpSendList);
+
+				if(ret==TRUE){
 					this->statusLog.Format(L"Signal: %.02f Drop: %I64d Scramble: %I64d  space: %d ch: %d",this->main.GetSignalLevel(), drop, scramble, space, ch);
 				}else{
 					this->statusLog.Format(L"Signal: %.02f Drop: %I64d Scramble: %I64d",this->main.GetSignalLevel(), drop, scramble);
 				}
 				this->statusLog += L"\r\n";
-
-				vector<NW_SEND_INFO> udpSendList;
-				vector<NW_SEND_INFO> tcpSendList;
-				this->main.GetSendUDPList(&udpSendList);
-				this->main.GetSendTCPList(&tcpSendList);
 
 				CString udp = L"";
 				if( udpSendList.size() > 0 ){

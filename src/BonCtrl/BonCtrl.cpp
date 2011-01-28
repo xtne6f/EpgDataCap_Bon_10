@@ -632,7 +632,7 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 			sys->tsOut.AddTSBuff(data);
 			SAFE_DELETE(data);
 		}else{
-			Sleep(10);
+			Sleep(5);
 		}
 	}
 	return 0;
@@ -1687,3 +1687,27 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 	return 0;
 }
 
+BOOL CBonCtrl::GetViewStatusInfo(
+	DWORD id,
+	float* signal,
+	DWORD* space,
+	DWORD* ch,
+	ULONGLONG* drop,
+	ULONGLONG* scramble
+	)
+{
+	if( Lock() == FALSE ) return FALSE;
+	BOOL ret = FALSE;
+
+	this->tsOut.GetErrCount(id, drop, scramble);
+
+	*signal = this->bonUtil.GetSignalLevel();
+	this->tsOut.SetSignalLevel(*signal);
+
+	if( this->bonUtil.GetSetCh(space, ch) == TRUE ){
+		ret = TRUE;
+	}
+
+	UnLock();
+	return ret;
+}

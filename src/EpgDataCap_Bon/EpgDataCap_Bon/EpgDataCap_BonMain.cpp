@@ -119,6 +119,9 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	BOOL epgCapRec = (BOOL)GetPrivateProfileInt( L"SET", L"EpgCapRec", 1, appIniPath.c_str() );
 
 	this->bonCtrl.SetBackGroundEpgCap(epgCapLive, epgCapRec, this->BSBasic, this->CS1Basic, this->CS2Basic);
+	if( this->sendTcpFlag == FALSE && this->sendUdpFlag == FALSE ){
+		this->bonCtrl.SetScramble(this->nwCtrlID, this->enableScrambleFlag);
+	}
 	this->bonCtrl.SetEMMMode(this->enableEMMFlag);
 }
 
@@ -777,6 +780,21 @@ void CEpgDataCap_BonMain::StartTimeShift()
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
 	}
+}
+
+BOOL CEpgDataCap_BonMain::GetViewStatusInfo(
+	float* signal,
+	DWORD* space,
+	DWORD* ch,
+	ULONGLONG* drop,
+	ULONGLONG* scramble,
+	vector<NW_SEND_INFO>* sendUdpList,
+	vector<NW_SEND_INFO>* sendTcpList
+	)
+{
+	*sendUdpList = this->udpSendList;
+	*sendTcpList = this->tcpSendList;
+	return this->bonCtrl.GetViewStatusInfo(this->nwCtrlID, signal, space, ch, drop, scramble);
 }
 
 int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)

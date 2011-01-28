@@ -467,6 +467,15 @@ public:
 		BOOL CS2Basic
 		);
 
+	BOOL GetViewStatusInfo(
+		DWORD id,
+		float* signal,
+		DWORD* space,
+		DWORD* ch,
+		ULONGLONG* drop,
+		ULONGLONG* scramble
+		);
+
 protected:
 	CBonDriverUtil bonUtil;
 	CPacketInit packetInit;
