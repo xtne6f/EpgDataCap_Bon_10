@@ -436,11 +436,19 @@ BOOL CParseReserveText::Parse1Line(string parseLine, RESERVE_DATA* item )
 		if( wBuff.size() > 0 ){
 			wstring folder = L"";
 			wstring plugin = L"";
-			Separate( wBuff, L"*", folder, plugin);
+			wstring recname = L"";
+			Separate( wBuff, L"*", folder, wBuff);
+			Separate( wBuff, L"*", plugin, recname);
 
 			REC_FILE_SET_INFO folderItem;
 			folderItem.recFolder = folder;
-			folderItem.writePlugIn = plugin;
+			ChkFolderPath(folderItem.recFolder);
+			if( plugin.size() == 0 ){
+				folderItem.writePlugIn = L"Write_Default.dll";
+			}else{
+				folderItem.writePlugIn = plugin;
+			}
+			folderItem.recNamePlugIn = recname;
 			item->recSetting.recFolderList.push_back(folderItem);
 		}
 	}

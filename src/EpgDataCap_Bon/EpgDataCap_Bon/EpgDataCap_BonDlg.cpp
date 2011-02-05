@@ -403,9 +403,9 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				BOOL ret = this->main.GetViewStatusInfo(&signal, &space, &ch, &drop, &scramble, &udpSendList, &tcpSendList);
 
 				if(ret==TRUE){
-					this->statusLog.Format(L"Signal: %.02f Drop: %I64d Scramble: %I64d  space: %d ch: %d",this->main.GetSignalLevel(), drop, scramble, space, ch);
+					this->statusLog.Format(L"Signal: %.02f Drop: %I64d Scramble: %I64d  space: %d ch: %d",signal, drop, scramble, space, ch);
 				}else{
-					this->statusLog.Format(L"Signal: %.02f Drop: %I64d Scramble: %I64d",this->main.GetSignalLevel(), drop, scramble);
+					this->statusLog.Format(L"Signal: %.02f Drop: %I64d Scramble: %I64d",signal, drop, scramble);
 				}
 				this->statusLog += L"\r\n";
 

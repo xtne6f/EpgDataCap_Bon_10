@@ -245,6 +245,8 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 							}
 						}
 					}
+				}else{
+					_OutputDebugString(L"BATファイル作成エラー：%s", work.reserveInfo.recSetting.batFilePath);
 				}
 			}
 
@@ -272,7 +274,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	if( hRead == INVALID_HANDLE_VALUE ){
 		return FALSE;
 	}
-	HANDLE hWrite = CreateFileW( batFilePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hWrite = _CreateFile2( batFilePath.c_str(), GENERIC_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hWrite == INVALID_HANDLE_VALUE ){
 		CloseHandle(hRead);
 		return FALSE;

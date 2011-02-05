@@ -74,6 +74,8 @@ protected:
 	BYTE rebootDef;
 	BOOL ngFileStreaming;
 
+	BOOL awayMode;
+
 	vector<OLD_EVENT_INFO_DATA3> oldSearchList;
 protected:
 	//コマンド関係排他制御用

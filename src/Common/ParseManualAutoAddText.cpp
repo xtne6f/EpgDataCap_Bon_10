@@ -214,11 +214,19 @@ BOOL CParseManualAutoAddText::Parse1Line(string parseLine, MANUAL_AUTO_ADD_DATA*
 		if( wBuff.size() > 0 ){
 			wstring folder = L"";
 			wstring plugin = L"";
-			Separate( wBuff, L"*", folder, plugin);
+			wstring recname = L"";
+			Separate( wBuff, L"*", folder, wBuff);
+			Separate( wBuff, L"*", plugin, recname);
 
 			REC_FILE_SET_INFO folderItem;
 			folderItem.recFolder = folder;
+			if( plugin.size() == 0 ){
+				folderItem.writePlugIn = L"Write_Default.dll";
+			}else{
+				folderItem.writePlugIn = plugin;
+			}
 			folderItem.writePlugIn = plugin;
+			folderItem.recNamePlugIn = recname;
 
 			item->recSetting.recFolderList.push_back(folderItem);
 		}
@@ -375,6 +383,8 @@ BOOL CParseManualAutoAddText::SaveText(LPCWSTR filePath)
 			path = itr->second->recSetting.recFolderList[i].recFolder;
 			path += L"*";
 			path += itr->second->recSetting.recFolderList[i].writePlugIn;
+			path += L"*";
+			path += itr->second->recSetting.recFolderList[i].recNamePlugIn;
 			WtoA(path, strBuff);
 			strWrite+=strBuff +"\t";
 		}

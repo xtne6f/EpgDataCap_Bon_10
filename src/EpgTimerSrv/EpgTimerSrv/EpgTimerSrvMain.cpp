@@ -30,6 +30,20 @@ CEpgTimerSrvMain::CEpgTimerSrvMain(void)
 	this->autoAddDays = 8;
 	this->chkGroupEvent = TRUE;
 	this->rebootDef = 0;
+
+	this->awayMode = FALSE;
+
+	OSVERSIONINFO osvi;
+	ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
+	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+	GetVersionEx((OSVERSIONINFO*)&osvi);
+	if( VER_PLATFORM_WIN32_NT==osvi.dwPlatformId ){
+		if( osvi.dwMajorVersion >= 6 ){
+			//Vista以降
+			this->awayMode = TRUE;
+		}
+	}
+
 }
 
 
@@ -180,7 +194,13 @@ void CEpgTimerSrvMain::StartMain(
 				}
 			}
 			if( this->reserveManager.IsSuspendOK() == FALSE || streamingChk == FALSE){
-				SetThreadExecutionState(ES_SYSTEM_REQUIRED);
+				DWORD esMode = ES_SYSTEM_REQUIRED|ES_CONTINUOUS;
+				if( this->awayMode == TRUE ){
+					esMode |= ES_AWAYMODE_REQUIRED;
+				}
+				SetThreadExecutionState(esMode);
+			}else{
+				SetThreadExecutionState(ES_CONTINUOUS);
 			}
 			countChkSuspend = 0;
 
@@ -256,6 +276,8 @@ UINT WINAPI CEpgTimerSrvMain::SleepThread(void* param)
 		sys->StartReboot();
 		return 0;
 	}
+
+	SetThreadExecutionState(ES_CONTINUOUS);
 
 	LONGLONG returnTime = 0;
 	if( sys->reserveManager.GetSleepReturnTime(&returnTime) == TRUE ){
