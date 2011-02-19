@@ -8,6 +8,7 @@
 */
 #include "StringUtil.h"
 #include "CtrlCmdUtil.h"
+#include "CtrlCmdUtil2.h"
 #include "CtrlCmdDef.h"
 #include "ErrDef.h"
 
@@ -1841,6 +1842,165 @@ DWORD CSendCtrlCmd::SendNwTimeShiftOpen(
 	UnLock();
 	return ret;
 }
+
+DWORD CSendCtrlCmd::SendEnumReserve2(vector<RESERVE_DATA>* val)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	WORD ver = (WORD)CMD_VER;
+
+	send.param = CMD2_EPG_SRV_ENUM_RESERVE2;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize2(ver, ver);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE2(ver, ver, send.data, send.dataSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+
+	if( ret == CMD_SUCCESS ){
+		DWORD readSize = 0;
+		if( ReadVALUE2(ver, &ver, res.data, res.dataSize, &readSize) == FALSE ){
+			UnLock();
+			return CMD_ERR;
+		}
+		if( ReadVALUE2(ver, val, res.data+readSize, res.dataSize-readSize, NULL) == FALSE ){
+			UnLock();
+			return CMD_ERR;
+		}
+	}
+	UnLock();
+	return ret;
+}
+
+DWORD CSendCtrlCmd::SendGetReserve2(DWORD reserveID, RESERVE_DATA* val)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	WORD ver = (WORD)CMD_VER;
+	DWORD writeSize = 0;
+
+	send.param = CMD2_EPG_SRV_GET_RESERVE2;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize2(ver, reserveID)+GetVALUESize2(ver, ver);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+	if( WriteVALUE2(ver, reserveID, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+	if( ret == CMD_SUCCESS ){
+		DWORD readSize = 0;
+		if( ReadVALUE2(ver, &ver, res.data, res.dataSize, &readSize) == FALSE ){
+			UnLock();
+			return CMD_ERR;
+		}
+		if( ReadVALUE2(ver, val, res.data+readSize, res.dataSize-readSize, NULL) == FALSE ){
+			UnLock();
+			return CMD_ERR;
+		}
+	}
+	UnLock();
+	return ret;
+}
+
+DWORD CSendCtrlCmd::SendAddReserve2(vector<RESERVE_DATA>* val)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	WORD ver = (WORD)CMD_VER;
+	DWORD writeSize = 0;
+
+	send.param = CMD2_EPG_SRV_ADD_RESERVE2;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+
+	UnLock();
+	return ret;
+}
+
+DWORD CSendCtrlCmd::SendChgReserve2(vector<RESERVE_DATA>* val)
+{
+	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
+	DWORD ret = CMD_ERR;
+
+	CMD_STREAM send;
+	CMD_STREAM res;
+
+	WORD ver = (WORD)CMD_VER;
+	DWORD writeSize = 0;
+
+	send.param = CMD2_EPG_SRV_CHG_RESERVE2;
+	send.dataSize = 0;
+
+	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
+	send.data = new BYTE[send.dataSize];
+	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
+		UnLock();
+		return CMD_ERR;
+	}
+
+	if( this->tcpFlag == FALSE ){
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+	}else{
+		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+	}
+
+	UnLock();
+	return ret;
+}
+
 
 //ダイアログを前面に表示
 //戻り値：

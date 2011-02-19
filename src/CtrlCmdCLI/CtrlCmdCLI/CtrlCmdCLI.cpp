@@ -343,6 +343,19 @@ void CtrlCmdUtil::CopyData(Def::RecSettingData^ src, REC_SETTING_DATA* dest)
 
 		dest->recFolderList.push_back(item);
 	}
+	for( int i=0; i<src->PartialRecFolder->Count; i++){
+		REC_FILE_SET_INFO item;
+		pin_ptr<const wchar_t> recFolderPathPin = PtrToStringChars(src->PartialRecFolder[i]->RecFolder);
+		pin_ptr<const wchar_t> writePlugInPin = PtrToStringChars(src->PartialRecFolder[i]->WritePlugIn);
+		pin_ptr<const wchar_t> recNamePlugInPin = PtrToStringChars(src->PartialRecFolder[i]->RecNamePlugIn);
+		pin_ptr<const wchar_t> recFileNamePin = PtrToStringChars(src->PartialRecFolder[i]->RecFileName);
+		item.recFolder = recFolderPathPin;
+		item.writePlugIn = writePlugInPin;
+		item.recNamePlugIn = recNamePlugInPin;
+		item.recFileName = recFileNamePin;
+
+		dest->partialRecFolder.push_back(item);
+	}
 
 	dest->recMode = src->RecMode;
 	dest->priority = src->Priority;
@@ -377,6 +390,14 @@ void CtrlCmdUtil::CopyData(REC_SETTING_DATA* src, Def::RecSettingData^% dest)
 		item->RecNamePlugIn = gcnew String(src->recFolderList[i].recNamePlugIn.c_str());
 		item->RecFileName = gcnew String(src->recFolderList[i].recFileName.c_str());
 		dest->RecFolderList->Add( item );
+	}
+	for( size_t i=0; i<src->partialRecFolder.size(); i++){
+		Def::RecFileSetInfo^ item = gcnew Def::RecFileSetInfo();
+		item->RecFolder = gcnew String(src->partialRecFolder[i].recFolder.c_str());
+		item->WritePlugIn = gcnew String(src->partialRecFolder[i].writePlugIn.c_str());
+		item->RecNamePlugIn = gcnew String(src->partialRecFolder[i].recNamePlugIn.c_str());
+		item->RecFileName = gcnew String(src->partialRecFolder[i].recFileName.c_str());
+		dest->PartialRecFolder->Add( item );
 	}
 	dest->SuspendMode = src->suspendMode;
 	dest->RebootFlag = src->rebootFlag;
@@ -561,6 +582,7 @@ void CtrlCmdUtil::CopyData(Def::EpgEventInfo^ src, EPGDB_EVENT_INFO* dest)
 //	CopyData(src->start_time, &dest->start_time);
 	dest->DurationFlag = src->DurationFlag;
 	dest->durationSec = src->durationSec;
+	dest->freeCAFlag = src->FreeCAFlag;
 
 	if( src->ShortInfo != nullptr ){
 		dest->shortInfo = new EPGDB_SHORT_EVENT_INFO;
@@ -618,6 +640,7 @@ void CtrlCmdUtil::CopyData(EPGDB_EVENT_INFO* src, Def::EpgEventInfo^% dest)
 //	CopyData(&src->start_time, dest->start_time);
 	dest->DurationFlag = src->DurationFlag;
 	dest->durationSec = src->durationSec;
+	dest->FreeCAFlag = src->freeCAFlag;
 
 	if( src->shortInfo != NULL ){
 		dest->ShortInfo = gcnew Def::EpgShortEventInfo();
@@ -753,6 +776,7 @@ void CtrlCmdUtil::CopyData(Def::EpgSearchKeyInfo^ src, EPGDB_SEARCH_KEY_INFO* de
 	dest->aimaiFlag = src->aimaiFlag;
 	dest->notContetFlag = src->notContetFlag;
 	dest->notDateFlag = src->notDateFlag;
+	dest->freeCAFlag = src->freeCAFlag;
 }
 
 void CtrlCmdUtil::CopyData(EPGDB_SEARCH_KEY_INFO* src, Def::EpgSearchKeyInfo^% dest)
@@ -789,6 +813,7 @@ void CtrlCmdUtil::CopyData(EPGDB_SEARCH_KEY_INFO* src, Def::EpgSearchKeyInfo^% d
 	dest->aimaiFlag = src->aimaiFlag;
 	dest->notContetFlag = src->notContetFlag;
 	dest->notDateFlag = src->notDateFlag;
+	dest->freeCAFlag = src->freeCAFlag;
 }
 
 void CtrlCmdUtil::CopyData(Def::RecFileInfo^ src, REC_FILE_INFO* dest)
@@ -1147,7 +1172,7 @@ UInt32 CtrlCmdUtil::SendEnumReserve(
 	)
 {
 	vector<RESERVE_DATA> list;
-	DWORD ret = this->sendCmd->SendEnumReserve(&list);
+	DWORD ret = this->sendCmd->SendEnumReserve2(&list);
 	for( size_t i=0; i<list.size(); i++ ){
 		Def::ReserveData^ item = gcnew Def::ReserveData();
 		CopyData(&list[i], item);
@@ -1168,7 +1193,7 @@ UInt32 CtrlCmdUtil::SendGetReserve(
 	)
 {
 	RESERVE_DATA info;
-	DWORD ret = this->sendCmd->SendGetReserve(reserveID, &info);
+	DWORD ret = this->sendCmd->SendGetReserve2(reserveID, &info);
 	if( ret == CMD_SUCCESS ){
 		CopyData(&info, val);
 	}
@@ -1189,7 +1214,7 @@ UInt32 CtrlCmdUtil::SendAddReserve(
 		CopyData(val[i], &item);
 		list.push_back(item);
 	}
-	DWORD ret = this->sendCmd->SendAddReserve(&list);
+	DWORD ret = this->sendCmd->SendAddReserve2(&list);
 
 	return ret;
 }
@@ -1225,7 +1250,7 @@ UInt32 CtrlCmdUtil::SendChgReserve(
 		CopyData(val[i], &item);
 		list.push_back(item);
 	}
-	DWORD ret = this->sendCmd->SendChgReserve(&list);
+	DWORD ret = this->sendCmd->SendChgReserve2(&list);
 
 	return ret;
 }

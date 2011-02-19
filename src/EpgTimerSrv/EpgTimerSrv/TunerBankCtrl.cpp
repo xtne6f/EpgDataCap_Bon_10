@@ -857,7 +857,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 	return ret;
 }
 
-BOOL CTunerBankCtrl::FindPartialService(WORD ONID, WORD TSID, WORD SID, WORD* partialSID)
+BOOL CTunerBankCtrl::FindPartialService(WORD ONID, WORD TSID, WORD SID, WORD* partialSID, wstring* serviceName)
 {
 	multimap<LONGLONG, CH_DATA4>::iterator itr;
 	for( itr = this->chUtil.chList.begin(); itr != this->chUtil.chList.end(); itr++ ){
@@ -865,6 +865,9 @@ BOOL CTunerBankCtrl::FindPartialService(WORD ONID, WORD TSID, WORD SID, WORD* pa
 			if( itr->second.serviceID != SID ){
 				if( partialSID != NULL ){
 					*partialSID = itr->second.serviceID;
+				}
+				if( serviceName != NULL ){
+					*serviceName = itr->second.serviceName;
 				}
 				return TRUE;
 			}
@@ -931,7 +934,7 @@ void CTunerBankCtrl::CreateCtrl(RESERVE_WORK* info)
 	if( info->partialRecFlag == 1 || info->partialRecFlag == 2){
 		//部分受信サービスも
 		WORD partialSID = 0;
-		if( FindPartialService(info->ONID, info->TSID, info->SID, &partialSID) == TRUE ){
+		if( FindPartialService(info->ONID, info->TSID, info->SID, &partialSID, NULL) == TRUE ){
 			//部分受信
 			if( sendCtrl.SendViewCreateCtrl(&newCtrlID) == CMD_SUCCESS){
 				info->ctrlID.push_back(newCtrlID);
@@ -949,6 +952,7 @@ void CTunerBankCtrl::CreateCtrl(RESERVE_WORK* info)
 					this->sendCtrl.SendViewSetCtrlMode(param);
 				}
 
+				info->partialCtrlID = newCtrlID;
 				if(info->partialRecFlag == 2){
 					createFull = FALSE;
 				}
@@ -1439,56 +1443,105 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 			}
 		}
 
-		CheckFileName(param.fileName);
+		if( param.ctrlID == reserve->partialCtrlID && reserve->partialCtrlID != 0 ){
+			//部分受信同時録画用
+			if( data.recSetting.partialRecFolder.size() == 0 ){
+				REC_FILE_SET_INFO folderItem;
+				folderItem.recFolder = this->recFolderPath;
+				folderItem.writePlugIn = this->recWritePlugIn;
 
-		param.overWriteFlag = this->recOverWrite;
-		if( data.recSetting.recFolderList.size() == 0 ){
-			REC_FILE_SET_INFO folderItem;
-			folderItem.recFolder = this->recFolderPath;
-			folderItem.writePlugIn = this->recWritePlugIn;
+				param.saveFolder.push_back(folderItem);
+			}else{
+				WORD partialSID = 0;
+				wstring partialName = L"";
+				if( FindPartialService(data.originalNetworkID, data.transportStreamID, data.serviceID, &partialSID, &partialName) == FALSE ){
+					partialSID = data.serviceID;
+					partialName = data.stationName;
+				}
+				for( size_t j=0; j<data.recSetting.partialRecFolder.size(); j++ ){
+					if( data.recSetting.partialRecFolder[j].recNamePlugIn.size() > 0 ){
+						CReNamePlugInUtil plugIn;
+						wstring plugInPath;
+						GetModuleFolderPath(plugInPath);
+						plugInPath += L"\\RecName\\";
+						plugInPath += data.recSetting.partialRecFolder[j].recNamePlugIn;
 
-			param.saveFolder.push_back(folderItem);
-		}else{
-			for( size_t j=0; j<data.recSetting.recFolderList.size(); j++ ){
-				if( data.recSetting.recFolderList[j].recNamePlugIn.size() > 0 ){
-					CReNamePlugInUtil plugIn;
-					wstring plugInPath;
-					GetModuleFolderPath(plugInPath);
-					plugInPath += L"\\RecName\\";
-					plugInPath += data.recSetting.recFolderList[j].recNamePlugIn;
+						if( plugIn.Initialize(plugInPath.c_str()) == TRUE ){
+							WCHAR name[512] = L"";
+							DWORD size = 512;
+							PLUGIN_RESERVE_INFO info;
 
-					if( plugIn.Initialize(plugInPath.c_str()) == TRUE ){
-						WCHAR name[512] = L"";
-						DWORD size = 512;
-						PLUGIN_RESERVE_INFO info;
+							info.startTime = data.startTime;
+							info.durationSec = data.durationSecond;
+							wcscpy_s(info.eventName, 512, data.title.c_str());
+							info.ONID = data.originalNetworkID;
+							info.TSID = data.transportStreamID;
+							info.SID = partialSID;
+							info.EventID = 0xFFFF;
+							wcscpy_s(info.serviceName, 256, partialName.c_str());
+							wcscpy_s(info.bonDriverName, 256, this->bonFileName.c_str());
+							info.bonDriverID = (this->tunerID & 0xFFFF0000)>>16;
+							info.tunerID = this->tunerID & 0x0000FFFF;
 
-						info.startTime = data.startTime;
-						info.durationSec = data.durationSecond;
-						wcscpy_s(info.eventName, 512, data.title.c_str());
-						info.ONID = data.originalNetworkID;
-						info.TSID = data.transportStreamID;
-						info.SID = data.serviceID;
-						info.EventID = data.eventID;
-						wcscpy_s(info.serviceName, 256, data.stationName.c_str());
-						wcscpy_s(info.bonDriverName, 256, this->bonFileName.c_str());
-						info.bonDriverID = (this->tunerID & 0xFFFF0000)>>16;
-						info.tunerID = this->tunerID & 0x0000FFFF;
-
-						if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-							data.recSetting.recFolderList[j].recFileName = name;
+							if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
+								data.recSetting.recFolderList[j].recFileName = name;
+							}
 						}
 					}
 				}
+				param.saveFolder = data.recSetting.recFolderList;
 			}
-			param.saveFolder = data.recSetting.recFolderList;
-		}
+		}else{
+			//通常録画
+			if( data.recSetting.recFolderList.size() == 0 ){
+				REC_FILE_SET_INFO folderItem;
+				folderItem.recFolder = this->recFolderPath;
+				folderItem.writePlugIn = this->recWritePlugIn;
 
+				param.saveFolder.push_back(folderItem);
+			}else{
+				for( size_t j=0; j<data.recSetting.recFolderList.size(); j++ ){
+					if( data.recSetting.recFolderList[j].recNamePlugIn.size() > 0 ){
+						CReNamePlugInUtil plugIn;
+						wstring plugInPath;
+						GetModuleFolderPath(plugInPath);
+						plugInPath += L"\\RecName\\";
+						plugInPath += data.recSetting.recFolderList[j].recNamePlugIn;
+
+						if( plugIn.Initialize(plugInPath.c_str()) == TRUE ){
+							WCHAR name[512] = L"";
+							DWORD size = 512;
+							PLUGIN_RESERVE_INFO info;
+
+							info.startTime = data.startTime;
+							info.durationSec = data.durationSecond;
+							wcscpy_s(info.eventName, 512, data.title.c_str());
+							info.ONID = data.originalNetworkID;
+							info.TSID = data.transportStreamID;
+							info.SID = data.serviceID;
+							info.EventID = data.eventID;
+							wcscpy_s(info.serviceName, 256, data.stationName.c_str());
+							wcscpy_s(info.bonDriverName, 256, this->bonFileName.c_str());
+							info.bonDriverID = (this->tunerID & 0xFFFF0000)>>16;
+							info.tunerID = this->tunerID & 0x0000FFFF;
+
+							if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
+								data.recSetting.recFolderList[j].recFileName = name;
+							}
+						}
+					}
+				}
+				param.saveFolder = data.recSetting.recFolderList;
+			}
+		}
+		param.overWriteFlag = this->recOverWrite;
 		param.pittariFlag = data.recSetting.pittariFlag;
 		param.pittariONID = data.originalNetworkID;
 		param.pittariTSID = data.transportStreamID;
 		param.pittariSID = data.serviceID;
 		param.pittariEventID = data.eventID;
 
+		CheckFileName(param.fileName);
 
 		DWORD durationSec = data.durationSecond;
 		if( data.recSetting.continueRecFlag == 1 ){

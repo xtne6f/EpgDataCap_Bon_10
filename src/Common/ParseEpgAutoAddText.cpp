@@ -357,6 +357,42 @@ BOOL CParseEpgAutoAddText::Parse1Line(string parseLine, EPG_AUTO_ADD_DATA* item 
 	item->searchInfo.notDateFlag = (BYTE)atoi(strBuff.c_str());
 	
 	Separate( parseLine, "\t", strBuff, parseLine);
+
+	//FreeCAモード
+	item->searchInfo.freeCAFlag = (BYTE)atoi(strBuff.c_str());
+	
+	Separate( parseLine, "\t", strBuff, parseLine);
+
+	//部分受信複数録画フォルダ
+	DWORD recFolderNum2 = (DWORD)atoi(strBuff.c_str());
+
+	for( DWORD i=0; i<recFolderNum2; i++ ){
+		Separate( parseLine, "\t", strBuff, parseLine);
+
+		wstring wBuff = L"";
+		AtoW(strBuff, wBuff);
+		if( wBuff.size() > 0 ){
+			wstring folder = L"";
+			wstring plugin = L"";
+			wstring recname = L"";
+			Separate( wBuff, L"*", folder, wBuff);
+			Separate( wBuff, L"*", plugin, recname);
+
+			REC_FILE_SET_INFO folderItem;
+			folderItem.recFolder = folder;
+			ChkFolderPath(folderItem.recFolder);
+			if( plugin.size() == 0 ){
+				folderItem.writePlugIn = L"Write_Default.dll";
+			}else{
+				folderItem.writePlugIn = plugin;
+			}
+			folderItem.recNamePlugIn = recname;
+			item->recSetting.partialRecFolder.push_back(folderItem);
+		}
+	}
+
+	Separate( parseLine, "\t", strBuff, parseLine);
+
 	return TRUE;
 }
 
@@ -544,6 +580,26 @@ BOOL CParseEpgAutoAddText::SaveText(LPCWSTR filePath)
 		//時間NOT扱い
 		Format(strBuff,"%d",itr->second->searchInfo.notDateFlag);
 		strWrite+=strBuff +"\t";
+		//FreeCAモード
+		Format(strBuff,"%d",itr->second->searchInfo.freeCAFlag);
+		strWrite+=strBuff +"\t";
+		//部分受信サービス録画のフォルダ
+		if( itr->second->recSetting.partialRecFolder.size() > 1 ){
+			Format(strBuff,"%d",itr->second->recSetting.partialRecFolder.size());
+			strWrite+=strBuff +"\t";
+			for( size_t i=0; i<itr->second->recSetting.partialRecFolder.size(); i++ ){
+				wstring path = L"";
+				path = itr->second->recSetting.partialRecFolder[i].recFolder;
+				path += L"*";
+				path += itr->second->recSetting.partialRecFolder[i].writePlugIn;
+				path += L"*";
+				path += itr->second->recSetting.partialRecFolder[i].recNamePlugIn;
+				WtoA(path, strBuff);
+				strWrite+=strBuff +"\t";
+			}
+		}else{
+			strWrite+="0\t";
+		}
 
 		strWrite+="\r\n";
 		WriteFile(hFile, strWrite.c_str(), (DWORD)strWrite.length(), &dwWrite, NULL);

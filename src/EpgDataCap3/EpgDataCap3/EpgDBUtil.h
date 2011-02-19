@@ -74,6 +74,7 @@ typedef struct _EVENT_INFO{
 	EVENTGROUP_INFO* eventGroupInfo;
 	EVENTGROUP_INFO* eventRelayInfo;
 
+	BYTE freeCAFlag;
 	_EVENT_INFO(void){
 		shortInfo = NULL;
 		extInfo = NULL;
@@ -82,6 +83,7 @@ typedef struct _EVENT_INFO{
 		audioInfo = NULL;
 		eventGroupInfo = NULL;
 		eventRelayInfo = NULL;
+		freeCAFlag = 0;
 	};
 	~_EVENT_INFO(void){
 		SAFE_DELETE(shortInfo);

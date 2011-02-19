@@ -4,6 +4,7 @@
 #include "../../Common/CommonDef.h"
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/CtrlCmdUtil.h"
+#include "../../Common/CtrlCmdUtil2.h"
 #include "../../Common/StringUtil.h"
 
 #include <process.h>
@@ -1715,6 +1716,135 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						}
 					}
 				}
+			}
+		}
+		break;
+	////////////////////////////////////////////////////////////
+	//CMD_VER対応コマンド
+	case CMD2_EPG_SRV_ENUM_RESERVE2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_RESERVE2");
+			if( sys->Lock() == TRUE ){
+				vector<RESERVE_DATA*> list;
+				if(sys->reserveManager.GetReserveDataAll(&list) == TRUE ){
+					WORD ver = (WORD)CMD_VER;
+
+					if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, NULL) == TRUE ){
+						DWORD writeSize = 0;
+						resParam->param = CMD_SUCCESS;
+						resParam->dataSize = GetVALUESize2(ver, &list)+GetVALUESize2(ver, ver);
+						resParam->data = new BYTE[resParam->dataSize];
+						if( WriteVALUE2(ver, ver, resParam->data, resParam->dataSize, &writeSize) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_RESERVE2\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}else
+						if( WriteVALUE2(ver, &list, resParam->data+writeSize, resParam->dataSize-writeSize, NULL) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_RESERVE2\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}
+						for( size_t i=0; i<list.size(); i++ ){
+							SAFE_DELETE(list[i]);
+						}
+						list.clear();
+					}
+				}
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_GET_RESERVE2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_GET_RESERVE2");
+			if( sys->Lock() == TRUE ){
+				WORD ver = (WORD)CMD_VER;
+				DWORD readSize = 0;
+				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, &readSize) == TRUE ){
+
+					DWORD reserveID = 0;
+					if( ReadVALUE2(ver, &reserveID, cmdParam->data+readSize, cmdParam->dataSize-readSize, NULL ) == TRUE ){
+						RESERVE_DATA info;
+						if(sys->reserveManager.GetReserveData(reserveID, &info) == TRUE ){
+							DWORD writeSize = 0;
+							resParam->param = CMD_SUCCESS;
+							resParam->dataSize = GetVALUESize2(ver, &info)+GetVALUESize2(ver, ver);
+							resParam->data = new BYTE[resParam->dataSize];
+							if( WriteVALUE2(ver, ver, resParam->data, resParam->dataSize, &writeSize) == FALSE ){
+								_OutputDebugString(L"err Write res CMD2_EPG_SRV_GET_RESERVE2\r\n");
+								resParam->dataSize = 0;
+								resParam->param = CMD_ERR;
+							}else
+							if( WriteVALUE2(ver, &info, resParam->data+writeSize, resParam->dataSize-writeSize, NULL) == FALSE ){
+								_OutputDebugString(L"err Write res CMD2_EPG_SRV_GET_RESERVE2\r\n");
+								resParam->dataSize = 0;
+								resParam->param = CMD_ERR;
+							}
+						}
+					}
+				}
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_ADD_RESERVE2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_ADD_RESERVE2");
+			if( sys->Lock() == TRUE ){
+				WORD ver = (WORD)CMD_VER;
+				DWORD readSize = 0;
+				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, &readSize) == TRUE ){
+
+					vector<RESERVE_DATA> list;
+					if( ReadVALUE2(ver, &list, cmdParam->data+readSize, cmdParam->dataSize-readSize, NULL ) == TRUE ){
+						if(sys->reserveManager.AddReserveData(&list) == TRUE ){
+							DWORD writeSize = 0;
+							resParam->param = CMD_SUCCESS;
+							resParam->dataSize = GetVALUESize2(ver, ver);
+							resParam->data = new BYTE[resParam->dataSize];
+							if( WriteVALUE2(ver, ver, resParam->data, resParam->dataSize, &writeSize) == FALSE ){
+								_OutputDebugString(L"err Write res CMD2_EPG_SRV_ADD_RESERVE2\r\n");
+								resParam->dataSize = 0;
+								resParam->param = CMD_ERR;
+							}
+						}
+					}
+				}
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_CHG_RESERVE2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_CHG_RESERVE2");
+			if( sys->Lock() == TRUE ){
+				WORD ver = (WORD)CMD_VER;
+				DWORD readSize = 0;
+				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, &readSize) == TRUE ){
+					vector<RESERVE_DATA> list;
+					if( ReadVALUE2(ver, &list, cmdParam->data+readSize, cmdParam->dataSize-readSize, NULL ) == TRUE ){
+						if(sys->reserveManager.ChgReserveData(&list) == TRUE ){
+							DWORD writeSize = 0;
+							resParam->param = CMD_SUCCESS;
+							resParam->dataSize = GetVALUESize2(ver, ver);
+							resParam->data = new BYTE[resParam->dataSize];
+							if( WriteVALUE2(ver, ver, resParam->data, resParam->dataSize, &writeSize) == FALSE ){
+								_OutputDebugString(L"err Write res CMD2_EPG_SRV_CHG_RESERVE2\r\n");
+								resParam->dataSize = 0;
+								resParam->param = CMD_ERR;
+							}
+						}
+					}
+				}
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
 			}
 		}
 		break;

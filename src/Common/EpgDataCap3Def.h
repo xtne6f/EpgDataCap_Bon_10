@@ -147,6 +147,7 @@ typedef struct _EPG_EVENT_INFO{
 	EPG_EVENTGROUP_INFO* eventGroupInfo;	//イベントグループ情報
 	EPG_EVENTGROUP_INFO* eventRelayInfo;	//イベントリレー情報
 
+	BYTE freeCAFlag;						//ノンスクランブルフラグ
 	_EPG_EVENT_INFO(void){
 		shortInfo = NULL;
 		extInfo = NULL;
@@ -155,6 +156,7 @@ typedef struct _EPG_EVENT_INFO{
 		audioInfo = NULL;
 		eventGroupInfo = NULL;
 		eventRelayInfo = NULL;
+		freeCAFlag = 0;
 	};
 	~_EPG_EVENT_INFO(void){
 		SAFE_DELETE(shortInfo);

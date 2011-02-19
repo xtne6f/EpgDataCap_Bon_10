@@ -769,6 +769,7 @@ BOOL CTSOut::ConvertEpgInfo(EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest)
 	dest->start_time = src->start_time;
 	dest->DurationFlag = src->DurationFlag;
 	dest->durationSec = src->durationSec;
+	dest->freeCAFlag = src->freeCAFlag;
 
 	if( src->shortInfo != NULL ){
 		dest->shortInfo = new EPGDB_SHORT_EVENT_INFO;

@@ -5,10 +5,10 @@
 
 //録画フォルダ情報
 typedef struct _REC_FILE_SET_INFO{
-	wstring recFolder;
-	wstring writePlugIn;
+	wstring recFolder;			//録画フォルダ
+	wstring writePlugIn;		//出力PlugIn
 	wstring recNamePlugIn;		//ファイル名変換PlugInの使用
-	wstring recFileName;		//ファイル名個別対応
+	wstring recFileName;		//ファイル名個別対応 録画開始処理時に内部で使用。予約情報としては必要なし
 	_REC_FILE_SET_INFO & operator= (const _REC_FILE_SET_INFO & o) {
 		recFolder = o.recFolder;
 		writePlugIn = o.writePlugIn;
@@ -35,6 +35,8 @@ typedef struct _REC_SETTING_DATA{
 	BYTE continueRecFlag;		//後続同一サービス時、同一ファイルで録画
 	BYTE partialRecFlag;		//物理CHに部分受信サービスがある場合、同時録画するかどうか
 	DWORD tunerID;				//強制的に使用Tunerを固定
+	//CMD_VER 2以降
+	vector<REC_FILE_SET_INFO> partialRecFolder;	//部分受信サービス録画のフォルダ
 	//=オペレーターの処理
 	_REC_SETTING_DATA(void){
 		recMode = 1;
@@ -54,6 +56,7 @@ typedef struct _REC_SETTING_DATA{
 	};
 	~_REC_SETTING_DATA(void){
 		recFolderList.clear();
+		partialRecFolder.clear();
 	}
 	_REC_SETTING_DATA & operator= (const _REC_SETTING_DATA & o) {
 		recMode = o.recMode;
@@ -71,6 +74,7 @@ typedef struct _REC_SETTING_DATA{
 		continueRecFlag = o.continueRecFlag;
 		partialRecFlag = o.partialRecFlag;
 		tunerID = o.tunerID;
+		partialRecFolder = o.partialRecFolder;
 		return *this;
 	};
 } REC_SETTING_DATA;
@@ -86,13 +90,13 @@ typedef struct _RESERVE_DATA{
 	WORD serviceID;					//SID
 	WORD eventID;					//EventID
 	wstring comment;				//コメント
-	DWORD reserveID;				//同一番組判別用ID
-	BYTE recWaitFlag;				//予約待機入った？
+	DWORD reserveID;				//予約識別ID 予約登録時は0
+	BYTE recWaitFlag;				//予約待機入った？ 内部で使用
 	BYTE overlapMode;				//かぶり状態 1:かぶってチューナー足りない予約あり 2:チューナー足りなくて予約できない
-	wstring recFilePath;			//録画ファイルパス
+	wstring recFilePath;			//録画ファイルパス 旧バージョン互換用 未使用
 	SYSTEMTIME startTimeEpg;		//予約時の開始時間
 	REC_SETTING_DATA recSetting;	//録画設定
-	DWORD reserveStatus;			//予約追加状態
+	DWORD reserveStatus;			//予約追加状態 内部で使用
 	//=オペレーターの処理
 	_RESERVE_DATA(void){
 		title=L"";
@@ -488,6 +492,7 @@ typedef struct _EPGDB_EVENT_INFO{
 	EPGDB_EVENTGROUP_INFO* eventGroupInfo;	//イベントグループ情報
 	EPGDB_EVENTGROUP_INFO* eventRelayInfo;	//イベントリレー情報
 
+	BYTE freeCAFlag;						//ノンスクランブルフラグ
 	_EPGDB_EVENT_INFO(void){
 		shortInfo = NULL;
 		extInfo = NULL;
@@ -592,6 +597,7 @@ typedef struct _EPGDB_SEARCH_KEY_INFO{
 	BYTE aimaiFlag;
 	BYTE notContetFlag;
 	BYTE notDateFlag;
+	BYTE freeCAFlag;
 	//=オペレーターの処理
 	_EPGDB_SEARCH_KEY_INFO(void){
 		andKey = L"";
@@ -601,6 +607,7 @@ typedef struct _EPGDB_SEARCH_KEY_INFO{
 		aimaiFlag = 0;
 		notContetFlag = 0;
 		notDateFlag = 0;
+		freeCAFlag = 0;
 	};
 	_EPGDB_SEARCH_KEY_INFO & operator= (const _EPGDB_SEARCH_KEY_INFO & o) {
 		andKey = o.andKey;
@@ -615,6 +622,7 @@ typedef struct _EPGDB_SEARCH_KEY_INFO{
 		aimaiFlag = o.aimaiFlag;
 		notContetFlag = o.notContetFlag;
 		notDateFlag = o.notDateFlag;
+		freeCAFlag = o.freeCAFlag;
 		return *this;
 	};
 }EPGDB_SEARCH_KEY_INFO;

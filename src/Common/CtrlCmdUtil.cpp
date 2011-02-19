@@ -962,7 +962,6 @@ BOOL ReadVALUE( REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSi
 			return FALSE;
 		}
 		pos += size;
-
 	}
 
 	if( readSize != NULL ){
@@ -2739,6 +2738,8 @@ DWORD GetVALUESize( EPGDB_EVENT_INFO* val )
 	size += GetVALUESize(val->eventGroupInfo);
 	size += GetVALUESize(val->eventRelayInfo);
 
+	size += GetVALUESize(val->freeCAFlag);
+
 	return size;
 }
 
@@ -2815,6 +2816,10 @@ BOOL WriteVALUE( EPGDB_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* write
 		}
 		pos += size;
 		if( WriteVALUE( val->eventRelayInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->freeCAFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
 			return FALSE;
 		}
 		pos += size;
@@ -2981,6 +2986,12 @@ BOOL ReadVALUE( EPGDB_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSi
 			}
 			pos += size;
 		}
+
+		if( ReadVALUE( &val->freeCAFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
 	}
 
 	if( readSize != NULL ){
@@ -3317,6 +3328,7 @@ DWORD GetVALUESize( EPGDB_SEARCH_KEY_INFO* val )
 	size += GetVALUESize(val->aimaiFlag);
 	size += GetVALUESize(val->notContetFlag);
 	size += GetVALUESize(val->notDateFlag);
+	size += GetVALUESize(val->freeCAFlag);
 
 	return size;
 }
@@ -3381,6 +3393,10 @@ BOOL WriteVALUE( EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 		}
 		pos += size;
 		if( WriteVALUE( val->notDateFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE( val->freeCAFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
 			return FALSE;
 		}
 		pos += size;
@@ -3455,6 +3471,10 @@ BOOL ReadVALUE( EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* r
 		}
 		pos += size;
 		if( ReadVALUE( &val->notDateFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE( &val->freeCAFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
 			return FALSE;
 		}
 		pos += size;

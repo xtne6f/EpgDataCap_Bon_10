@@ -140,7 +140,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 			eventInfo->durationSec = eitEventInfo->durationHH*60*60 +
 				eitEventInfo->durationMM*60 +
 				eitEventInfo->durationSS;
-
+			eventInfo->freeCAFlag = eitEventInfo->free_CA_mode;
 			serviceInfo->eventMap.insert(pair<WORD, EVENT_INFO*>(eventInfo->event_id, eventInfo));
 		}else{
 			eventInfo = itrEvent->second;
@@ -1048,6 +1048,7 @@ void CEpgDBUtil::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo)
 	destInfo->start_time = srcInfo->start_time;
 	destInfo->DurationFlag = srcInfo->DurationFlag;
 	destInfo->durationSec = srcInfo->durationSec;
+	destInfo->freeCAFlag = srcInfo->freeCAFlag;
 
 	if( srcInfo->shortInfo != NULL ){
 		EPG_SHORT_EVENT_INFO* item = new EPG_SHORT_EVENT_INFO;

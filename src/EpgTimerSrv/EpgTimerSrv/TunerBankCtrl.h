@@ -110,6 +110,7 @@ protected:
 		CReserveInfo* reserveInfo;
 		DWORD reserveID;
 		DWORD mainCtrlID;
+		DWORD partialCtrlID;
 		vector<DWORD> ctrlID;
 		BOOL recStartFlag;
 
@@ -140,6 +141,7 @@ protected:
 			reserveInfo = NULL;
 			reserveID = 0;
 			mainCtrlID = 0;
+			partialCtrlID = 0;
 			recStartFlag = FALSE;
 			stratTime = 0;
 			endTime = 0;
@@ -229,7 +231,7 @@ protected:
 	BOOL CloseTuner();
 
 	BOOL ContinueRec(RESERVE_WORK* info);
-	BOOL FindPartialService(WORD ONID, WORD TSID, WORD SID, WORD* partialSID);
+	BOOL FindPartialService(WORD ONID, WORD TSID, WORD SID, WORD* partialSID, wstring* serviceName);
 
 	BOOL IsFindContinueReserve(RESERVE_WORK* reserve, DWORD* continueSec);
 

@@ -23,6 +23,9 @@
 //モジュール内コマンド実行イベント
 #define CMD2_CTRL_EVENT_WAIT _T("CtrlCmdEvent_") //+ID
 
+//コマンドバージョン
+#define CMD_VER 2	//バージョン情報追加対応　録画設定への部分受信録画フォルダ指定追加
+
 //コマンド
 #define CMD2_EPG_SRV_ADDLOAD_RESERVE		1 //Program.txtの追加読み込み
 #define CMD2_EPG_SRV_RELOAD_EPG				2 //EPG再読み込み
@@ -41,6 +44,12 @@
 #define CMD2_EPG_SRV_ENUM_TUNER_RESERVE		1016 //チューナーごとの予約ID一覧取得
 #define CMD2_EPG_SRV_ENUM_RECINFO			1017 //録画済み情報一覧取得
 #define CMD2_EPG_SRV_DEL_RECINFO			1018 //録画済み情報削除
+
+//バージョン情報追加対応版
+#define CMD2_EPG_SRV_ENUM_RESERVE2			2011 //予約一覧取得
+#define CMD2_EPG_SRV_GET_RESERVE2			2012 //予約情報取得
+#define CMD2_EPG_SRV_ADD_RESERVE2			2013 //予約追加
+#define CMD2_EPG_SRV_CHG_RESERVE2			2015 //予約変更
 
 #define CMD2_EPG_SRV_ENUM_SERVICE			1021 //読み込まれたEPGデータのサービスの一覧取得
 #define CMD2_EPG_SRV_ENUM_PG_INFO			1022 //サービス指定で番組情報一覧を取得する

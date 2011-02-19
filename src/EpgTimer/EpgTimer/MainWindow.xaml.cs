@@ -432,7 +432,11 @@ namespace EpgTimer
         void SettingCmd()
         {
             SettingWindow setting = new SettingWindow();
-            setting.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            PresentationSource topWindow = PresentationSource.FromVisual(this);
+            if (topWindow != null)
+            {
+                setting.Owner = (Window)topWindow.RootVisual;
+            }
             if (setting.ShowDialog() == true)
             {
                 if (setting.ServiceStop == false)

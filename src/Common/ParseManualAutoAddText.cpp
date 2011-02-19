@@ -249,6 +249,36 @@ BOOL CParseManualAutoAddText::Parse1Line(string parseLine, MANUAL_AUTO_ADD_DATA*
 	
 	Separate( parseLine, "\t", strBuff, parseLine);
 
+	//部分受信複数録画フォルダ
+	DWORD recFolderNum2 = (DWORD)atoi(strBuff.c_str());
+
+	for( DWORD i=0; i<recFolderNum2; i++ ){
+		Separate( parseLine, "\t", strBuff, parseLine);
+
+		wstring wBuff = L"";
+		AtoW(strBuff, wBuff);
+		if( wBuff.size() > 0 ){
+			wstring folder = L"";
+			wstring plugin = L"";
+			wstring recname = L"";
+			Separate( wBuff, L"*", folder, wBuff);
+			Separate( wBuff, L"*", plugin, recname);
+
+			REC_FILE_SET_INFO folderItem;
+			folderItem.recFolder = folder;
+			ChkFolderPath(folderItem.recFolder);
+			if( plugin.size() == 0 ){
+				folderItem.writePlugIn = L"Write_Default.dll";
+			}else{
+				folderItem.writePlugIn = plugin;
+			}
+			folderItem.recNamePlugIn = recname;
+			item->recSetting.partialRecFolder.push_back(folderItem);
+		}
+	}
+
+	Separate( parseLine, "\t", strBuff, parseLine);
+
 	return TRUE;
 }
 
@@ -397,6 +427,23 @@ BOOL CParseManualAutoAddText::SaveText(LPCWSTR filePath)
 		//強制的使用BonDrive
 		Format(strBuff,"%d",itr->second->recSetting.tunerID);
 		strWrite+=strBuff +"\t";
+		//部分受信サービス録画のフォルダ
+		if( itr->second->recSetting.partialRecFolder.size() > 1 ){
+			Format(strBuff,"%d",itr->second->recSetting.partialRecFolder.size());
+			strWrite+=strBuff +"\t";
+			for( size_t i=0; i<itr->second->recSetting.partialRecFolder.size(); i++ ){
+				wstring path = L"";
+				path = itr->second->recSetting.partialRecFolder[i].recFolder;
+				path += L"*";
+				path += itr->second->recSetting.partialRecFolder[i].writePlugIn;
+				path += L"*";
+				path += itr->second->recSetting.partialRecFolder[i].recNamePlugIn;
+				WtoA(path, strBuff);
+				strWrite+=strBuff +"\t";
+			}
+		}else{
+			strWrite+="0\t";
+		}
 
 		strWrite+="\r\n";
 		WriteFile(hFile, strWrite.c_str(), (DWORD)strWrite.length(), &dwWrite, NULL);

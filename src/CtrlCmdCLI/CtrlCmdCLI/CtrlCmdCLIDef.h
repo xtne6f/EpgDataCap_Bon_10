@@ -26,7 +26,7 @@ namespace Def {
 		property String^ RecNamePlugIn;
 
 		/// <summary>
-		/// ファイル名個別対応
+		/// ファイル名個別対応 録画開始処理時に内部で使用。予約情報としては必要なし
 		/// </summary>
 		property String^ RecFileName;
 	public:
@@ -119,6 +119,11 @@ namespace Def {
 		/// </summary>
 		property UInt32 TunerID;
 
+		/// <summary>
+		/// 部分受信サービス録画のフォルダ
+		/// </summary>
+		property List<RecFileSetInfo^>^ PartialRecFolder;
+
 	public:
 		RecSettingData(void){
 			RecMode = 0;
@@ -136,6 +141,7 @@ namespace Def {
 			ContinueRecFlag = 0;
 			PartialRecFlag = 0;
 			TunerID = 0;
+			PartialRecFolder = gcnew List<RecFileSetInfo^>();
 		};
 	};
 
@@ -655,6 +661,10 @@ namespace Def {
 		/// イベントリレー情報
 		/// </summary>
 		property EpgEventGroupInfo^ EventRelayInfo;
+		/// <summary>
+		/// ノンスクランブルかどうか
+		/// </summary>
+		property Byte FreeCAFlag;
 
 	public:
 		EpgEventInfo(void){
@@ -673,6 +683,7 @@ namespace Def {
 			AudioInfo = nullptr;
 			EventGroupInfo = nullptr;
 			EventRelayInfo = nullptr;
+			FreeCAFlag = 0;
 		};
 	};
 
@@ -823,13 +834,17 @@ namespace Def {
 		/// </summary>
 		property Byte aimaiFlag;
 		/// <summary>
-		/// あいまい検索を行う
+		/// ジャンル絞り込みNOT扱い
 		/// </summary>
 		property Byte notContetFlag;
 		/// <summary>
-		/// あいまい検索を行う
+		/// 映像絞り込みNOT扱い
 		/// </summary>
 		property Byte notDateFlag;
+		/// <summary>
+		/// FreeCAモード
+		/// </summary>
+		property Byte freeCAFlag;
 	public:
 		EpgSearchKeyInfo(void){
 			andKey = gcnew String("");
@@ -844,6 +859,7 @@ namespace Def {
 			aimaiFlag = 0;
 			notContetFlag = 0;
 			notDateFlag = 0;
+			freeCAFlag = 0;
 		};
 	};
 

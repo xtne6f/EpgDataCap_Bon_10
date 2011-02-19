@@ -268,6 +268,7 @@ BOOL CEpgDBManager::ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INF
 	dest->start_time = src->start_time;
 	dest->DurationFlag = src->DurationFlag;
 	dest->durationSec = src->durationSec;
+	dest->freeCAFlag = src->freeCAFlag;
 
 	if( src->shortInfo != NULL ){
 		dest->shortInfo = new EPGDB_SHORT_EVENT_INFO;
@@ -542,6 +543,19 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, EPGDB
 			//サービス発見
 			map<WORD, EPGDB_EVENT_INFO*>::iterator itrEvent;
 			for( itrEvent = itrService->second->eventMap.begin(); itrEvent != itrService->second->eventMap.end(); itrEvent++ ){
+				if( key->freeCAFlag == 1 ){
+					//無料放送のみ
+					if(itrEvent->second->freeCAFlag == 1 ){
+						//有料放送
+						continue;
+					}
+				}else if( key->freeCAFlag == 2 ){
+					//有料放送のみ
+					if(itrEvent->second->freeCAFlag == 0 ){
+						//無料放送
+						continue;
+					}
+				}
 				//ジャンル確認
 				if( key->contentList.size() > 0 ){
 					//ジャンル指定あるのでジャンルで絞り込み

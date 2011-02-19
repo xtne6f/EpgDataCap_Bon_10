@@ -423,6 +423,38 @@ public:
 		NWPLAY_TIMESHIFT_INFO* resVal
 		);
 
+	//予約一覧を取得する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[OUT]予約一覧
+	DWORD SendEnumReserve2(
+		vector<RESERVE_DATA>* val
+		);
+
+	//予約情報を取得する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// reserveID		[IN]取得する情報の予約ID
+	// val				[OUT]予約情報
+	DWORD SendGetReserve2(DWORD reserveID, RESERVE_DATA* val);
+
+	//予約を追加する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]追加する予約一覧
+	DWORD SendAddReserve2(vector<RESERVE_DATA>* val);
+
+	//予約を変更する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]変更する予約一覧
+	DWORD SendChgReserve2(vector<RESERVE_DATA>* val);
+
+
 //タイマーGUI（EpgTimer_Bon.exe）用
 
 	//ダイアログを前面に表示

@@ -390,6 +390,20 @@ namespace EpgTimer
                 }
                 extInfo += "\r\n";
 
+                //スクランブル
+                if (!(0x7880 <= eventInfo.original_network_id && eventInfo.original_network_id <= 0x7FE8))
+                {
+                    if (eventInfo.FreeCAFlag == 0)
+                    {
+                        extInfo += "無料放送\r\n";
+                    }
+                    else
+                    {
+                        extInfo += "有料放送\r\n";
+                    }
+                    extInfo += "\r\n";
+                }
+
                 extInfo += "OriginalNetworkID : " + eventInfo.original_network_id.ToString() + " (0x" + eventInfo.original_network_id.ToString("X4") + ")\r\n";
                 extInfo += "TransportStreamID : " + eventInfo.transport_stream_id.ToString() + " (0x" + eventInfo.transport_stream_id.ToString("X4") + ")\r\n";
                 extInfo += "ServiceID : " + eventInfo.service_id.ToString() + " (0x" + eventInfo.service_id.ToString("X4") + ")\r\n";

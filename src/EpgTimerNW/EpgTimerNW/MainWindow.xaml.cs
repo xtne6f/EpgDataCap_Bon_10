@@ -381,7 +381,11 @@ namespace EpgTimerNW
         bool ConnectCmd(bool reloadFlag)
         {
             ConnectWindow dlg = new ConnectWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            PresentationSource topWindow = PresentationSource.FromVisual(this);
+            if (topWindow != null)
+            {
+                dlg.Owner = (Window)topWindow.RootVisual;
+            }
             if (dlg.ShowDialog() == true)
             {
                 bool connected = false;
@@ -616,7 +620,11 @@ namespace EpgTimerNW
         void SettingCmd()
         {
             SettingWindow setting = new SettingWindow();
-            setting.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            PresentationSource topWindow = PresentationSource.FromVisual(this);
+            if (topWindow != null)
+            {
+                setting.Owner = (Window)topWindow.RootVisual;
+            } 
             if (setting.ShowDialog() == true)
             {
                 if (setting.ServiceStop == false)

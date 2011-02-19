@@ -148,6 +148,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\Common\CtrlCmdDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdUtil.h" />
+    <ClInclude Include="..\..\Common\CtrlCmdUtil2.h" />
     <ClInclude Include="..\..\Common\NWStructDef.h" />
     <ClInclude Include="..\..\Common\SendCtrlCmd.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
@@ -161,6 +162,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp" />
+    <ClCompile Include="..\..\Common\CtrlCmdUtil2.cpp" />
     <ClCompile Include="..\..\Common\SendCtrlCmd.cpp" />
     <ClCompile Include="..\..\Common\StringUtil.cpp" />
     <ClCompile Include="..\..\Common\twitterUtil.cpp" />
