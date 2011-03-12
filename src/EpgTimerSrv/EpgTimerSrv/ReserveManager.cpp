@@ -2764,22 +2764,43 @@ void CReserveManager::CheckTuijyu()
 						}else{
 							//総時間未定
 							if( resNextVal.StartTimeFlag == 1 && resNowVal.StartTimeFlag == 1 ){
-								if( ConvertI64Time(resNextVal.start_time) < ConvertI64Time(resNowVal.start_time) ){
-									//次の方が開始時間早いとかおかしい
-									endRec = TRUE;
-									_OutputDebugString(L"●p/f 不正状態（現在開始＞次開始 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
-										data.startTime.wYear,
-										data.startTime.wMonth,
-										data.startTime.wDay,
-										data.startTime.wHour,
-										data.startTime.wMinute,
-										data.startTime.wSecond,
-										data.durationSecond,
-										data.title.c_str(),
-										data.stationName.c_str()
-										);
-									if( CheckEventRelay(&resNextVal, &data, TRUE) == TRUE ){
-										chgReserve = TRUE;
+								if( resNowVal.DurationFlag == 1 ){
+									if( ConvertI64Time(resNextVal.start_time) < GetSumTime(resNowVal.start_time, resNowVal.durationSec) ){
+										//次の方が開始時間が現在の間にあるとかおかしい
+										endRec = TRUE;
+										_OutputDebugString(L"●p/f 不正状態（現在終了＞次開始 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
+											data.startTime.wYear,
+											data.startTime.wMonth,
+											data.startTime.wDay,
+											data.startTime.wHour,
+											data.startTime.wMinute,
+											data.startTime.wSecond,
+											data.durationSecond,
+											data.title.c_str(),
+											data.stationName.c_str()
+											);
+										if( CheckEventRelay(&resNextVal, &data, TRUE) == TRUE ){
+											chgReserve = TRUE;
+										}
+									}
+								}else{
+									if( ConvertI64Time(resNextVal.start_time) < ConvertI64Time(resNowVal.start_time) ){
+										//次の方が開始時間早いとかおかしい
+										endRec = TRUE;
+										_OutputDebugString(L"●p/f 不正状態（現在開始＞次開始 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
+											data.startTime.wYear,
+											data.startTime.wMonth,
+											data.startTime.wDay,
+											data.startTime.wHour,
+											data.startTime.wMinute,
+											data.startTime.wSecond,
+											data.durationSecond,
+											data.title.c_str(),
+											data.stationName.c_str()
+											);
+										if( CheckEventRelay(&resNextVal, &data, TRUE) == TRUE ){
+											chgReserve = TRUE;
+										}
 									}
 								}
 							}
@@ -2990,6 +3011,12 @@ BOOL CReserveManager::CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, 
 		timeLog2 = L"時間未定";
 	}
 
+	if( info->StartTimeFlag == 1 && info->DurationFlag == 1){
+		if(GetNowI64Time() > GetSumTime(info->start_time, info->durationSec)){
+			//終了時間を過ぎているので追従はしない
+			return FALSE;
+		}
+	}
 	if( info->StartTimeFlag == 1 ){
 		if( ConvertI64Time(data->startTime) != ConvertI64Time(info->start_time) ){
 			//開始時間変わっている

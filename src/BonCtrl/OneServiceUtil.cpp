@@ -557,3 +557,10 @@ void COneServiceUtil::GetRecWriteSize(
 		this->writeFile->GetRecWriteSize(writeSize);
 	}
 }
+
+void COneServiceUtil::SetBonDriver(
+	wstring bonDriver
+	)
+{
+	this->dropCount.SetBonDriver(bonDriver);
+}

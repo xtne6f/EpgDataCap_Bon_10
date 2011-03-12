@@ -307,6 +307,10 @@ public:
 		float signalLv
 		);
 
+	void SetBonDriver(
+		wstring bonDriver
+		);
+
 protected:
 	HANDLE lockEvent;
 
@@ -339,6 +343,8 @@ protected:
 	HANDLE epgFile;
 	wstring epgFilePath;
 	wstring epgTempFilePath;
+
+	wstring bonFile;
 protected:
 	//PublicAPI排他制御用
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 5*1000);

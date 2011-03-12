@@ -12,6 +12,7 @@ CDropCount::CDropCount(void)
 	this->lastLogScramble = 0;
 
 	this->signalLv = 0;
+	this->bonFile = L"";
 }
 
 
@@ -61,6 +62,11 @@ void CDropCount::Clear()
 void CDropCount::SetSignal(float level)
 {
 	this->signalLv = level;
+}
+
+void CDropCount::SetBonDriver(wstring bonDriver)
+{
+	this->bonFile = bonDriver;
 }
 
 void CDropCount::GetCount(ULONGLONG* drop, ULONGLONG* scramble)
@@ -215,6 +221,11 @@ void CDropCount::SaveLog(wstring filePath)
 				itr->first, itr->second.total, itr->second.drop, itr->second.scramble );
 			WriteFile(file, buff.c_str(), (DWORD)buff.size(), &write, NULL );
 		}
+
+		string strA;
+		WtoA(bonFile, strA);
+		Format(buff, "\r\n使用BonDriver : %s\r\n", strA.c_str());
+		WriteFile(file, buff.c_str(), (DWORD)buff.size(), &write, NULL );
 
 		CloseHandle(file);
 	}

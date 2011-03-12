@@ -428,7 +428,7 @@ BOOL CParseManualAutoAddText::SaveText(LPCWSTR filePath)
 		Format(strBuff,"%d",itr->second->recSetting.tunerID);
 		strWrite+=strBuff +"\t";
 		//部分受信サービス録画のフォルダ
-		if( itr->second->recSetting.partialRecFolder.size() > 1 ){
+		if( itr->second->recSetting.partialRecFolder.size() > 0 ){
 			Format(strBuff,"%d",itr->second->recSetting.partialRecFolder.size());
 			strWrite+=strBuff +"\t";
 			for( size_t i=0; i<itr->second->recSetting.partialRecFolder.size(); i++ ){

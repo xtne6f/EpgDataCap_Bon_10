@@ -601,47 +601,44 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 
 	map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itrKey;
 	for( itrKey = this->epgAutoAdd.dataIDMap.begin(); itrKey != this->epgAutoAdd.dataIDMap.end(); itrKey++ ){
-		vector<EPGDB_SEARCH_KEY_INFO> searchKey;
-		vector<EPGDB_EVENT_INFO*> result;
-
-		searchKey.push_back(itrKey->second->searchInfo);
-
-		this->epgDB.SearchEpg(&searchKey, &result);
-		for( size_t i=0; i<result.size(); i++ ){
-			if( result[i]->StartTimeFlag == 0 || result[i]->DurationFlag == 0 ){
+		vector<CEpgDBManager::SEARCH_RESULT_EVENT> resultList;
+		this->epgDB.SearchEpg(&itrKey->second->searchInfo, &resultList);
+		for( size_t i=0; i<resultList.size(); i++ ){
+			EPGDB_EVENT_INFO* result = resultList[i].info;
+			if( result->StartTimeFlag == 0 || result->DurationFlag == 0 ){
 				//時間未定なので対象外
 				continue;
 			}
-			if( ConvertI64Time(result[i]->start_time) < nowTime ){
+			if( ConvertI64Time(result->start_time) < nowTime ){
 				//開始時間過ぎているので対象外
 				continue;
 			}
-			if( nowTime + ((LONGLONG)this->autoAddDays)*24*60*60*I64_1SEC < ConvertI64Time(result[i]->start_time)){
+			if( nowTime + ((LONGLONG)this->autoAddDays)*24*60*60*I64_1SEC < ConvertI64Time(result->start_time)){
 				//対象期間外
 				continue;
 			}
 
 			if(this->reserveManager.IsFindReserve(
-				result[i]->original_network_id,
-				result[i]->transport_stream_id,
-				result[i]->service_id,
-				result[i]->event_id
+				result->original_network_id,
+				result->transport_stream_id,
+				result->service_id,
+				result->event_id
 				) == FALSE ){
 					ULONGLONG eventKey = _Create64Key2(
-						result[i]->original_network_id,
-						result[i]->transport_stream_id,
-						result[i]->service_id,
-						result[i]->event_id
+						result->original_network_id,
+						result->transport_stream_id,
+						result->service_id,
+						result->event_id
 						);
 
 					itrAdd = addMap.find(eventKey);
 					if( itrAdd == addMap.end() ){
 						//まだ存在しないので追加対象
-						if(result[i]->eventGroupInfo != NULL && this->chkGroupEvent == TRUE){
+						if(result->eventGroupInfo != NULL && this->chkGroupEvent == TRUE){
 							//イベントグループのチェックをする
 							BOOL findGroup = FALSE;
-							for(size_t j=0; j<result[i]->eventGroupInfo->eventDataList.size(); j++ ){
-								EPGDB_EVENT_DATA groupData = result[i]->eventGroupInfo->eventDataList[j];
+							for(size_t j=0; j<result->eventGroupInfo->eventDataList.size(); j++ ){
+								EPGDB_EVENT_DATA groupData = result->eventGroupInfo->eventDataList[j];
 								if(this->reserveManager.IsFindReserve(
 									groupData.original_network_id,
 									groupData.transport_stream_id,
@@ -671,24 +668,29 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 						}
 						//まだ存在しないので追加対象
 						RESERVE_DATA* addItem = new RESERVE_DATA;
-						if( result[i]->shortInfo != NULL ){
-							addItem->title = result[i]->shortInfo->event_name;
+						if( result->shortInfo != NULL ){
+							addItem->title = result->shortInfo->event_name;
 						}
-						addItem->startTime = result[i]->start_time;
-						addItem->startTimeEpg = result[i]->start_time;
-						addItem->durationSecond = result[i]->durationSec;
+						addItem->startTime = result->start_time;
+						addItem->startTimeEpg = result->start_time;
+						addItem->durationSecond = result->durationSec;
 						this->epgDB.SearchServiceName(
-							result[i]->original_network_id,
-							result[i]->transport_stream_id,
-							result[i]->service_id,
+							result->original_network_id,
+							result->transport_stream_id,
+							result->service_id,
 							addItem->stationName
 							);
-						addItem->originalNetworkID = result[i]->original_network_id;
-						addItem->transportStreamID = result[i]->transport_stream_id;
-						addItem->serviceID = result[i]->service_id;
-						addItem->eventID = result[i]->event_id;
+						addItem->originalNetworkID = result->original_network_id;
+						addItem->transportStreamID = result->transport_stream_id;
+						addItem->serviceID = result->service_id;
+						addItem->eventID = result->event_id;
 
 						addItem->recSetting = itrKey->second->recSetting;
+						if( resultList[i].findKey.size() > 0 ){
+							Format(addItem->comment, L"EPG自動予約(%s)", resultList[i].findKey.c_str());
+						}else{
+							addItem->comment = L"EPG自動予約";
+						}
 
 						addMap.insert(pair<ULONGLONG, RESERVE_DATA*>(eventKey, addItem));
 					}else{
@@ -1212,15 +1214,13 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 				for( itr = sys->epgAutoAdd.dataIDMap.begin(); itr != sys->epgAutoAdd.dataIDMap.end(); itr++ ){
 					val.push_back(*(itr->second));
 				}
-				if( val.size() > 0 ){
-					resParam->param = CMD_SUCCESS;
-					resParam->dataSize = GetVALUESize(&val);
-					resParam->data = new BYTE[resParam->dataSize];
-					if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
-						_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_AUTO_ADD\r\n");
-						resParam->dataSize = 0;
-						resParam->param = CMD_ERR;
-					}
+				resParam->param = CMD_SUCCESS;
+				resParam->dataSize = GetVALUESize(&val);
+				resParam->data = new BYTE[resParam->dataSize];
+				if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
+					_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_AUTO_ADD\r\n");
+					resParam->dataSize = 0;
+					resParam->param = CMD_ERR;
 				}
 
 				sys->UnLock();
@@ -1327,15 +1327,13 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 				for( itr = sys->manualAutoAdd.dataIDMap.begin(); itr != sys->manualAutoAdd.dataIDMap.end(); itr++ ){
 					val.push_back(*(itr->second));
 				}
-				if( val.size() > 0 ){
-					resParam->param = CMD_SUCCESS;
-					resParam->dataSize = GetVALUESize(&val);
-					resParam->data = new BYTE[resParam->dataSize];
-					if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
-						_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_MANU_ADD\r\n");
-						resParam->dataSize = 0;
-						resParam->param = CMD_ERR;
-					}
+				resParam->param = CMD_SUCCESS;
+				resParam->dataSize = GetVALUESize(&val);
+				resParam->data = new BYTE[resParam->dataSize];
+				if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
+					_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_MANU_ADD\r\n");
+					resParam->dataSize = 0;
+					resParam->param = CMD_ERR;
 				}
 
 				sys->UnLock();

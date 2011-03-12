@@ -647,6 +647,7 @@ BOOL CTSOut::CreateServiceCtrl(
 
 	serviceUtil->SetEpgUtil(&this->epgUtil);
 	serviceUtil->SetID(*id);
+	serviceUtil->SetBonDriver(bonFile);
 
 	serviceUtilMap.insert(pair<DWORD, COneServiceUtil*>(*id, serviceUtil));
 
@@ -700,6 +701,7 @@ BOOL CTSOut::SetServiceID(
 	}
 
 	itr->second->SetSID(serviceID);
+	CheckNeedPID();
 
 	UnLock();
 	return TRUE;
@@ -1208,3 +1210,20 @@ void CTSOut::SetSignalLevel(
 
 	UnLock();
 }
+
+
+void CTSOut::SetBonDriver(
+	wstring bonDriver
+	)
+{
+	if( Lock() == FALSE ) return ;
+
+	map<DWORD, COneServiceUtil*>::iterator itr;
+	for( itr = serviceUtilMap.begin(); itr != serviceUtilMap.end(); itr++ ){
+		itr->second->SetBonDriver(bonDriver);
+	}
+	bonFile = bonDriver;
+
+	UnLock();
+}
+

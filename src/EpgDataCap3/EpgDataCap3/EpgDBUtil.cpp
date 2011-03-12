@@ -130,6 +130,15 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 		map<WORD, EVENT_INFO*>::iterator itrEvent;
 		EVENT_INFO* eventInfo = NULL;
 
+		if( eitEventInfo->running_status == 1 || eitEventInfo->running_status == 3 ){
+			//非実行中または停止中
+			_OutputDebugString(L"★非実行中または停止中イベント ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x %04d/%02d/%02d %02:%02",
+				eit->original_network_id,  eit->transport_stream_id, eit->service_id, eitEventInfo->event_id,
+				eitEventInfo->start_time.wYear, eitEventInfo->start_time.wMonth, eitEventInfo->start_time.wDay, eitEventInfo->start_time.wHour, eitEventInfo->start_time.wMinute
+				);
+			continue;
+		}
+
 		itrEvent = serviceInfo->eventMap.find(eitEventInfo->event_id);
 		if( itrEvent == serviceInfo->eventMap.end() ){
 			eventInfo = new EVENT_INFO;
@@ -156,13 +165,16 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 
 			if( eit->section_number == 0 ){
 				serviceInfo->nowEvent = eventInfo;
+				eventInfo->pfFlag = TRUE;
 			}else if( eit->section_number == 1 ){
 				serviceInfo->nextEvent = eventInfo;
+				eventInfo->pfFlag = TRUE;
 			}
 		}else if( 0x50 <= eit->table_id && eit->table_id <= 0x5F ){
 			if( serviceInfo->nowEvent != NULL && serviceInfo->nextEvent != NULL ){
 				if( serviceInfo->nowEvent->event_id != eitEventInfo->event_id &&
-					serviceInfo->nextEvent->event_id != eitEventInfo->event_id ){
+					serviceInfo->nextEvent->event_id != eitEventInfo->event_id &&
+					eventInfo->pfFlag == FALSE){
 					//自ストリームでp/fじゃないなら時間更新
 					eventInfo->StartTimeFlag = eitEventInfo->StartTimeFlag;
 					eventInfo->start_time = eitEventInfo->start_time;
@@ -237,46 +249,48 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 	}else{
 		//H-EIT
 		sectionInfo->HEITFlag = TRUE;
-		if( 0x50 <= eit->table_id && eit->table_id <= 0x57 ||
-			0x60 <= eit->table_id && eit->table_id <= 0x67){
-			sectionInfo->last_table_idBasic = eit->last_table_id;
-			sectionInfo->last_section_numberBasic = eit->last_section_number;
+		if( eit->section_number == eit->segment_last_section_number ){
+			if( 0x50 <= eit->table_id && eit->table_id <= 0x57 ||
+				0x60 <= eit->table_id && eit->table_id <= 0x67){
+				sectionInfo->last_table_idBasic = eit->last_table_id;
+				sectionInfo->last_section_numberBasic = eit->last_section_number;
 
-			DWORD sectionNo = eit->section_number >> 3;
-			map<WORD, SECTION_FLAG_INFO>::iterator itrFlag;
-			itrFlag = sectionInfo->sectionBasicMap.find(eit->table_id);
-			if( itrFlag == sectionInfo->sectionBasicMap.end() ){
-				DWORD maxFlag = 0;
-				for( DWORD i=0; i<=((DWORD)eit->last_section_number)>>3; i++ ){
-					maxFlag |= 1<<i;
+				DWORD sectionNo = eit->section_number >> 3;
+				map<WORD, SECTION_FLAG_INFO>::iterator itrFlag;
+				itrFlag = sectionInfo->sectionBasicMap.find(eit->table_id);
+				if( itrFlag == sectionInfo->sectionBasicMap.end() ){
+					DWORD maxFlag = 0;
+					for( DWORD i=0; i<=((DWORD)eit->last_section_number)>>3; i++ ){
+						maxFlag |= 1<<i;
+					}
+					SECTION_FLAG_INFO item;
+					item.maxFlag = maxFlag;
+					item.sectionFlag = 1<<sectionNo;
+					sectionInfo->sectionBasicMap.insert(pair<WORD, SECTION_FLAG_INFO>(eit->table_id, item));
+				}else{
+					itrFlag->second.sectionFlag |= (DWORD)1<<sectionNo;
 				}
-				SECTION_FLAG_INFO item;
-				item.maxFlag = maxFlag;
-				item.sectionFlag = 1<<sectionNo;
-				sectionInfo->sectionBasicMap.insert(pair<WORD, SECTION_FLAG_INFO>(eit->table_id, item));
-			}else{
-				itrFlag->second.sectionFlag |= (DWORD)1<<sectionNo;
 			}
-		}
-		if( 0x58 <= eit->table_id && eit->table_id <= 0x5F ||
-			0x68 <= eit->table_id && eit->table_id <= 0x6F){
-			sectionInfo->last_table_idExt = eit->last_table_id;
-			sectionInfo->last_section_numberExt = eit->last_section_number;
+			if( 0x58 <= eit->table_id && eit->table_id <= 0x5F ||
+				0x68 <= eit->table_id && eit->table_id <= 0x6F){
+				sectionInfo->last_table_idExt = eit->last_table_id;
+				sectionInfo->last_section_numberExt = eit->last_section_number;
 
-			DWORD sectionNo = eit->section_number >> 3;
-			map<WORD, SECTION_FLAG_INFO>::iterator itrFlag;
-			itrFlag = sectionInfo->sectionExtMap.find(eit->table_id);
-			if( itrFlag == sectionInfo->sectionExtMap.end() ){
-				DWORD maxFlag = 0;
-				for( DWORD i=0; i<=((DWORD)eit->last_section_number)>>3; i++ ){
-					maxFlag |= 1<<i;
+				DWORD sectionNo = eit->section_number >> 3;
+				map<WORD, SECTION_FLAG_INFO>::iterator itrFlag;
+				itrFlag = sectionInfo->sectionExtMap.find(eit->table_id);
+				if( itrFlag == sectionInfo->sectionExtMap.end() ){
+					DWORD maxFlag = 0;
+					for( DWORD i=0; i<=((DWORD)eit->last_section_number)>>3; i++ ){
+						maxFlag |= 1<<i;
+					}
+					SECTION_FLAG_INFO item;
+					item.maxFlag = maxFlag;
+					item.sectionFlag = 1<<sectionNo;
+					sectionInfo->sectionExtMap.insert(pair<WORD, SECTION_FLAG_INFO>(eit->table_id, item));
+				}else{
+					itrFlag->second.sectionFlag |= (DWORD)1<<sectionNo;
 				}
-				SECTION_FLAG_INFO item;
-				item.maxFlag = maxFlag;
-				item.sectionFlag = 1<<sectionNo;
-				sectionInfo->sectionExtMap.insert(pair<WORD, SECTION_FLAG_INFO>(eit->table_id, item));
-			}else{
-				itrFlag->second.sectionFlag |= (DWORD)1<<sectionNo;
 			}
 		}
 		if( eit->table_id == 0x4E && eit->section_number == 0){

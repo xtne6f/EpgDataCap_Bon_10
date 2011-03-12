@@ -22,6 +22,8 @@ public:
 	void SaveLog(wstring filePath);
 
 	void SetSignal(float level);
+	void SetBonDriver(wstring bonDriver);
+
 
 protected:
 	typedef struct _DROP_INFO{
@@ -49,6 +51,7 @@ protected:
 	ULONGLONG lastLogDrop;
 	ULONGLONG lastLogScramble;
 	float signalLv;
+	wstring bonFile;
 
 protected:
 	void CheckCounter(CTSPacketUtil* tsPacket, DROP_INFO* info);

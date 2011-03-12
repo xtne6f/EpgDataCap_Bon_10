@@ -14,6 +14,12 @@
 class CEpgDBManager
 {
 public:
+	typedef struct _SEARCH_RESULT_EVENT{
+		EPGDB_EVENT_INFO* info;
+		wstring findKey;
+	}SEARCH_RESULT_EVENT;
+
+public:
 	CEpgDBManager(void);
 	~CEpgDBManager(void);
 
@@ -55,6 +61,8 @@ public:
 		wstring& serviceName
 		);
 
+	BOOL SearchEpg(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>* result);
+
 protected:
 	HANDLE lockEvent;
 
@@ -94,11 +102,11 @@ protected:
 
 	BOOL _IsLoadingData();
 
-	void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, EPGDB_EVENT_INFO*>* resultMap);
+	void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARCH_RESULT_EVENT>* resultMap);
 	BOOL IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector<EPGDB_CONTENT_DATA>* eventData);
 	BOOL IsInDateTime(vector<TIME_SEARCH>* timeList, SYSTEMTIME startTime);
-	BOOL IsFindKeyword(BOOL regExpFlag, BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode);
-	BOOL IsFindLikeKeyword(BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode);
+	BOOL IsFindKeyword(BOOL regExpFlag, BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey = NULL);
+	BOOL IsFindLikeKeyword(BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey = NULL);
 
 };
 

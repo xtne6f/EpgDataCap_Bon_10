@@ -1484,12 +1484,12 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 							info.tunerID = this->tunerID & 0x0000FFFF;
 
 							if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-								data.recSetting.recFolderList[j].recFileName = name;
+								data.recSetting.partialRecFolder[j].recFileName = name;
 							}
 						}
 					}
 				}
-				param.saveFolder = data.recSetting.recFolderList;
+				param.saveFolder = data.recSetting.partialRecFolder;
 			}
 		}else{
 			//通常録画

@@ -404,12 +404,34 @@ BOOL CEpgDBManager::SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<EPGDB_E
 
 	BOOL ret = TRUE;
 
-	map<ULONGLONG, EPGDB_EVENT_INFO*> resultMap;
+	map<ULONGLONG, SEARCH_RESULT_EVENT> resultMap;
 	for( size_t i=0; i<key->size(); i++ ){
 		SearchEvent( &(*key)[i], &resultMap );
 	}
 
-	map<ULONGLONG, EPGDB_EVENT_INFO*>::iterator itr;
+	map<ULONGLONG, SEARCH_RESULT_EVENT>::iterator itr;
+	for( itr = resultMap.begin(); itr != resultMap.end(); itr++ ){
+		result->push_back(itr->second.info);
+	}
+
+	UnLock();
+	return ret;
+}
+
+BOOL CEpgDBManager::SearchEpg(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>* result)
+{
+	if( Lock() == FALSE ) return FALSE;
+	if( _IsLoadingData() == TRUE ){
+		UnLock();
+		return FALSE;
+	}
+
+	BOOL ret = TRUE;
+
+	map<ULONGLONG, SEARCH_RESULT_EVENT> resultMap;
+	SearchEvent( key, &resultMap );
+
+	map<ULONGLONG, SEARCH_RESULT_EVENT>::iterator itr;
 	for( itr = resultMap.begin(); itr != resultMap.end(); itr++ ){
 		result->push_back(itr->second);
 	}
@@ -418,7 +440,7 @@ BOOL CEpgDBManager::SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<EPGDB_E
 	return ret;
 }
 
-void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, EPGDB_EVENT_INFO*>* resultMap)
+void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARCH_RESULT_EVENT>* resultMap)
 {
 	if( key == NULL || resultMap == NULL ){
 		return ;
@@ -543,6 +565,7 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, EPGDB
 			//サービス発見
 			map<WORD, EPGDB_EVENT_INFO*>::iterator itrEvent;
 			for( itrEvent = itrService->second->eventMap.begin(); itrEvent != itrService->second->eventMap.end(); itrEvent++ ){
+				wstring matchKey = L"";
 				if( key->freeCAFlag == 1 ){
 					//無料放送のみ
 					if(itrEvent->second->freeCAFlag == 1 ){
@@ -686,12 +709,12 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, EPGDB
 					//}
 					if( key->regExpFlag == FALSE && key->aimaiFlag == 1){
 						//あいまい検索
-						if( IsFindLikeKeyword(key->titleOnlyFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE) == FALSE ){
+						if( IsFindLikeKeyword(key->titleOnlyFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE, &matchKey) == FALSE ){
 							//andキーワード見つからなかったので対象外
 							continue;
 						}
 					}else{
-						if( IsFindKeyword(key->regExpFlag, key->titleOnlyFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE) == FALSE ){
+						if( IsFindKeyword(key->regExpFlag, key->titleOnlyFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE, &matchKey) == FALSE ){
 							//andキーワード見つからなかったので対象外
 							continue;
 						}
@@ -704,7 +727,10 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, EPGDB
 					itrEvent->second->service_id,
 					itrEvent->second->event_id);
 
-				resultMap->insert(pair<ULONGLONG, EPGDB_EVENT_INFO*>(mapKey, itrEvent->second));
+				SEARCH_RESULT_EVENT addItem;
+				addItem.findKey = matchKey;
+				addItem.info = itrEvent->second;
+				resultMap->insert(pair<ULONGLONG, SEARCH_RESULT_EVENT>(mapKey, addItem));
 
 			}
 		}
@@ -765,7 +791,7 @@ BOOL CEpgDBManager::IsInDateTime(vector<TIME_SEARCH>* timeList, SYSTEMTIME start
 	return FALSE;
 }
 
-BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode)
+BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey)
 {
 	if( shortInfo == NULL ){
 		//基本情報ないので対象外
@@ -794,6 +820,12 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, BOOL titleOnlyFlag, vector<ws
 				IMatchCollectionPtr pMatchCol( this->regExp->Execute( target ) );
 
 				if( pMatchCol->Count > 0 ){
+					if( findKey != NULL ){
+						IMatch2Ptr pMatch( pMatchCol->Item[0] );
+						_bstr_t value( pMatch->Value );
+
+						*findKey = value;
+					}
 					return TRUE;
 				}
 			}catch(...){
@@ -807,6 +839,10 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, BOOL titleOnlyFlag, vector<ws
 				if( word.find((*keyList)[i]) == string::npos ){
 					//見つからなかったので終了
 					return FALSE;
+				}else{
+					if( findKey != NULL ){
+						*findKey += (*keyList)[i];
+					}
 				}
 			}
 			return TRUE;
@@ -822,7 +858,7 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, BOOL titleOnlyFlag, vector<ws
 	}
 }
 
-BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode)
+BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey)
 {
 	if( shortInfo == NULL ){
 		//基本情報ないので対象外
@@ -867,6 +903,10 @@ BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, vector<wstring>* keyLi
 			}
 			hitCount = 0;
 			missCount = 0;
+		}else{
+			if( findKey != NULL ){
+				*findKey += (*keyList)[i];
+			}
 		}
 	}
 	if( andMode == TRUE ){

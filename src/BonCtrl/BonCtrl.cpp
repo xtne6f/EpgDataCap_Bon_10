@@ -213,6 +213,10 @@ DWORD CBonCtrl::OpenBonDriver(
 	if( ret == NO_ERR ){
 		ret = _OpenBonDriver();
 		this->tsOut.ResetChChange();
+
+		wstring bonFile;
+		bonFile = this->bonUtil.GetOpenBonDriverFileName();
+		this->tsOut.SetBonDriver(bonFile);
 	}
 	if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
 		this->chUtil.LoadChSet( this->bonUtil.GetChSet4Path(), this->bonUtil.GetChSet5Path() );
@@ -236,6 +240,10 @@ DWORD CBonCtrl::OpenBonDriver(
 	if( ret == NO_ERR ){
 		ret = _OpenBonDriver();
 		this->tsOut.ResetChChange();
+
+		wstring bonFile;
+		bonFile = this->bonUtil.GetOpenBonDriverFileName();
+		this->tsOut.SetBonDriver(bonFile);
 	}
 	if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
 		this->chUtil.LoadChSet( this->bonUtil.GetChSet4Path(), this->bonUtil.GetChSet5Path() );

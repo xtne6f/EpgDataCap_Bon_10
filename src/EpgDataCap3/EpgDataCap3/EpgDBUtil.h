@@ -75,6 +75,7 @@ typedef struct _EVENT_INFO{
 	EVENTGROUP_INFO* eventRelayInfo;
 
 	BYTE freeCAFlag;
+	BOOL pfFlag;
 	_EVENT_INFO(void){
 		shortInfo = NULL;
 		extInfo = NULL;
@@ -84,6 +85,7 @@ typedef struct _EVENT_INFO{
 		eventGroupInfo = NULL;
 		eventRelayInfo = NULL;
 		freeCAFlag = 0;
+		pfFlag = FALSE;
 	};
 	~_EVENT_INFO(void){
 		SAFE_DELETE(shortInfo);

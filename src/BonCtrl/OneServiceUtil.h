@@ -186,6 +186,10 @@ public:
 		__int64* writeSize
 		);
 
+	void SetBonDriver(
+		wstring bonDriver
+		);
+
 protected:
 	DWORD id;
 	WORD SID;
