@@ -328,7 +328,7 @@ protected:
 	BOOL CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, BOOL errEnd = FALSE);
 
 	BOOL CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, BYTE* chgMode = NULL);
-	BOOL CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* ctrl);
+	BOOL CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* ctrl, vector<DWORD>* deleteList);
 	BOOL ChgDurationChk(EPGDB_EVENT_INFO* info);
 
 	void EnableSuspendWork(BYTE suspendMode, BYTE rebootFlag, BYTE epgReload);

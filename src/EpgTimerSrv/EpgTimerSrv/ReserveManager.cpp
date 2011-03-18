@@ -1078,7 +1078,6 @@ BOOL CReserveManager::ChgReserveData(
 
 	_ReloadBankMap();
 
-
 	_SendNotifyUpdate();
 
 	UnLock();
@@ -1157,6 +1156,19 @@ BOOL CReserveManager::_ChgReserveData(RESERVE_DATA* reserve, BOOL chgTime)
 	if( chgCtrl == FALSE ){
 		itrInfo->second->SetData(&setData);
 	}
+
+	//EventID変わってる可能性あるのでリスト再構築
+	this->reserveInfoIDMap.clear();
+	map<DWORD, RESERVE_DATA*>::iterator itrData;
+	for( itrData = this->reserveText.reserveIDMap.begin(); itrData != this->reserveText.reserveIDMap.end(); itrData++){
+		LONGLONG keyID = _Create64Key2(
+			itrData->second->originalNetworkID,
+			itrData->second->transportStreamID,
+			itrData->second->serviceID,
+			itrData->second->eventID);
+		this->reserveInfoIDMap.insert(pair<LONGLONG, DWORD>(keyID, itrData->second->reserveID));
+	}
+
 
 	return TRUE;
 }
@@ -2635,6 +2647,8 @@ void CReserveManager::CheckTuijyu()
 	}
 
 	//予約の状態を確認する
+	vector<DWORD> deleteList;
+
 	BOOL chgReserve = FALSE;
 	map<DWORD, CReserveInfo*>::iterator itrRes;
 	BOOL chk6h = FALSE;
@@ -2846,7 +2860,7 @@ void CReserveManager::CheckTuijyu()
 					}
 					if( chkNormal == FALSE ){
 						//時間未定なので6時間追従モードへ
-						if( CheckNotFindChgEvent(&data, itrCtrl->second) == TRUE ){
+						if( CheckNotFindChgEvent(&data, itrCtrl->second, &deleteList) == TRUE ){
 							chgReserve = TRUE;
 						}
 					}else{
@@ -2949,6 +2963,11 @@ void CReserveManager::CheckTuijyu()
 		}
 	}
 
+	if( deleteList.size() > 0 ){
+		//予約一覧から削除
+		_DelReserveData(&deleteList);
+		chgReserve = TRUE;
+	}
 	if( chgReserve == TRUE ){
 		wstring filePath = L"";
 		GetSettingPath(filePath);
@@ -3077,7 +3096,7 @@ BOOL CReserveManager::CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, 
 	return chgRes;
 }
 
-BOOL CReserveManager::CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* ctrl)
+BOOL CReserveManager::CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* ctrl, vector<DWORD>* deleteList)
 {
 	BOOL chgRes = FALSE;
 	wstring log = L"";
@@ -3135,10 +3154,8 @@ BOOL CReserveManager::CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* c
 			this->recInfoText.AddRecInfo(&item);
 			_SendTweet(TW_REC_END, &item, NULL, NULL);
 
-			vector<DWORD> deleteList;
-			deleteList.push_back(data->reserveID);
-			//予約一覧から削除
-			_DelReserveData(&deleteList);
+			deleteList->push_back(data->reserveID);
+
 		}else{
 			//開始時間を延ばす
 			LONGLONG chgStart = nowTime;
