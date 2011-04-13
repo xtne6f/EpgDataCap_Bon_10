@@ -454,6 +454,35 @@ public:
 	// val				[IN]変更する予約一覧
 	DWORD SendChgReserve2(vector<RESERVE_DATA>* val);
 
+	//予約追加が可能か確認する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]予約情報
+	// resVal			[OUT]追加可能かのステータス
+	DWORD SendAddChkReserve2(RESERVE_DATA* val, WORD* resVal);
+
+
+	//EPGデータファイルのタイムスタンプ取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]取得ファイル名
+	// resVal			[OUT]タイムスタンプ
+	DWORD SendGetEpgFileTime2(wstring val, LONGLONG* resVal);
+
+	//EPGデータファイル取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[IN]ファイル名
+	// resVal		[OUT]ファイルのバイナリデータ
+	// resValSize	[OUT]resValのサイズ
+	DWORD SendGetEpgFile2(
+		wstring val,
+		BYTE** resVal,
+		DWORD* resValSize
+		);
 
 //タイマーGUI（EpgTimer_Bon.exe）用
 
@@ -474,6 +503,13 @@ public:
 	// エラーコード
 	DWORD SendGUIUpdateEpgData(
 		);
+
+	//情報更新を通知する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]通知情報
+	DWORD SendGUINotifyInfo2(NOTIFY_SRV_INFO* val);
 
 //Viewアプリ（EpgDataCap_Bon.exe）を起動
 	//戻り値：

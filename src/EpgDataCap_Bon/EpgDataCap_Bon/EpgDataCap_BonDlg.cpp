@@ -478,6 +478,32 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					}
 					BtnUpdate(GUI_NORMAL);
 					ChgIconStatus();
+
+					//同じサービスが別の物理チャンネルにあるかチェック
+					wstring msg = L"";
+					for( size_t i=0; i<this->serviceList.size(); i++ ){
+						for( size_t j=i+1; j<this->serviceList.size(); j++ ){
+							if( this->serviceList[i].originalNetworkID == this->serviceList[j].originalNetworkID &&
+								this->serviceList[i].transportStreamID == this->serviceList[j].transportStreamID &&
+								this->serviceList[i].serviceID == this->serviceList[j].serviceID ){
+									wstring log = L"";
+									Format(log, L"%s space:%d ch:%d <=> %s space:%d ch:%d\r\n",
+										this->serviceList[i].serviceName.c_str(),
+										this->serviceList[i].space,
+										this->serviceList[i].ch,
+										this->serviceList[j].serviceName.c_str(),
+										this->serviceList[j].space,
+										this->serviceList[j].ch);
+									msg += log;
+									break;
+							}
+						}
+					}
+					if( msg.size() > 0){
+						wstring log = L"同一サービスが複数の物理チャンネルで検出されました。\r\n受信環境のよい物理チャンネルのサービスのみ残すように設定を行ってください。\r\n正常に録画できない可能性が出てきます。\r\n\r\n";
+						log += msg;
+						MessageBox(log.c_str());
+					}
 				}
 			}
 			break;
@@ -1060,6 +1086,7 @@ void CEpgDataCap_BonDlg::ReloadServiceList()
 		if( this->combService.GetCount() > 0 ){
 			this->combService.SetCurSel(selectSel);
 		}
+
 	}
 
 }

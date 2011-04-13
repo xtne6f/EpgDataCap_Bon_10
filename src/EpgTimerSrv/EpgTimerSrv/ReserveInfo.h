@@ -42,6 +42,10 @@ public:
 	BOOL IsChkPfInfo();
 
 	DWORD GetReserveAddStatus();
+
+	BOOL IsNeedCoopAdd();
+	void SetCoopAdd(wstring srv, WORD status);
+	void GetCoopAddStatus(wstring& srv, WORD* status);
 protected:
 	HANDLE lockEvent;
 
@@ -57,6 +61,8 @@ protected:
 
 	BOOL pfInfoCheck;
 
+	wstring coopAddsrv;
+	WORD coopStatus;
 protected:
 	//PublicAPI排他制御用
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);

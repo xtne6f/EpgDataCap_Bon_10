@@ -4,7 +4,6 @@ using System.Configuration;
 using System.Data;
 using System.Linq;
 using System.Windows;
-using System.ServiceProcess;
 
 namespace EpgTimer
 {
@@ -13,6 +12,5 @@ namespace EpgTimer
     /// </summary>
     public partial class App : Application
     {
-
     }
 }

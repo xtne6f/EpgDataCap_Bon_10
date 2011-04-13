@@ -3,18 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="録画情報" Height="361" Width="557" WindowStartupLocation="CenterOwner">
     <Window.Resources>
-        <Style TargetType="{x:Type ComboBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type Button}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type ListBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
+        <ResourceDictionary Source="/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml" />
     </Window.Resources>
     <Grid>
         <Button Content="再生" Height="23" HorizontalAlignment="Left" Margin="12,12,0,0" Name="button_play" VerticalAlignment="Top" Width="75" Click="button_play_Click" />

@@ -23,7 +23,7 @@ namespace EpgTimer
     {
         private bool changeModeFlag = false;
         private ManualAutoAddData defKey = null;
-        private CtrlCmdUtil cmd = EpgTimerDef.Instance.CtrlCmd;
+        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
         public AddManualAutoAddWindow()
         {
@@ -31,24 +31,25 @@ namespace EpgTimer
 
             try
             {
-                comboBox_startHH.DataContext = EpgTimerDef.Instance.HourDictionary.Values;
+                comboBox_startHH.DataContext = CommonManager.Instance.HourDictionary.Values;
                 comboBox_startHH.SelectedIndex = 0;
-                comboBox_startMM.DataContext = EpgTimerDef.Instance.MinDictionary.Values;
+                comboBox_startMM.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_startMM.SelectedIndex = 0;
-                comboBox_startSS.DataContext = EpgTimerDef.Instance.MinDictionary.Values;
+                comboBox_startSS.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_startSS.SelectedIndex = 0;
-                comboBox_endHH.DataContext = EpgTimerDef.Instance.HourDictionary.Values;
+                comboBox_endHH.DataContext = CommonManager.Instance.HourDictionary.Values;
                 comboBox_endHH.SelectedIndex = 0;
-                comboBox_endMM.DataContext = EpgTimerDef.Instance.MinDictionary.Values;
+                comboBox_endMM.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_endMM.SelectedIndex = 0;
-                comboBox_endSS.DataContext = EpgTimerDef.Instance.MinDictionary.Values;
+                comboBox_endSS.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_endSS.SelectedIndex = 0;
 
                 comboBox_service.ItemsSource = ChSet5.Instance.ChList.Values;
                 comboBox_service.SelectedIndex = 0;
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -144,6 +145,11 @@ namespace EpgTimer
             DialogResult = true;
         }
 
+        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+        }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             if (defKey != null)
@@ -209,7 +215,7 @@ namespace EpgTimer
                     comboBox_service.SelectedItem = ChSet5.Instance.ChList[key];
                 }
 
-                recSettingView.SetDefRecSetting(defKey.recSetting);
+                recSettingView.SetDefSetting(defKey.recSetting);
             }
         }
     }

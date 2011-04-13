@@ -91,7 +91,7 @@ void CTSOut::UnLock(LPCWSTR log)
 	}
 }
 
-DWORD CTSOut::SetChChangeEvent()
+DWORD CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 {
 	if( Lock() == FALSE ) return ERR_FALSE;
 
@@ -102,6 +102,11 @@ DWORD CTSOut::SetChChangeEvent()
 	this->decodeUtil.UnLoadDll();
 
 	SAFE_DELETE(this->catUtil);
+
+	if( resetEpgUtil == TRUE ){
+		this->epgUtil.UnInitialize();
+		this->epgUtil.Initialize(FALSE);
+	}
 
 	UnLock();
 	return NO_ERR;
@@ -169,183 +174,236 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 	BYTE* decodeData = NULL;
 	DWORD decodeSize = 0;
 	
-	for( DWORD i=0; i<data->size; i+=188 ){
-		CTSPacketUtil packet;
-		if( packet.Set188TS(data->data + i, 188) == TRUE ){
-			if( this->chChangeFlag == TRUE ){
-				//チャンネル切り替え中
-				//簡易パケット解析
-				if( packet.transport_scrambling_control != 0 ){
-					//スクランブルパケットなので解析できない
-					continue;
-				}
-				if( packet.data_byteSize < 3 ){
-					//サイズが小さすぎる
-					continue;
-				}
-				if(packet.payload_unit_start_indicator == 1 && 
-					packet.data_byte[0] == 0x00 &&
-					packet.data_byte[1] == 0x00 &&
-					packet.data_byte[2] == 0x01){
-					//PES
-					continue;
-				}
-				this->epgUtil.AddTSPacket(data->data + i, 188);
+	try{
+		for( DWORD i=0; i<data->size; i+=188 ){
+			CTSPacketUtil packet;
+			if( packet.Set188TS(data->data + i, 188) == TRUE ){
+				if( this->chChangeFlag == TRUE ){
+					//チャンネル切り替え中
+					//簡易パケット解析
+					if( packet.transport_scrambling_control != 0 ){
+						//スクランブルパケットなので解析できない
+						continue;
+					}
+					if( packet.data_byteSize < 3 ){
+						//サイズが小さすぎる
+						continue;
+					}
+					if(packet.payload_unit_start_indicator == 1 && 
+						packet.data_byte[0] == 0x00 &&
+						packet.data_byte[1] == 0x00 &&
+						packet.data_byte[2] == 0x01){
+						//PES
+						continue;
+					}
+					this->epgUtil.AddTSPacket(data->data + i, 188);
 
-				WORD onid = 0xFFFF;
-				WORD tsid = 0xFFFF;
-				if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
-					if( onid != this->lastONID || tsid != this->lastTSID ){
-						OutputDebugString(L"★Ch Change Complete\r\n");
-					_OutputDebugString(L"★Ch 0x%04X 0x%04X 0x%04X 0x%04X\r\n", onid, this->lastONID, tsid, this->lastTSID);
-						this->chChangeFlag = FALSE;
-						this->lastONID = onid;
-						this->lastTSID = tsid;
-						this->epgUtil.ClearSectionStatus();
-						if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
-							OutputDebugString(L"★★Decode DLL load err\r\n");
-							Sleep(100);
-							this->decodeUtil.SetNetwork(onid, tsid);
-						}
-						this->decodeUtil.SetEmm(this->emmEnableFlag);
-						ResetErrCount();
-					}else if( GetTimeCount() > this->chChangeTime + 15 ){
-						OutputDebugString(L"★Ch Change Err\r\n");
-						//10秒以上たってるなら切り替わったとする
-						this->chChangeErr = TRUE;
-						//this->chChangeFlag = FALSE;
-						this->lastONID = onid;
-						this->lastTSID = tsid;
-						//this->epgUtil.ClearSectionStatus();
-						//this->decodeUtil.SetNetwork(onid, tsid);
-						//this->decodeUtil.SetEmm(this->emmEnableFlag);
-						//ResetErrCount();
-					}
-				}
-				else{
-					if( GetTimeCount() > this->chChangeTime + 15 ){
-						//15秒以上たってるなら切り替わったとする
-						OutputDebugString(L"★GetTSID Err\r\n");
-						//this->chChangeFlag = FALSE;
-						this->chChangeErr = TRUE;
-						this->lastONID = onid;
-						this->lastTSID = tsid;
-						//this->epgUtil.ClearSectionStatus();
-						//this->decodeUtil.SetNetwork(onid, tsid);
-						//this->decodeUtil.SetEmm(this->emmEnableFlag);
-						//ResetErrCount();
-					}
-				}
-
-			}else{
-				//指定サービスに必要なPIDを解析
-				if( packet.transport_scrambling_control == 0 ){
-					//CAT
-					if( packet.PID == 0x0001 ){
-						if( this->catUtil == NULL ){
-							this->catUtil = new CCATUtil;
-						}
-						if(this->catUtil->AddPacket(&packet) == TRUE){
-							CheckNeedPID();
-						}
-					}
-					//PMT
-					if( packet.payload_unit_start_indicator == 1 && packet.data_byteSize > 0){
-						BYTE pointer = packet.data_byte[0];
-						if( pointer+1 < packet.data_byteSize ){
-							if( packet.data_byte[1+pointer] == 0x02 ){
-								//PMT
-								map<WORD, CPMTUtil*>::iterator itrPmt;
-								itrPmt = this->pmtUtilMap.find(packet.PID);
-								if( itrPmt == this->pmtUtilMap.end() ){
-									CPMTUtil* util = new CPMTUtil;
-									this->pmtUtilMap.insert(pair<WORD, CPMTUtil*>(packet.PID, util));
-									if( util->AddPacket(&packet) == TRUE ){
-										CheckNeedPID();
-									}
-								}else{
-									if( itrPmt->second->AddPacket(&packet) == TRUE ){
-										CheckNeedPID();
-									}
-								}
+					WORD onid = 0xFFFF;
+					WORD tsid = 0xFFFF;
+					if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
+						if( onid != this->lastONID || tsid != this->lastTSID ){
+							OutputDebugString(L"★Ch Change Complete\r\n");
+						_OutputDebugString(L"★Ch 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", onid, tsid, this->lastONID, this->lastTSID);
+							this->chChangeFlag = FALSE;
+							this->chChangeErr = FALSE;
+							this->lastONID = onid;
+							this->lastTSID = tsid;
+							this->epgUtil.ClearSectionStatus();
+							if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
+								OutputDebugString(L"★★Decode DLL load err\r\n");
+								Sleep(100);
+								this->decodeUtil.SetNetwork(onid, tsid);
 							}
+							this->decodeUtil.SetEmm(this->emmEnableFlag);
+							ResetErrCount();
+						}else if( GetTimeCount() > this->chChangeTime + 15 ){
+							if( this->lastONID == onid && this->lastTSID == tsid ){
+								this->chChangeFlag = FALSE;
+								this->chChangeErr = FALSE;
+								this->lastONID = onid;
+								this->lastTSID = tsid;
+								this->epgUtil.ClearSectionStatus();
+								if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
+									OutputDebugString(L"★★Decode DLL load err\r\n");
+									Sleep(100);
+									this->decodeUtil.SetNetwork(onid, tsid);
+								}
+								this->decodeUtil.SetEmm(this->emmEnableFlag);
+								ResetErrCount();
+							}else{
+//								OutputDebugString(L"★Ch Change Err\r\n");
+								//10秒以上たってるなら切り替わったとする
+								this->chChangeErr = TRUE;
+								//this->chChangeFlag = FALSE;
+								this->lastONID = onid;
+								this->lastTSID = tsid;
+							}
+							//this->epgUtil.ClearSectionStatus();
+							//this->decodeUtil.SetNetwork(onid, tsid);
+							//this->decodeUtil.SetEmm(this->emmEnableFlag);
+							//ResetErrCount();
 						}
-					}else{
-						//PMTの2パケット目かチェック
-						map<WORD, CPMTUtil*>::iterator itrPmt;
-						itrPmt = this->pmtUtilMap.find(packet.PID);
-						if( itrPmt != this->pmtUtilMap.end() ){
-							if( itrPmt->second->AddPacket(&packet) == TRUE ){
+					}
+					else{
+						if( GetTimeCount() > this->chChangeTime + 15 ){
+							//15秒以上たってるなら切り替わったとする
+							OutputDebugString(L"★GetTSID Err\r\n");
+							//this->chChangeFlag = FALSE;
+							this->chChangeErr = TRUE;
+							this->lastONID = onid;
+							this->lastTSID = tsid;
+							//this->epgUtil.ClearSectionStatus();
+							//this->decodeUtil.SetNetwork(onid, tsid);
+							//this->decodeUtil.SetEmm(this->emmEnableFlag);
+							//ResetErrCount();
+						}
+					}
+
+				}else{
+					//指定サービスに必要なPIDを解析
+					if( packet.transport_scrambling_control == 0 ){
+						//CAT
+						if( packet.PID == 0x0001 ){
+							if( this->catUtil == NULL ){
+								this->catUtil = new CCATUtil;
+							}
+							if(this->catUtil->AddPacket(&packet) == TRUE){
 								CheckNeedPID();
 							}
 						}
-					}
-				}
-
-				//デコード用のバッファ作成
-				if( this->serviceOnlyFlag == FALSE ){
-					//全サービス
-					memcpy(this->decodeBuff + this->deocdeBuffWriteSize, data->data + i, 188);
-					this->deocdeBuffWriteSize += 188;
-				}else{
-					//指定サービス
-					if( IsNeedPID(&packet) == TRUE ){
-						if( packet.PID == 0x0000 ){
-							//PATなので必要なサービスのみに絞る
-							BYTE* patBuff = NULL;
-							DWORD patBuffSize = 0;
-							if( patUtil.GetPacket(&patBuff, &patBuffSize) == TRUE ){
-								memcpy(this->decodeBuff + this->deocdeBuffWriteSize, patBuff, patBuffSize);
-								this->deocdeBuffWriteSize += patBuffSize;
+						//PMT
+						if( packet.payload_unit_start_indicator == 1 && packet.data_byteSize > 0){
+							BYTE pointer = packet.data_byte[0];
+							if( pointer+1 < packet.data_byteSize ){
+								if( packet.data_byte[1+pointer] == 0x02 ){
+									//PMT
+									map<WORD, CPMTUtil*>::iterator itrPmt;
+									itrPmt = this->pmtUtilMap.find(packet.PID);
+									if( itrPmt == this->pmtUtilMap.end() ){
+										CPMTUtil* util = new CPMTUtil;
+										this->pmtUtilMap.insert(pair<WORD, CPMTUtil*>(packet.PID, util));
+										if( util->AddPacket(&packet) == TRUE ){
+											CheckNeedPID();
+										}
+									}else{
+										if( itrPmt->second->AddPacket(&packet) == TRUE ){
+											CheckNeedPID();
+										}
+									}
+								}
 							}
 						}else{
-							memcpy(this->decodeBuff + this->deocdeBuffWriteSize, data->data + i, 188);
-							this->deocdeBuffWriteSize += 188;
+							//PMTの2パケット目かチェック
+							map<WORD, CPMTUtil*>::iterator itrPmt;
+							itrPmt = this->pmtUtilMap.find(packet.PID);
+							if( itrPmt != this->pmtUtilMap.end() ){
+								if( itrPmt->second->AddPacket(&packet) == TRUE ){
+									CheckNeedPID();
+								}
+							}
+						}
+					}
+
+					//デコード用のバッファ作成
+					if( this->serviceOnlyFlag == FALSE ){
+						//全サービス
+						memcpy(this->decodeBuff + this->deocdeBuffWriteSize, data->data + i, 188);
+						this->deocdeBuffWriteSize += 188;
+					}else{
+						//指定サービス
+						if( IsNeedPID(&packet) == TRUE ){
+							if( packet.PID == 0x0000 ){
+								//PATなので必要なサービスのみに絞る
+								BYTE* patBuff = NULL;
+								DWORD patBuffSize = 0;
+								if( patUtil.GetPacket(&patBuff, &patBuffSize) == TRUE ){
+									memcpy(this->decodeBuff + this->deocdeBuffWriteSize, patBuff, patBuffSize);
+									this->deocdeBuffWriteSize += patBuffSize;
+								}
+							}else{
+								memcpy(this->decodeBuff + this->deocdeBuffWriteSize, data->data + i, 188);
+								this->deocdeBuffWriteSize += 188;
+							}
+						}
+					}
+					if( this->epgFile != NULL ){
+						if( packet.PID <= 0x0030 ){
+							DWORD write=0;
+							WriteFile(this->epgFile, data->data + i, 188, &write, NULL);
 						}
 					}
 				}
-				if( this->epgFile != NULL ){
-					if( packet.PID <= 0x0030 ){
-						DWORD write=0;
-						WriteFile(this->epgFile, data->data + i, 188, &write, NULL);
+			}else{
+				if( this->chChangeFlag == TRUE ){
+					if( GetTimeCount() > this->chChangeTime + 15 ){
+						//15秒以上たってるなら切り替わったとする
+						//OutputDebugString(L"★Ch Change Err NoPacket\r\n");
+						//this->chChangeFlag = FALSE;
+						this->chChangeErr = TRUE;
+						this->lastONID = 0xFFFF;
+						this->lastTSID = 0xFFFF;
+						//this->epgUtil.ClearSectionStatus();
+						//this->decodeUtil.SetNetwork(onid, tsid);
+						//this->decodeUtil.SetEmm(this->emmEnableFlag);
+						//ResetErrCount();
 					}
 				}
 			}
 		}
+	}catch(...){
+		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception1");
+		UnLock();
+		return ERR_FALSE;
 	}
+	try{
+		if( this->deocdeBuffWriteSize > 0 ){
+			if( this->enableDecodeFlag == TRUE){
+				//デコード必要
 
-	if( this->deocdeBuffWriteSize > 0 ){
-		if( this->enableDecodeFlag == TRUE){
-			//デコード必要
-
-			if( decodeUtil.Decode(this->decodeBuff, this->deocdeBuffWriteSize, &decodeData, &decodeSize) == FALSE ){
-				//デコード失敗
+				if( decodeUtil.Decode(this->decodeBuff, this->deocdeBuffWriteSize, &decodeData, &decodeSize) == FALSE ){
+					//デコード失敗
+					decodeData = this->decodeBuff;
+					decodeSize = this->deocdeBuffWriteSize;
+				}else{
+					if( decodeData == NULL || decodeSize == 0 ){
+						decodeData = NULL;
+						decodeSize = 0;
+					}
+				}
+			}else{
+				//デコードの必要なし
 				decodeData = this->decodeBuff;
 				decodeSize = this->deocdeBuffWriteSize;
-			}else{
-				if( decodeData == NULL || decodeSize == 0 ){
-					decodeData = NULL;
-					decodeSize = 0;
-				}
 			}
-		}else{
-			//デコードの必要なし
-			decodeData = this->decodeBuff;
-			decodeSize = this->deocdeBuffWriteSize;
 		}
+	}catch(...){
+		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception2");
+		UnLock();
+		return ERR_FALSE;
 	}
 	
 	//デコード済みのデータを解析させる
-	for( DWORD i=0; i<decodeSize; i+=188 ){
-		this->epgUtil.AddTSPacket(decodeData + i, 188);
-	}
-	
-	//各サービス処理にデータ渡す
-	map<DWORD, COneServiceUtil*>::iterator itrService;
-	for( itrService = serviceUtilMap.begin(); itrService != serviceUtilMap.end(); itrService++ ){
-		itrService->second->AddTSBuff(decodeData, decodeSize);
+	try{
+		for( DWORD i=0; i<decodeSize; i+=188 ){
+			this->epgUtil.AddTSPacket(decodeData + i, 188);
+		}
+	}catch(...){
+		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception3");
+		UnLock();
+		return ERR_FALSE;
 	}
 
+	//各サービス処理にデータ渡す
+	try{
+		map<DWORD, COneServiceUtil*>::iterator itrService;
+		for( itrService = serviceUtilMap.begin(); itrService != serviceUtilMap.end(); itrService++ ){
+			itrService->second->AddTSBuff(decodeData, decodeSize);
+		}
+	}catch(...){
+		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception4");
+		UnLock();
+		return ERR_FALSE;
+	}
 	UnLock();
 	return NO_ERR;
 }
@@ -997,7 +1055,7 @@ BOOL CTSOut::EndSave(
 	)
 {
 	if( Lock() == FALSE ) return FALSE;
-
+	BOOL ret = TRUE;
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
@@ -1005,10 +1063,10 @@ BOOL CTSOut::EndSave(
 		return FALSE;
 	}
 
-	itr->second->EndSave();
+	ret = itr->second->EndSave();
 
 	UnLock();
-	return TRUE;
+	return ret;
 }
 
 //スクランブル解除処理の動作設定

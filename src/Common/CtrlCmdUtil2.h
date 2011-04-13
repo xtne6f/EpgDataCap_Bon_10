@@ -53,7 +53,7 @@ DWORD GetVALUESize2(WORD ver, vector<__int64>* val);
 BOOL WriteVALUE2(WORD ver, vector<__int64>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
 BOOL ReadVALUE2(WORD ver, vector<__int64>* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESiz2e(WORD ver, wstring val );
+DWORD GetVALUESize2(WORD ver, wstring val );
 BOOL WriteVALUE2(WORD ver, wstring val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
 BOOL ReadVALUE2(WORD ver, wstring* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
 
@@ -88,5 +88,8 @@ DWORD GetVALUESize2(WORD ver, vector<RESERVE_DATA*>* val );
 BOOL WriteVALUE2(WORD ver, vector<RESERVE_DATA*>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
 BOOL ReadVALUE2(WORD ver, vector<RESERVE_DATA*>* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
 
+DWORD GetVALUESize2(WORD ver, NOTIFY_SRV_INFO* val );
+BOOL WriteVALUE2(WORD ver, NOTIFY_SRV_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+BOOL ReadVALUE2(WORD ver, NOTIFY_SRV_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
 
 #endif

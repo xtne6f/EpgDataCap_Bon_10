@@ -23,7 +23,7 @@ public:
 	CTSOut(void);
 	~CTSOut(void);
 
-	DWORD SetChChangeEvent();
+	DWORD SetChChangeEvent(BOOL resetEpgUtil = FALSE);
 	BOOL IsChChanging(BOOL* chChgErr);
 	void ResetChChange();
 

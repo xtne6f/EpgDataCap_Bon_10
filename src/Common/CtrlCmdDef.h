@@ -50,6 +50,9 @@
 #define CMD2_EPG_SRV_GET_RESERVE2			2012 //予約情報取得
 #define CMD2_EPG_SRV_ADD_RESERVE2			2013 //予約追加
 #define CMD2_EPG_SRV_CHG_RESERVE2			2015 //予約変更
+#define CMD2_EPG_SRV_ADDCHK_RESERVE2		2030 //サーバー連携用　予約追加できるかのチェック（戻り値 0:追加不可 1:追加可能 2:追加可能だが開始か終了が重なるものあり 3:すでに同じ物がある）
+#define CMD2_EPG_SRV_GET_EPG_FILETIME2		2031 //サーバー連携用　EPGデータファイルのタイムスタンプ取得
+#define CMD2_EPG_SRV_GET_EPG_FILE2			2032 //サーバー連携用　EPGデータファイル取得
 
 #define CMD2_EPG_SRV_ENUM_SERVICE			1021 //読み込まれたEPGデータのサービスの一覧取得
 #define CMD2_EPG_SRV_ENUM_PG_INFO			1022 //サービス指定で番組情報一覧を取得する
@@ -97,6 +100,9 @@
 #define CMD2_TIMER_GUI_QUERY_SUSPEND		120 //スタンバイ、休止、シャットダウンに入っていいかの確認をユーザーに行う（入っていいならCMD_EPG_SRV_SUSPENDを送る）
 #define CMD2_TIMER_GUI_QUERY_REBOOT			121 //PC再起動に入っていいかの確認をユーザーに行う（入っていいならCMD_EPG_SRV_REBOOTを送る）
 #define CMD2_TIMER_GUI_SRV_STATUS_CHG		130 //サーバーのステータス変更通知（1:通常、2:EPGデータ取得開始、3:予約録画開始）
+
+//バージョン情報追加対応版
+#define CMD2_TIMER_GUI_SRV_STATUS_NOTIFY2	1130 //サーバーの情報変更通知
 
 //Viewアプリ（EpgDataCap_Bon.exe）用
 #define CMD2_VIEW_APP_SET_BONDRIVER			201 //BonDriverの切り替え

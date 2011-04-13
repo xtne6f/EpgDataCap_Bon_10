@@ -13,7 +13,7 @@ using System.Windows.Shapes;
 using EpgTimer;
 using CtrlCmdCLI;
 
-namespace EpgTimerNW
+namespace EpgTimer
 {
     /// <summary>
     /// ConnectWindow.xaml の相互作用ロジック

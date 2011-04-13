@@ -34,6 +34,7 @@ CTunerBankCtrl::CTunerBankCtrl(void)
 
 	this->chkSpaceCount = 0;
 	this->twitterManager = NULL;
+	this->notifyManager = NULL;
 
 	ReloadSetting();
 }
@@ -74,12 +75,17 @@ BOOL CTunerBankCtrl::Lock(LPCWSTR log, DWORD timeOut)
 	if( this->lockEvent == NULL ){
 		return FALSE;
 	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
+	//if( log != NULL ){
+	//	_OutputDebugString(L"◆%s",log);
+	//}
 	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
 	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
+		dwRet == WAIT_FAILED ||
+		dwRet == WAIT_TIMEOUT){
+			OutputDebugString(L"◆CTunerBankCtrl::Lock FALSE");
+			if( log != NULL ){
+				OutputDebugString(log);
+			}
 		return FALSE;
 	}
 	return TRUE;
@@ -172,6 +178,14 @@ void CTunerBankCtrl::SetAutoDel(
 	UnLock();
 }
 
+void CTunerBankCtrl::SetNotifyManager(CNotifyManager* manager)
+{
+	if( Lock(L"CTunerBankCtrl::SetNotifyManager") == FALSE ) return;
+	this->notifyManager = manager;
+
+	UnLock();
+}
+/*
 void CTunerBankCtrl::SetRegistGUI(map<DWORD, DWORD> registGUIMap)
 {
 	if( Lock() == FALSE ) return;
@@ -180,7 +194,7 @@ void CTunerBankCtrl::SetRegistGUI(map<DWORD, DWORD> registGUIMap)
 
 	UnLock();
 }
-
+*/
 void CTunerBankCtrl::SetTunerInfo(
 	WORD bonID,
 	WORD tunerID,
@@ -423,6 +437,9 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 							continue;
 						}else{
 							sys->currentChID = ((DWORD)initCh.ONID) << 16 | initCh.TSID;
+							if( sys->notifyManager != NULL ){
+								sys->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, sys->bonFileName);
+							}
 						}
 					}
 				}else{
@@ -665,10 +682,15 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 		TCP = TRUE;
 	}
 	this->useOpendTuner = FALSE;
-	BOOL ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, this->registGUIMap, &this->processID, UDP, TCP, this->processPriority);
+	map<DWORD, DWORD> registGUIMap;
+	if( this->notifyManager != NULL ){
+		this->notifyManager->GetRegistGUI(&registGUIMap);
+	}
+
+	BOOL ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, registGUIMap, &this->processID, UDP, TCP, this->processPriority);
 	if( ret == FALSE ){
 		Sleep(500);
-		ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, this->registGUIMap, &this->processID, UDP, TCP, this->processPriority);
+		ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, registGUIMap, &this->processID, UDP, TCP, this->processPriority);
 	}
 	if( ret == TRUE ){
 		wstring pipeName = L"";
@@ -728,6 +750,11 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 				//TVTestで使ってるものあるかチェック
 				IDList.clear();
 				tunerCtrl.GetOpenExe(L"tvtest.exe", &IDList);
+				map<DWORD, DWORD> registGUIMap;
+				if( this->notifyManager != NULL ){
+					this->notifyManager->GetRegistGUI(&registGUIMap);
+				}
+
 				for(size_t i=0; i<IDList.size(); i++ ){
 					CSendCtrlCmd send;
 					wstring pipeName = L"";
@@ -742,10 +769,10 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 						if( bonDriver.size() > 0 && CompareNoCase(bonDriver, this->bonFileName) == 0 ){
 							send.SendViewAppClose();
 							Sleep(5000);
-							ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, this->registGUIMap, &this->processID, UDP, TCP, this->processPriority);
+							ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, registGUIMap, &this->processID, UDP, TCP, this->processPriority);
 							if( ret == FALSE ){
 								Sleep(500);
-								ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, this->registGUIMap, &this->processID, UDP, TCP, this->processPriority);
+								ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, registGUIMap, &this->processID, UDP, TCP, this->processPriority);
 							}
 							if( ret == TRUE ){
 								wstring pipeName = L"";
@@ -920,6 +947,23 @@ void CTunerBankCtrl::CreateCtrl(multimap<LONGLONG, RESERVE_WORK*>* sortList, LON
 						//作成
 						CreateCtrl(itr->second);
 					}
+				}
+
+				if( this->notifyManager != NULL ){
+					RESERVE_DATA data;
+					itr->second->reserveInfo->GetData(&data);
+					wstring msg;
+					Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d～ %s", 
+						data.stationName.c_str(),
+						data.startTime.wYear,
+						data.startTime.wMonth,
+						data.startTime.wDay,
+						data.startTime.wHour,
+						data.startTime.wMinute,
+						data.startTime.wMilliseconds,
+						data.title.c_str()
+						);
+					this->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, msg);
 				}
 			}
 		}
@@ -1293,7 +1337,10 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 					param.ctrlID = itr->second->ctrlID[i];
 					param.saveErrLog = this->saveErrLog;
 					SET_CTRL_REC_STOP_RES_PARAM resVal;
-					this->sendCtrl.SendViewStopRec(param, &resVal);
+					BOOL errEnd = FALSE;
+					if( this->sendCtrl.SendViewStopRec(param, &resVal) == CMD_ERR ){
+						errEnd = TRUE;
+					}
 
 					this->sendCtrl.SendViewDeleteCtrl(itr->second->ctrlID[i]);
 					if( itr->second->ctrlID[i] == itr->second->mainCtrlID ){
@@ -1308,6 +1355,9 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 							if( itr->second->reserveInfo->IsChkPfInfo() == FALSE ){
 								endType = REC_END_STATUS_NOT_FIND_PF;
 							}
+						}
+						if( errEnd == TRUE ){
+							endType = REC_END_STATUS_ERR_END2;
 						}
 						AddEndReserve(itr->second, endType, resVal);
 					}
@@ -1356,8 +1406,14 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 void CTunerBankCtrl::SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, BYTE mode)
 {
 	wstring outText = L"";
-
-	_ConvertEpgInfoText(info, outText);
+	wstring serviceName = L"";
+	multimap<LONGLONG, CH_DATA4>::iterator itr;
+	LONGLONG key = _Create64Key(info->original_network_id, info->transport_stream_id, info->service_id);
+	itr = chUtil.chList.find(key);
+	if( itr != chUtil.chList.end() ){
+		serviceName = itr->second.serviceName;
+	}
+	_ConvertEpgInfoText2(info, outText, serviceName);
 
 	string buff = "";
 	WtoA(outText, buff);
@@ -1370,7 +1426,7 @@ void CTunerBankCtrl::SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, B
 	}
 }
 
-BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL sendTweet)
+BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL sendNoyify)
 {
 	RESERVE_DATA data;
 	reserve->reserveInfo->GetData(&data);
@@ -1561,8 +1617,23 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 		}
 	}
 
-	if( this->twitterManager != NULL && sendTweet == TRUE){
+	if( this->twitterManager != NULL && sendNoyify == TRUE){
 		this->twitterManager->SendTweet(TW_REC_START, &data, NULL, NULL);
+	}
+
+	if( this->notifyManager != NULL && sendNoyify == TRUE){
+		wstring msg;
+		Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d\r\n%s", 
+			data.stationName.c_str(),
+			data.startTime.wYear,
+			data.startTime.wMonth,
+			data.startTime.wDay,
+			data.startTime.wHour,
+			data.startTime.wMinute,
+			data.startTime.wSecond,
+			data.title.c_str()
+			);
+		this->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_REC_START, msg);
 	}
 	return ret;
 }

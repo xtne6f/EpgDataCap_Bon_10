@@ -13,18 +13,21 @@
 CReserveManager::CReserveManager(void)
 {
 	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
-	this->lockNotify = _CreateEvent(FALSE, TRUE, NULL);
+//	this->lockNotify = _CreateEvent(FALSE, TRUE, NULL);
 
 	this->bankCheckThread = NULL;
 	this->bankCheckStopEvent = _CreateEvent(FALSE, FALSE, NULL);
 
+	this->notifyStatus = 0;
+/*
 	this->notifyThread = NULL;
 	this->notifyStopEvent = _CreateEvent(FALSE, FALSE, NULL);
 	this->notifyStatusThread = NULL;
 	this->notifyStatusStopEvent = _CreateEvent(FALSE, FALSE, NULL);
 	this->notifyEpgReloadThread = NULL;
 	this->notifyEpgReloadStopEvent = _CreateEvent(FALSE, FALSE, NULL);
-
+	*/
+	this->notifyManager = NULL;
 
 	this->tunerManager.ReloadTuner();
 	vector<DWORD> idList;
@@ -69,6 +72,18 @@ CReserveManager::CReserveManager(void)
 	this->useProxy = FALSE;
 
 	this->reloadBankMapAlgo = 0;
+
+	this->useSrvCoop = FALSE;
+	this->ngAddResSrvCoop = FALSE;
+	this->useResSrvCoop = FALSE;
+	this->useEpgSrvCoop = FALSE;
+
+	wstring textPath;
+	GetModuleFolderPath(textPath);
+	textPath += L"\\ConvertText.txt";
+
+	this->chgText.ParseReserveText(textPath.c_str() );
+
 	ReloadSetting();
 }
 
@@ -88,7 +103,7 @@ CReserveManager::~CReserveManager(void)
 		CloseHandle(this->bankCheckStopEvent);
 		this->bankCheckStopEvent = NULL;
 	}
-
+	/*
 	if( this->notifyEpgReloadThread != NULL ){
 		::SetEvent(this->notifyEpgReloadStopEvent);
 		// スレッド終了待ち
@@ -130,7 +145,7 @@ CReserveManager::~CReserveManager(void)
 		CloseHandle(this->notifyStopEvent);
 		this->notifyStopEvent = NULL;
 	}
-
+	*/
 	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
 		SAFE_DELETE(itrCtrl->second);
@@ -154,12 +169,12 @@ CReserveManager::~CReserveManager(void)
 	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
 		SAFE_DELETE(itr->second);
 	}
-
+	/*
 	if( this->lockNotify != NULL ){
 		NotifyUnLock();
 		CloseHandle(this->lockNotify);
 		this->lockNotify = NULL;
-	}
+	}*/
 
 	if( this->lockEvent != NULL ){
 		UnLock();
@@ -199,7 +214,7 @@ void CReserveManager::UnLock(LPCWSTR log)
 		OutputDebugString(log);
 	}
 }
-
+/*
 BOOL CReserveManager::NotifyLock(LPCWSTR log, DWORD timeOut)
 {
 	if( this->lockNotify == NULL ){
@@ -227,7 +242,33 @@ void CReserveManager::NotifyUnLock(LPCWSTR log)
 		OutputDebugString(log);
 	}
 }
+*/
+void CReserveManager::SetNotifyManager(CNotifyManager* manager)
+{
+	if( Lock(L"CReserveManager::SetNotifyManager") == FALSE ) return;
+	this->notifyManager = manager;
 
+	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
+	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
+		itrCtrl->second->SetNotifyManager(manager);
+	}
+
+	this->batManager.SetNotifyManager(manager);
+
+	UnLock();
+}
+
+void CReserveManager::ChangeRegist()
+{
+	if( Lock(L"CReserveManager::ChangeRegist") == FALSE ) return;
+
+	if( this->notifyManager != NULL ){
+		this->notifyManager->AddNotifySrvStatus(this->notifyStatus);
+	}
+
+	UnLock();
+}
+/*
 void CReserveManager::SetRegistGUI(map<DWORD, DWORD> registGUIMap)
 {
 	if( Lock(L"SetRegistGUI") == FALSE ) return;
@@ -276,7 +317,7 @@ void CReserveManager::SetRegistTCP(map<wstring, REGIST_TCP_INFO> registTCPMap)
 
 	UnLock();
 }
-
+*/
 void CReserveManager::ReloadSetting()
 {
 	if( Lock(L"ReloadSetting") == FALSE ) return;
@@ -456,35 +497,140 @@ void CReserveManager::ReloadSetting()
 
 	this->reloadBankMapAlgo = GetPrivateProfileInt(L"SET", L"ReloadBankMapAlgo", 0, iniAppPath.c_str());
 
+	this->useSrvCoop = GetPrivateProfileInt(L"SET", L"UseSrvCoop", 0, iniAppPath.c_str());
+	this->ngAddResSrvCoop = GetPrivateProfileInt(L"SET", L"NgAddResSrvCoop", 0, iniAppPath.c_str());
+	this->nwCoopManager.StopChkReserve();
+	this->nwCoopManager.StopChkEpgFile();
+	if( this->useSrvCoop == TRUE ){
+		vector<COOP_SERVER_INFO> srvList;
+
+		count = GetPrivateProfileInt(L"COOP_SRV", L"Num", 0, iniAppPath.c_str());
+		for( int i=0; i<count; i++ ){
+			COOP_SERVER_INFO addItem;
+
+			wstring key;
+			Format(key, L"ADD%d", i);
+			WCHAR buff[256] = L"";
+			GetPrivateProfileString(L"COOP_SRV", key.c_str(), L"", buff, 256, iniAppPath.c_str());
+			addItem.hostName = buff;
+
+			Format(key, L"PORT%d", i);
+			addItem.srvPort = GetPrivateProfileInt(L"COOP_SRV", key.c_str(), 4510, iniAppPath.c_str());
+
+			srvList.push_back(addItem);
+		}
+		if(srvList.size() > 0 ){
+			this->nwCoopManager.SetCoopServer(&srvList);
+		}
+	}else{
+		this->ngAddResSrvCoop = TRUE;
+	}
+	this->useResSrvCoop = GetPrivateProfileInt(L"SET", L"UseResSrvCoop", 0, iniAppPath.c_str());
+	if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
+		this->nwCoopManager.StartChkReserve();
+	}
+
+	this->useEpgSrvCoop = GetPrivateProfileInt(L"SET", L"UseEpgSrvCoop", 0, iniAppPath.c_str());
+	if( this->useEpgSrvCoop == TRUE && this->useSrvCoop == TRUE){
+		vector<wstring> fileList;
+		GetSrvCoopEpgList(&fileList);
+		this->nwCoopManager.SetChkEpgFile(&fileList);
+	}
+
 	UnLock();
 }
 
-void CReserveManager::SendNotifyUpdate()
+void CReserveManager::SendNotifyUpdate(DWORD notifyId)
 {
 	if( Lock(L"SendNotifyUpdate") == FALSE ) return;
 
-	_SendNotifyUpdate();
+	_SendNotifyUpdate(notifyId);
 
 	UnLock();
 }
 
-void CReserveManager::_SendNotifyUpdate()
+void CReserveManager::SendNotifyChgReserveAutoAdd(RESERVE_DATA* oldInfo, RESERVE_DATA* newInfo)
 {
-	if( this->notifyThread != NULL ){
-		if( ::WaitForSingleObject(this->notifyThread, 0) == WAIT_OBJECT_0 ){
-			CloseHandle(this->notifyThread);
-			this->notifyThread = NULL;
-		}
-	}
-	if( this->notifyThread == NULL ){
-		ResetEvent(this->notifyStopEvent);
-		this->notifyThread = (HANDLE)_beginthreadex(NULL, 0, SendNotifyThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-		SetThreadPriority( this->notifyThread, THREAD_PRIORITY_NORMAL );
-		ResumeThread(this->notifyThread);
+	if( Lock(L"SendNotifyUpdate") == FALSE ) return;
+
+	_SendNotifyChgReserve(NOTIFY_UPDATE_CHG_TUIJYU, oldInfo, newInfo);
+
+	UnLock();
+}
+
+void CReserveManager::_SendNotifyUpdate(DWORD notifyId)
+{
+	if( this->notifyManager != NULL ){
+		this->notifyManager->AddNotify(notifyId);
 	}
 }
 
 
+void CReserveManager::_SendNotifyStatus(WORD status)
+{
+	this->notifyStatus = status;
+	if( this->notifyManager != NULL ){
+		this->notifyManager->AddNotifySrvStatus(this->notifyStatus);
+	}
+}
+
+void CReserveManager::_SendNotifyRecEnd(REC_FILE_INFO* item)
+{
+	if( this->notifyManager != NULL ){
+		SYSTEMTIME endTime;
+		GetSumTime(item->startTime, item->durationSecond, &endTime);
+		wstring msg;
+		Format(msg, L"%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\n%s",
+			item->serviceName.c_str(),
+			item->startTime.wYear,
+			item->startTime.wMonth,
+			item->startTime.wDay,
+			item->startTime.wHour,
+			item->startTime.wMinute,
+			endTime.wHour,
+			endTime.wMinute,
+			item->title.c_str(),
+			item->comment.c_str()
+			);
+		this->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_REC_END, msg);
+	}
+}
+
+void CReserveManager::_SendNotifyChgReserve(DWORD notifyId, RESERVE_DATA* oldInfo, RESERVE_DATA* newInfo)
+{
+	if( this->notifyManager != NULL ){
+		SYSTEMTIME endTimeOld;
+		GetSumTime(oldInfo->startTime, oldInfo->durationSecond, &endTimeOld);
+		SYSTEMTIME endTimeNew;
+		GetSumTime(newInfo->startTime, newInfo->durationSecond, &endTimeNew);
+		wstring msg;
+		Format(msg, L"%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\nEventID:0x%04X\r\n↓\r\n%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\nEventID:0x%04X\r\n",
+			oldInfo->stationName.c_str(),
+			oldInfo->startTime.wYear,
+			oldInfo->startTime.wMonth,
+			oldInfo->startTime.wDay,
+			oldInfo->startTime.wHour,
+			oldInfo->startTime.wMinute,
+			endTimeOld.wHour,
+			endTimeOld.wMinute,
+			oldInfo->title.c_str(),
+			oldInfo->eventID,
+			newInfo->stationName.c_str(),
+			newInfo->startTime.wYear,
+			newInfo->startTime.wMonth,
+			newInfo->startTime.wDay,
+			newInfo->startTime.wHour,
+			newInfo->startTime.wMinute,
+			endTimeNew.wHour,
+			endTimeNew.wMinute,
+			newInfo->title.c_str(),
+			newInfo->eventID
+			);
+		this->notifyManager->AddNotifyMsg(notifyId, msg);
+	}
+}
+
+/*
 UINT WINAPI CReserveManager::SendNotifyThread(LPVOID param)
 {
 	CReserveManager* sys = (CReserveManager*)param;
@@ -719,7 +865,7 @@ UINT WINAPI CReserveManager::SendNotifyStatusThread(LPVOID param)
 
 	return 0;
 }
-
+*/
 BOOL CReserveManager::ReloadReserveData()
 {
 	if( Lock(L"ReloadReserveData") == FALSE ) return FALSE;
@@ -866,7 +1012,7 @@ BOOL CReserveManager::AddLoadReserveData()
 		}
 	}
 
-	_SendNotifyUpdate();
+	_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
 
 	UnLock();
 	return ret;
@@ -996,7 +1142,7 @@ BOOL CReserveManager::AddReserveData(
 	_ReloadBankMap();
 
 
-	_SendNotifyUpdate();
+	_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
 
 	UnLock();
 	return ret;
@@ -1050,7 +1196,8 @@ BOOL CReserveManager::_AddReserveData(RESERVE_DATA* reserve, BOOL tweet)
 //引数：
 // reserveList		[IN]予約情報
 BOOL CReserveManager::ChgReserveData(
-	vector<RESERVE_DATA>* reserveList
+	vector<RESERVE_DATA>* reserveList,
+	BOOL timeChg
 	)
 {
 	if( Lock(L"ChgReserveData") == FALSE ) return FALSE;
@@ -1059,7 +1206,7 @@ BOOL CReserveManager::ChgReserveData(
 	//予約変更
 	BOOL chg = FALSE;
 	for( size_t i=0; i<reserveList->size(); i++ ){
-		if( _ChgReserveData(&(*reserveList)[i], FALSE) == TRUE ){
+		if( _ChgReserveData(&(*reserveList)[i], timeChg) == TRUE ){
 			chg = TRUE;
 		}
 	}
@@ -1078,7 +1225,7 @@ BOOL CReserveManager::ChgReserveData(
 
 	_ReloadBankMap();
 
-	_SendNotifyUpdate();
+	_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
 
 	UnLock();
 	return ret;
@@ -1115,6 +1262,7 @@ BOOL CReserveManager::_ChgReserveData(RESERVE_DATA* reserve, BOOL chgTime)
 			setData.startTime = reserve->startTime;
 			setData.durationSecond = reserve->durationSecond;
 			setData.reserveStatus = reserve->reserveStatus;
+			setData.eventID = reserve->eventID;
 
 			//コントロール経由で変更
 			map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
@@ -1198,7 +1346,7 @@ BOOL CReserveManager::DelReserveData(
 	_ReloadBankMap();
 
 
-	_SendNotifyUpdate();
+	_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
 
 	UnLock();
 	return ret;
@@ -1263,7 +1411,8 @@ void CReserveManager::ReloadBankMap(BOOL notify)
 
 	_ReloadBankMap();
 	if( notify == TRUE ){
-		_SendNotifyUpdate();
+		_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
+		_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
 	}
 	
 	UnLock();
@@ -1272,6 +1421,11 @@ void CReserveManager::ReloadBankMap(BOOL notify)
 void CReserveManager::_ReloadBankMap()
 {
 	OutputDebugString(L"Start _ReloadBankMap\r\n");
+
+	if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
+		this->nwCoopManager.ResetResCheck();
+	}
+
 	DWORD time = GetTickCount();
 	//まずバンクをクリア
 	map<DWORD, BANK_INFO*>::iterator itrBank;
@@ -1338,6 +1492,15 @@ void CReserveManager::_ReloadBankMap()
 			}
 		}
 	}
+
+	if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
+		map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
+		for( itrNG = NGReserveMap.begin(); itrNG != NGReserveMap.end(); itrNG++ ){
+			this->nwCoopManager.AddChkReserve(itrNG->second->reserveInfo);
+		}
+		this->nwCoopManager.StartChkReserve();
+	}
+
 	_OutputDebugString(L"End _ReloadBankMap %dmsec\r\n", GetTickCount()-time);
 }
 
@@ -1519,6 +1682,7 @@ void CReserveManager::_ReloadBankMapAlgo0()
 
 	//NGで少しでも録画できるかチェック
 	for( itrSortNG = tempNGMap.begin(); itrSortNG != tempNGMap.end(); itrSortNG++){
+
 		if( itrSortNG->second->useTunerID != 0 ){
 			//チューナー固定でNGになっているのは無視
 			continue;
@@ -1543,6 +1707,10 @@ void CReserveManager::_ReloadBankMapAlgo0()
 				itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
 				if( itrNG != this->NGReserveMap.end() ){
 					this->NGReserveMap.erase(itrNG);
+				}
+				if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
+					//全部は録画できないもの
+					this->nwCoopManager.AddChkReserve(itrSortNG->second->reserveInfo);
 				}
 			}
 		}
@@ -1782,6 +1950,10 @@ void CReserveManager::_ReloadBankMapAlgo1()
 				itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
 				if( itrNG != this->NGReserveMap.end() ){
 					this->NGReserveMap.erase(itrNG);
+				}
+				if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
+					//全部は録画できないもの
+					this->nwCoopManager.AddChkReserve(itrSortNG->second->reserveInfo);
 				}
 			}
 		}
@@ -2216,6 +2388,7 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 	CSendCtrlCmd sendCtrl;
 	DWORD wait = 1000;
 	DWORD countTuijyuChk = 11;
+	BOOL sendPreEpgCap = FALSE;
 
 	while(1){
 		if( ::WaitForSingleObject(sys->bankCheckStopEvent, wait) != WAIT_TIMEOUT ){
@@ -2268,9 +2441,32 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 		if( sys->Lock(L"BankCheckThread6") == TRUE){
 			LONGLONG capTime = 0;
 			if( sys->GetNextEpgcapTime(&capTime, -1) == TRUE ){
-				if( GetNowI64Time() > capTime ){
+				if( sys->useSrvCoop == TRUE &&sys->useEpgSrvCoop == TRUE){
+					if( (GetNowI64Time()+10*60*I64_1SEC) > capTime ){
+						//10分前になったらサーバー連携EPGチェックをやめる
+						sys->nwCoopManager.StopChkEpgFile();
+					}else{
+						if( sys->_IsEpgCap() == FALSE ){
+							//EPGの取得していなければサーバー連携EPGチェックをする
+							sys->nwCoopManager.StartChkEpgFile();
+						}
+					}
+				}
+				if( (sendPreEpgCap == FALSE) && ((GetNowI64Time()+60*I64_1SEC) > capTime) ){
+					if( sys->notifyManager != NULL ){
+						sys->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_PRE_EPGCAP_START, L"取得開始１分前");
+					}
+					sendPreEpgCap = TRUE;
+				}
+				if( GetNowI64Time() > capTime && sys->_IsEpgCap() == FALSE){
 					//開始時間過ぎたので開始
 					sys->_StartEpgCap();
+				}
+			}else{
+				//EPGの取得予定なし
+				if( sys->useSrvCoop == TRUE &&sys->useEpgSrvCoop == TRUE){
+					//サーバー連携EPGチェックをする
+					sys->nwCoopManager.StartChkEpgFile();
 				}
 			}
 			sys->UnLock();
@@ -2282,7 +2478,7 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 				map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 				for( itrCtrl = sys->tunerBankMap.begin(); itrCtrl != sys->tunerBankMap.end(); itrCtrl++ ){
 					if( itrCtrl->second->IsRecWork() == TRUE ){
-						sys->SendNotifyStatus(1);
+						sys->_SendNotifyStatus(1);
 						break;
 					}
 				}
@@ -2299,7 +2495,7 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 					}
 				}
 				if( noRec == TRUE ){
-					sys->SendNotifyStatus(0);
+					sys->_SendNotifyStatus(0);
 				}
 				sys->UnLock();
 			}
@@ -2308,16 +2504,35 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 		//EPG取得状態のチェック
 		if( sys->epgCapCheckFlag == TRUE ){
 			if( sys->Lock(L"BankCheckThread9") == TRUE){
-				if( sys->IsEpgCap() == FALSE ){
+				if( sys->_IsEpgCap() == FALSE ){
 					//取得完了
-					sys->SendNotifyStatus(0);
+					sys->_SendNotifyStatus(0);
+					sys->_SendNotifyUpdate(NOTIFY_UPDATE_EPGCAP_END);
 					sys->epgCapCheckFlag = FALSE;
 					sys->EnableSuspendWork(0, 0, 1);
+					sendPreEpgCap = FALSE;
 				}
 				sys->UnLock();
 			}
 		}
 
+		//サーバー連携チェック
+		if( sys->useSrvCoop == TRUE){
+			if( sys->useResSrvCoop == TRUE ){
+				if( sys->Lock(L"BankCheckThread10") == TRUE){
+					sys->CheckNWSrvResCoop();
+					sys->UnLock();
+				}
+			}
+			if( sys->useEpgSrvCoop == TRUE ){
+				if( sys->Lock(L"BankCheckThread11") == TRUE){
+					if( sys->nwCoopManager.IsUpdateEpgData() == TRUE){
+						sys->enableEpgReload = 1;
+					}
+					sys->UnLock();
+				}
+			}
+		}
 	}
 	return 0;
 }
@@ -2376,12 +2591,16 @@ void CReserveManager::CheckEndReserve()
 				}else if( itrEnd->second->endType == REC_END_STATUS_ERR_CH_CHG ){
 					item.recStatus = REC_END_STATUS_ERR_CH_CHG;
 					item.comment = L"指定チャンネルのデータがBonDriverから出力されなかった可能性があります";
+				}else if( itrEnd->second->endType == REC_END_STATUS_ERR_END2 ){
+					item.recStatus = itrEnd->second->endType;
+					item.comment = L"ファイル保存で致命的なエラーが発生した可能性があります";
 				}else{
 					item.recStatus = itrEnd->second->endType;
 					item.comment = L"録画中にキャンセルされた可能性があります";
 				}
 				this->recInfoText.AddRecInfo(&item);
 				_SendTweet(TW_REC_END, &item, NULL, NULL);
+				_SendNotifyRecEnd(&item);
 
 				//バッチ処理追加
 				if(itrEnd->second->endType == REC_END_STATUS_NORMAL || itrEnd->second->endType == REC_END_STATUS_NEXT_START_END ){
@@ -2427,7 +2646,8 @@ void CReserveManager::CheckEndReserve()
 
 		this->recInfoText.SaveRecInfoText(recFilePath.c_str());
 
-		_SendNotifyUpdate();
+		_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
+		_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
 	}
 	if( suspendMode != 0xFF && rebootFlag != 0xFF ){
 		EnableSuspendWork(suspendMode, rebootFlag, 0);
@@ -2545,6 +2765,8 @@ void CReserveManager::CheckErrReserve()
 			item.comment = L"チューナーのオープンに失敗しました";
 			this->recInfoText.AddRecInfo(&item);
 			_SendTweet(TW_REC_END, &item, NULL, NULL);
+			_SendNotifyRecEnd(&item);
+
 
 			SAFE_DELETE(NGAddReserve[i]);
 
@@ -2577,7 +2799,8 @@ void CReserveManager::CheckErrReserve()
 
 	if( needNotify == TRUE ){
 		_ReloadBankMap();
-		_SendNotifyUpdate();
+		_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
+		_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
 	}
 }
 
@@ -2793,8 +3016,10 @@ void CReserveManager::CheckTuijyu()
 											data.title.c_str(),
 											data.stationName.c_str()
 											);
-										if( CheckEventRelay(&resNextVal, &data, TRUE) == TRUE ){
-											chgReserve = TRUE;
+										if( this->eventRelay == TRUE ){
+											if( CheckEventRelay(&resNextVal, &data, TRUE) == TRUE ){
+												chgReserve = TRUE;
+											}
 										}
 									}
 								}else{
@@ -2812,8 +3037,10 @@ void CReserveManager::CheckTuijyu()
 											data.title.c_str(),
 											data.stationName.c_str()
 											);
-										if( CheckEventRelay(&resNextVal, &data, TRUE) == TRUE ){
-											chgReserve = TRUE;
+										if( this->eventRelay == TRUE ){
+											if( CheckEventRelay(&resNextVal, &data, TRUE) == TRUE ){
+												chgReserve = TRUE;
+											}
 										}
 									}
 								}
@@ -2843,7 +3070,7 @@ void CReserveManager::CheckTuijyu()
 						}
 					}
 				}
-				if( findPF == FALSE ){
+				if( findPF == FALSE && (itrRes->second->IsChkPfInfo() == FALSE )){
 					//現在or次ではない
 					BOOL chkNormal = TRUE;
 					if( nowSuccess == TRUE){
@@ -2864,57 +3091,62 @@ void CReserveManager::CheckTuijyu()
 							chgReserve = TRUE;
 						}
 					}else{
-						//p/f正常なので通常検索
-						SEARCH_EPG_INFO_PARAM val;
-						val.ONID = data.originalNetworkID;
-						val.TSID = data.transportStreamID;
-						val.SID = data.serviceID;
-						val.eventID = data.eventID;
-						val.pfOnlyFlag = 0;
-						EPGDB_EVENT_INFO resVal;
-						if( itrCtrl->second->SearchEpgInfo(
-							&val,
-							&resVal
-							) == TRUE ){
-								if( data.reserveStatus == ADD_RESERVE_NO_FIND ){
-									if( resVal.StartTimeFlag == 1 ){
-										if( ConvertI64Time(resVal.start_time) > ConvertI64Time(data.startTime) ){
-											//開始時間後なので更新されたEPGのはず
-											chgRes = CheckChgEvent(&resVal, &data);
-										}else{
-											//古いEPGなので何もしない
-										}
-									}
-								}else{
-									chgRes = CheckChgEvent(&resVal, &data);
-								}
+						//イベントID直前変更対応
+						if( CheckChgEventID(&resNowVal, &data) == TRUE ){
+							chgRes = TRUE;
 						}else{
-							_OutputDebugString(L"●番組情報みつからず %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
-								data.startTime.wYear,
-								data.startTime.wMonth,
-								data.startTime.wDay,
-								data.startTime.wHour,
-								data.startTime.wMinute,
-								data.startTime.wSecond,
-								data.durationSecond,
-								data.title.c_str(),
-								data.stationName.c_str()
-								);
-							if( nowSuccess == FALSE && nextSuccess == FALSE ){
-								if( data.reserveStatus == ADD_RESERVE_NORMAL ){
-									LONGLONG delay = itrCtrl->second->DelayTime();
-									LONGLONG nowTime = GetNowI64Time() + delay;
-									LONGLONG endTime = GetSumTime(data.startTime, data.durationSecond);
-									if( data.recSetting.useMargineFlag == 1 ){
-										if( data.recSetting.endMargine < 0 ){
-											endTime -= ((LONGLONG)data.recSetting.endMargine)*I64_1SEC;
+							//p/f正常なので通常検索
+							SEARCH_EPG_INFO_PARAM val;
+							val.ONID = data.originalNetworkID;
+							val.TSID = data.transportStreamID;
+							val.SID = data.serviceID;
+							val.eventID = data.eventID;
+							val.pfOnlyFlag = 0;
+							EPGDB_EVENT_INFO resVal;
+							if( itrCtrl->second->SearchEpgInfo(
+								&val,
+								&resVal
+								) == TRUE ){
+									if( data.reserveStatus == ADD_RESERVE_NO_FIND ){
+										if( resVal.StartTimeFlag == 1 ){
+											if( ConvertI64Time(resVal.start_time) > ConvertI64Time(data.startTime) ){
+												//開始時間後なので更新されたEPGのはず
+												chgRes = CheckChgEvent(&resVal, &data);
+											}else{
+												//古いEPGなので何もしない
+											}
 										}
+									}else{
+										chgRes = CheckChgEvent(&resVal, &data);
 									}
-									if( nowTime + 2*60*I64_1SEC > endTime ){
-										//終了2分前だけどEPGなし
-										data.reserveStatus = ADD_RESERVE_NO_EPG;
-										data.durationSecond += this->noEpgTuijyuMin * 60;
-										chgRes = TRUE;
+							}else{
+								_OutputDebugString(L"●番組情報みつからず %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
+									data.startTime.wYear,
+									data.startTime.wMonth,
+									data.startTime.wDay,
+									data.startTime.wHour,
+									data.startTime.wMinute,
+									data.startTime.wSecond,
+									data.durationSecond,
+									data.title.c_str(),
+									data.stationName.c_str()
+									);
+								if( nowSuccess == FALSE && nextSuccess == FALSE ){
+									if( data.reserveStatus == ADD_RESERVE_NORMAL ){
+										LONGLONG delay = itrCtrl->second->DelayTime();
+										LONGLONG nowTime = GetNowI64Time() + delay;
+										LONGLONG endTime = GetSumTime(data.startTime, data.durationSecond);
+										if( data.recSetting.useMargineFlag == 1 ){
+											if( data.recSetting.endMargine < 0 ){
+												endTime -= ((LONGLONG)data.recSetting.endMargine)*I64_1SEC;
+											}
+										}
+										if( nowTime + 2*60*I64_1SEC > endTime ){
+											//終了2分前だけどEPGなし
+											data.reserveStatus = ADD_RESERVE_NO_EPG;
+											data.durationSecond += this->noEpgTuijyuMin * 60;
+											chgRes = TRUE;
+										}
 									}
 								}
 							}
@@ -2978,7 +3210,8 @@ void CReserveManager::CheckTuijyu()
 
 		_ReloadBankMap();
 
-		_SendNotifyUpdate();
+		_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
+		_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
 	}
 }
 
@@ -3083,6 +3316,198 @@ BOOL CReserveManager::CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, 
 		log += data->title;
 		log += L"\r\n";
 		_SendTweet(TW_CHG_RESERVE_CHK_REC, &oldData, data, info);
+		_SendNotifyChgReserve(NOTIFY_UPDATE_REC_TUIJYU, &oldData, data);
+	}else{
+		log += data->stationName;
+		log += L" ";
+		log += timeLog2;
+		log += L" ";
+		log += data->title;
+		log += L"\r\n";
+	}
+
+	OutputDebugString(log.c_str());
+	return chgRes;
+}
+
+BOOL CReserveManager::CheckChgEventID(EPGDB_EVENT_INFO* info, RESERVE_DATA* data)
+{
+	BOOL chgEventID = FALSE;
+	if( info->shortInfo != NULL && (info->event_id != data->eventID)){
+		//似たタイトルになっているかチェック
+		wstring title1 = data->title;
+		wstring title2 = info->shortInfo->event_name;
+		if( title1.size() > 0 && title2.size() > 0){
+			//記号を除去
+			while( (title1.find(L"[") != string::npos) && (title1.find(L"]") != string::npos) ){
+				wstring strSep1=L"";
+				wstring strSep2=L"";
+				Separate(title1, L"[", strSep1, title1);
+				Separate(title1, L"]", strSep2, title1);
+				strSep1 += title1;
+				title1 = strSep1;
+			}
+			while( (title2.find(L"[") != string::npos) && (title2.find(L"]") != string::npos) ){
+				wstring strSep1=L"";
+				wstring strSep2=L"";
+				Separate(title2, L"[", strSep1, title2);
+				Separate(title2, L"]", strSep2, title2);
+				strSep1 += title2;
+				title2 = strSep1;
+			}
+			//空白除去
+			Replace(title1, L" ", L"");
+			Replace(title2, L" ", L"");
+			//比較用に文字調整
+			this->chgText.ChgText(title1);
+			this->chgText.ChgText(title2);
+
+			//あいまい検索
+			DWORD hitCount = 0;
+			DWORD missCount = 0;
+			wstring key= L"";
+			for( size_t j=0; j<title1.size(); j++ ){
+				key += title1.at(j);
+				if( title2.find(key) == string::npos ){
+					missCount+=1;
+					key = title1.at(j);
+					if( title2.find(key) == string::npos ){
+						missCount+=1;
+						key = L"";
+					}
+				}else{
+					hitCount+=(DWORD)key.size();
+				}
+			}
+			DWORD samePer1 = (hitCount*100) / (hitCount+missCount);
+
+			hitCount = 0;
+			missCount = 0;
+			key= L"";
+			for( size_t j=0; j<title2.size(); j++ ){
+				key += title2.at(j);
+				if( title1.find(key) == string::npos ){
+					missCount+=1;
+					key = title2.at(j);
+					if( title1.find(key) == string::npos ){
+						missCount+=1;
+						key = L"";
+					}
+				}else{
+					hitCount+=(DWORD)key.size();
+				}
+			}
+			DWORD samePer2 = (hitCount*100) / (hitCount+missCount);
+
+			if( samePer1 > 80 || samePer2 > 80 ){
+				//80%以上の一致で一緒とする
+				chgEventID = TRUE;
+			}
+			/*
+			if( data->title.find(nowTitle) != string::npos){
+				chgEventID = TRUE;
+			}else if( nowTitle.find(data->title) != string::npos ){
+				chgEventID = TRUE;
+			}*/
+		}
+	}
+	if( chgEventID == FALSE ){
+		return FALSE;
+	}
+
+
+	BOOL chgRes = TRUE;
+
+	RESERVE_DATA oldData = *data;
+
+	wstring log = L"";
+	wstring timeLog1 = L"";
+	wstring timeLog2 = L"";
+
+	SYSTEMTIME oldEndTime;
+	GetSumTime(data->startTime, data->durationSecond, &oldEndTime);
+	Format(timeLog1, L"%d/%d/%d %d:%d:%d～%d:%d:%d",
+		data->startTime.wYear,
+		data->startTime.wMonth,
+		data->startTime.wDay,
+		data->startTime.wHour,
+		data->startTime.wMinute,
+		data->startTime.wSecond,
+		oldEndTime.wHour,
+		oldEndTime.wMinute,
+		oldEndTime.wSecond);
+
+	SYSTEMTIME endTime;
+	if( info->StartTimeFlag == 1 && info->DurationFlag == 1){
+		GetSumTime(info->start_time, info->durationSec, &endTime);
+		Format(timeLog2, L"%d/%d/%d %d:%d:%d～%d:%d:%d",
+			info->start_time.wYear,
+			info->start_time.wMonth,
+			info->start_time.wDay,
+			info->start_time.wHour,
+			info->start_time.wMinute,
+			info->start_time.wSecond,
+			endTime.wHour,
+			endTime.wMinute,
+			endTime.wSecond);
+	}else if( info->StartTimeFlag == 1 && info->DurationFlag == 0){
+		Format(timeLog2, L"%d/%d/%d %d:%d:%d～未定",
+			info->start_time.wYear,
+			info->start_time.wMonth,
+			info->start_time.wDay,
+			info->start_time.wHour,
+			info->start_time.wMinute,
+			info->start_time.wSecond);
+	}else{
+		timeLog2 = L"時間未定";
+	}
+
+	if( info->StartTimeFlag == 1 && info->DurationFlag == 1){
+		if(GetNowI64Time() > GetSumTime(info->start_time, info->durationSec)){
+			//終了時間を過ぎているので追従はしない
+			return FALSE;
+		}
+	}
+	if( info->StartTimeFlag == 1 ){
+		if( ConvertI64Time(data->startTime) != ConvertI64Time(info->start_time) ){
+			//開始時間変わっている
+			chgRes = TRUE;
+			data->startTime = info->start_time;
+
+			Format(log ,L"●追従 EventID変更 0x%04X -> 0x%04X：開始変更 ", oldData.eventID, info->event_id);
+		}
+	}
+	if( info->DurationFlag == 1 ){
+		if( data->reserveStatus == ADD_RESERVE_CHG_PF ){
+			//一度変わってるのでマージン追加されてるはず
+			if( data->durationSecond - ((DWORD)this->duraChgMarginMin*60) != info->durationSec ){
+				//総時間が変更されている
+				chgRes = TRUE;
+				data->durationSecond = info->durationSec;
+				Format(log ,L"●追従 EventID変更 0x%04X -> 0x%04X：総時間変更 ", oldData.eventID, info->event_id);
+			}
+		}else{
+			if( data->durationSecond != info->durationSec ){
+				//総時間が変更されている
+				chgRes = TRUE;
+				data->durationSecond = info->durationSec;
+				Format(log ,L"●追従 EventID変更 0x%04X -> 0x%04X：総時間変更 ", oldData.eventID, info->event_id);
+			}
+		}
+	}
+	data->eventID = info->event_id;
+
+	if( chgRes == TRUE ){
+		log += data->stationName;
+		log += L" ";
+		log += timeLog1;
+		log += L" → ";
+		log += timeLog2;
+		log += L" ";
+		log += data->title;
+		log += L"\r\n";
+		_SendTweet(TW_CHG_RESERVE_CHK_REC, &oldData, data, info);
+		_SendNotifyChgReserve(NOTIFY_UPDATE_REC_TUIJYU, &oldData, data);
 	}else{
 		log += data->stationName;
 		log += L" ";
@@ -3153,6 +3578,7 @@ BOOL CReserveManager::CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* c
 			item.comment = L"指定時間番組情報が見つかりませんでした";
 			this->recInfoText.AddRecInfo(&item);
 			_SendTweet(TW_REC_END, &item, NULL, NULL);
+			_SendNotifyRecEnd(&item);
 
 			deleteList->push_back(data->reserveID);
 
@@ -3240,6 +3666,22 @@ BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 								}
 							}
 							break;
+					}
+				}
+				if( errEnd == FALSE ){
+					multimap<wstring, REC_FILE_INFO*>::iterator itrRecInfo;
+					for( itrRecInfo = this->recInfoText.recInfoMap.begin(); itrRecInfo != this->recInfoText.recInfoMap.end(); itrRecInfo++ ){
+						if( itrRecInfo->second->originalNetworkID == info->eventRelayInfo->eventDataList[i].original_network_id &&
+							itrRecInfo->second->transportStreamID == info->eventRelayInfo->eventDataList[i].transport_stream_id &&
+							itrRecInfo->second->serviceID == info->eventRelayInfo->eventDataList[i].service_id &&
+							itrRecInfo->second->eventID == info->eventRelayInfo->eventDataList[i].event_id 
+							){
+								if( ConvertI64Time(itrRecInfo->second->startTime) == GetSumTime(info->start_time, info->durationSec)){
+									//エラーで録画終了になった？
+									find = TRUE;
+									break;
+								}
+						}
 					}
 				}
 				if( find == FALSE ){
@@ -3614,6 +4056,7 @@ BOOL CReserveManager::GetNextEpgcapTime(LONGLONG* capTime, LONGLONG chkMargineMi
 	srcTime.wMinute = 0;
 	srcTime.wSecond = 0;
 	srcTime.wHour = 0;
+	srcTime.wMilliseconds = 0;
 
 	map<LONGLONG,LONGLONG> timeList;
 
@@ -3628,6 +4071,7 @@ BOOL CReserveManager::GetNextEpgcapTime(LONGLONG* capTime, LONGLONG chkMargineMi
 		return FALSE;
 	}
 
+	//そのまま判定したら直前で次の日になってしまうのでマージン分現在の時刻を調整
 	LONGLONG nowTime = GetNowI64Time() + (chkMargineMin*60*I64_1SEC);
 	map<LONGLONG,LONGLONG>::iterator itr;
 	for( itr = timeList.begin(); itr != timeList.end(); itr++){
@@ -3686,7 +4130,7 @@ BOOL CReserveManager::DelRecFileInfo(
 
 	this->recInfoText.SaveRecInfoText(filePath.c_str());
 
-	_SendNotifyUpdate();
+	_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
 
 	UnLock();
 	return ret;
@@ -3820,7 +4264,8 @@ BOOL CReserveManager::_StartEpgCap()
 	}
 	this->epgCapCheckFlag = TRUE;
 
-	SendNotifyStatus(2);
+	_SendNotifyStatus(2);
+	_SendNotifyUpdate(NOTIFY_UPDATE_EPGCAP_START);
 	this->setTimeSync = FALSE;
 
 	return ret;
@@ -3839,6 +4284,16 @@ void CReserveManager::StopEpgCap()
 }
 
 BOOL CReserveManager::IsEpgCap()
+{
+	if( Lock(L"StopEpgCap") == FALSE ) return FALSE;
+
+	BOOL ret = _IsEpgCap();
+		 
+	UnLock();
+	return ret;
+}
+
+BOOL CReserveManager::_IsEpgCap()
 {
 	BOOL ret = FALSE;
 	map<DWORD, CTunerBankCtrl*>::iterator itr;
@@ -4081,7 +4536,11 @@ BOOL CReserveManager::SetNWTVCh(
 		if( this->NWTVUDP == FALSE && this->NWTVTCP == FALSE ){
 			noNW = TRUE;
 		}
-		if( ctrl.OpenExe(bonDriver, -1, TRUE, TRUE, noNW, this->registGUIMap, &PID, this->NWTVUDP, this->NWTVTCP, 3) == TRUE ){
+		map<DWORD, DWORD> registGUIMap;
+		if( this->notifyManager != NULL ){
+			this->notifyManager->GetRegistGUI(&registGUIMap);
+		}
+		if( ctrl.OpenExe(bonDriver, -1, TRUE, TRUE, noNW, registGUIMap, &PID, this->NWTVUDP, this->NWTVTCP, 3) == TRUE ){
 			this->NWTVPID = PID;
 			ret = TRUE;
 
@@ -4195,3 +4654,223 @@ BOOL CReserveManager::GetRecFilePath(
 	return ret;
 }
 
+BOOL CReserveManager::ChkAddReserve(RESERVE_DATA* chkData, WORD* chkStatus)
+{
+	if( Lock(L"ChkAddReserve") == FALSE ) return FALSE;
+
+	if( chkData == NULL || chkStatus == NULL ){
+		UnLock();
+		return FALSE;
+	}
+	if( ngAddResSrvCoop == TRUE ){
+		UnLock();
+		return FALSE;
+	}
+	BOOL ret = TRUE;
+
+	//同じ物あるかチェック
+	map<DWORD, CReserveInfo*>::iterator itrRes;
+	for( itrRes = this->reserveInfoMap.begin(); itrRes != this->reserveInfoMap.end(); itrRes++ ){
+		RESERVE_DATA data;
+		itrRes->second->GetData(&data);
+		if( data.originalNetworkID == chkData->originalNetworkID &&
+			data.transportStreamID == chkData->transportStreamID &&
+			data.serviceID == chkData->serviceID ){
+			if( chkData->eventID == 0xFFFF ){
+				__int64 chk1 = ConvertI64Time(data.startTime);
+				__int64 chk2 = ConvertI64Time(chkData->startTime);
+				if( chk1 == chk2 && data.durationSecond == chkData->durationSecond ){
+					if( data.recSetting.recMode == 5 ){
+						//無効のものあるので不可
+						*chkStatus = 0;
+					}else{
+						//同じ物あり
+						if(data.overlapMode == 0 ){
+							*chkStatus = 3;
+						}else{
+							*chkStatus = 0;
+						}
+					}
+					UnLock();
+					return TRUE;
+				}
+			}else{
+				if( chkData->eventID == data.eventID ){
+					if( data.recSetting.recMode == 5 ){
+						//無効のものあるので不可
+						*chkStatus = 0;
+					}else{
+						//同じ物あり
+						if(data.overlapMode == 0 ){
+							*chkStatus = 3;
+						}else{
+							*chkStatus = 0;
+						}
+					}
+					UnLock();
+					return TRUE;
+				}
+			}
+		}
+	}
+
+
+	CReserveInfo chkItem;
+	chkItem.SetData(chkData);
+
+	//サービスサポートしてないチューナー検索
+	vector<DWORD> idList;
+	if( this->tunerManager.GetNotSupportServiceTuner(
+		chkData->originalNetworkID,
+		chkData->transportStreamID,
+		chkData->serviceID,
+		&idList ) == TRUE ){
+			chkItem.SetNGChTunerID(&idList);
+	}
+
+	BANK_WORK_INFO item;
+	CreateWorkData(&chkItem, &item, this->backPriorityFlag, 0, 0);
+
+
+	BOOL insert = FALSE;
+	map<DWORD, BANK_INFO*>::iterator itrBank;
+	//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
+	if( this->sameChPriorityFlag == TRUE ){
+		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
+			DWORD status = ChkInsertSameChStatus(itrBank->second, &item);
+			if( status == 1 ){
+				//問題なく追加可能
+				insert = TRUE;
+				*chkStatus = 1;
+				break;
+			}
+		}
+	}
+	if( insert == FALSE ){
+		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
+			DWORD status = ChkInsertStatus(itrBank->second, &item);
+			if( status == 1 ){
+				//問題なく追加可能
+				insert = TRUE;
+				*chkStatus = 1;
+				break;
+			}else if( status == 2 ){
+				//追加可能だが終了時間と開始時間の重なった予約あり
+				//仮追加
+				*chkStatus = 2;
+				insert = TRUE;
+				break;
+			}
+		}
+	}
+
+	UnLock();
+	return ret;
+}
+
+void CReserveManager::CheckNWSrvResCoop()
+{
+	if( this->useResSrvCoop == FALSE || this->useSrvCoop == FALSE){
+		return;
+	}
+	BOOL chgRes = FALSE;
+	map<DWORD, CReserveInfo*>::iterator itrInfo;
+	for( itrInfo = this->reserveInfoMap.begin(); itrInfo != this->reserveInfoMap.end(); itrInfo++){
+		if( itrInfo->second->IsNeedCoopAdd() == TRUE ){
+			RESERVE_DATA data;
+			itrInfo->second->GetData(&data);
+			wstring srv = L"";
+			WORD status = 0xFFFF;
+			itrInfo->second->GetCoopAddStatus(srv, &status);
+			switch(status){
+			case 0:
+				{
+					wstring msg;
+					msg = L" サーバー連携（追加可能なサーバーがありません）";
+					if( data.comment.find(msg) == string::npos ){
+						wstring buff;
+						Separate(data.comment, L" サーバー連携", data.comment, buff);
+						data.comment += msg;
+						_ChgReserveData(&data, FALSE);
+						chgRes = TRUE;
+					}
+				}
+				break;
+			case 1:
+				{
+					wstring msg;
+					Format(msg, L" サーバー連携（%s に予約を追加しました）", srv.c_str());
+					if( data.comment.find(msg) == string::npos ){
+						wstring buff;
+						Separate(data.comment, L" サーバー連携", data.comment, buff);
+						data.comment += msg;
+						_ChgReserveData(&data, FALSE);
+						chgRes = TRUE;
+					}
+				}
+				break;
+			case 3:
+				{
+					wstring msg;
+					Format(msg, L" サーバー連携（%s に同じ予約があります）", srv.c_str());
+					if( data.comment.find(msg) == string::npos ){
+						wstring buff;
+						Separate(data.comment, L" サーバー連携", data.comment, buff);
+						data.comment += msg;
+						_ChgReserveData(&data, FALSE);
+						chgRes = TRUE;
+					}
+				}
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	if( chgRes == TRUE ){
+		wstring filePath = L"";
+		GetSettingPath(filePath);
+		filePath += L"\\";
+		filePath += RESERVE_TEXT_NAME;
+
+		this->reserveText.SaveReserveText(filePath.c_str());
+
+		_ReloadBankMap();
+
+		_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
+	}
+}
+
+void CReserveManager::GetSrvCoopEpgList(vector<wstring>* fileList)
+{
+	if( fileList == NULL ){
+		return;
+	}
+	BOOL addBS = FALSE;
+	BOOL addCS1 = FALSE;
+	BOOL addCS2 = FALSE;
+
+	map<wstring, wstring> chkMap;
+	map<LONGLONG, CH_DATA5>::iterator itr;
+	for( itr = chUtil.chList.begin(); itr != chUtil.chList.end(); itr++ ){
+		if( itr->second.originalNetworkID == 0x0004 && addBS == FALSE ){
+			chkMap.insert( pair<wstring,wstring>(L"0004FFFF_epg.dat", L"0004FFFF_epg.dat") );
+			addBS = TRUE;
+		}
+		if( itr->second.originalNetworkID == 0x0006 && addCS1 == FALSE ){
+			chkMap.insert( pair<wstring,wstring>(L"0006FFFF_epg.dat", L"0006FFFF_epg.dat") );
+			addCS1 = TRUE;
+		}
+		if( itr->second.originalNetworkID == 0x0007 && addCS2 == FALSE ){
+			chkMap.insert( pair<wstring,wstring>(L"0007FFFF_epg.dat", L"0007FFFF_epg.dat") );
+			addCS2 = TRUE;
+		}
+		wstring file = L"";
+		Format(file, L"%04X%04X_epg.dat", itr->second.originalNetworkID, itr->second.transportStreamID);
+		chkMap.insert( pair<wstring,wstring>(file, file) );
+	}
+	map<wstring, wstring>::iterator itrFile;
+	for( itrFile = chkMap.begin(); itrFile != chkMap.end(); itrFile++ ){
+		fileList->push_back(itrFile->second);
+	}
+}

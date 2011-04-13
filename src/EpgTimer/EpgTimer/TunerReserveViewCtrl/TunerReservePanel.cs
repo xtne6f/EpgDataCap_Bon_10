@@ -10,16 +10,10 @@ using System.Windows.Media;
 using System.ComponentModel;
 using System.Windows.Input;
 
-namespace EpgTimer
+namespace EpgTimer.TunerReserveViewCtrl
 {
     class TunerReservePanel : FrameworkElement
     {
-        public static readonly DependencyProperty ItemsSourceProperty =
-            DependencyProperty.Register("ItemsSource",
-                typeof(ObservableNotifiableCollection<TunerReserveViewItem>),
-                typeof(TunerReservePanel),
-                new PropertyMetadata(OnItemsSourceChanged));
-
         public static readonly DependencyProperty BackgroundProperty =
             Panel.BackgroundProperty.AddOwner(typeof(TunerReservePanel));
 
@@ -29,217 +23,259 @@ namespace EpgTimer
             get { return (Brush)GetValue(BackgroundProperty); }
         }
 
-        public ObservableNotifiableCollection<TunerReserveViewItem> ItemsSource
+        public List<ReserveViewItem> Items
         {
-            set { SetValue(ItemsSourceProperty, value); }
-            get { return (ObservableNotifiableCollection<TunerReserveViewItem>)GetValue(ItemsSourceProperty); }
+            get;
+            set;
         }
 
-        static void OnItemsSourceChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
+        protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight)
         {
-            (obj as TunerReservePanel).OnItemsSourceChanged(args);
-        }
-
-        void OnItemsSourceChanged(DependencyPropertyChangedEventArgs args)
-        {
-            if (args.OldValue != null)
+            if (maxHeight < fontSize + 2)
             {
-                ObservableNotifiableCollection<TunerReserveViewItem> coll = args.OldValue as ObservableNotifiableCollection<TunerReserveViewItem>;
-                coll.CollectionChanged -= OnCollectionChanged;
-                coll.ItemPropertyChanged -= OnItemPropertyChanged;
+                useHeight = 0;
+                return false;
             }
+            double totalHeight = 0;
 
-            if (args.NewValue != null)
+            string[] lineText = text.Replace("\r", "").Split('\n');
+            foreach (string line in lineText)
             {
-                ObservableNotifiableCollection<TunerReserveViewItem> coll = args.NewValue as ObservableNotifiableCollection<TunerReserveViewItem>;
-                coll.CollectionChanged += OnCollectionChanged;
-                coll.ItemPropertyChanged += OnItemPropertyChanged;
+                totalHeight += Math.Floor(2 + fontSize);
+                List<ushort> glyphIndexes = new List<ushort>();
+                List<double> advanceWidths = new List<double>();
+                double totalWidth = 0;
+                for (int n = 0; n < line.Length; n++)
+                {
+                    ushort glyphIndex = glyphType.CharacterToGlyphMap[line[n]];
+                    double width = glyphType.AdvanceWidths[glyphIndex] * fontSize;
+                    if (totalWidth + width > maxWidth)
+                    {
+                        if (totalHeight + fontSize > maxHeight)
+                        {
+                            //次の行無理
+                            glyphIndex = glyphType.CharacterToGlyphMap['…'];
+                            glyphIndexes[glyphIndexes.Count - 1] = glyphIndex;
+                            advanceWidths[advanceWidths.Count - 1] = width;
+
+                            Point origin = new Point(x + 2, y + totalHeight);
+                            GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
+                                glyphIndexes, origin, advanceWidths, null, null, null, null,
+                                null, null);
+
+                            dc.DrawGlyphRun(Brushes.Black, glyphRun);
+
+                            useHeight = totalHeight;
+                            return false;
+                        }
+                        else
+                        {
+                            //次の行いけるので今までの分出力
+                            //次の行いける
+                            Point origin = new Point(x + 2, y + totalHeight);
+                            GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
+                                glyphIndexes, origin, advanceWidths, null, null, null, null,
+                                null, null);
+
+                            dc.DrawGlyphRun(Brushes.Black, glyphRun);
+                            totalHeight += fontSize + 2;
+                            glyphIndexes = new List<ushort>();
+                            advanceWidths = new List<double>();
+                            totalWidth = 0;
+                        }
+                    }
+                    glyphIndexes.Add(glyphIndex);
+                    advanceWidths.Add(width);
+                    totalWidth += width;
+                }
+                if (glyphIndexes.Count > 0)
+                {
+                    Point origin = new Point(x + 2, y + totalHeight);
+                    GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
+                        glyphIndexes, origin, advanceWidths, null, null, null, null,
+                        null, null);
+
+                    dc.DrawGlyphRun(Brushes.Black, glyphRun);
+                }
+                //高さ確認
+                if (totalHeight + fontSize > maxHeight)
+                {
+                    //これ以上は無理
+                    useHeight = totalHeight;
+                    return false;
+                }
+
             }
-
-            InvalidateVisual();
+            useHeight = Math.Floor(totalHeight);
+            return true;
         }
-
-        void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
-        {
-            InvalidateVisual();
-        }
-
-        void OnItemPropertyChanged(object sender, ItemPropertyChangedEventArgs args)
-        {
-            InvalidateVisual();
-        }
-
         protected override void OnRender(DrawingContext dc)
         {
             dc.DrawRectangle(Background, null, new Rect(RenderSize));
             this.VisualTextRenderingMode = TextRenderingMode.ClearType;
             this.VisualTextHintingMode = TextHintingMode.Fixed;
 
-            if (ItemsSource == null)
+            if (Items == null)
             {
                 return;
             }
 
-            Typeface typeface = null;
+            Typeface typefaceNormal = null;
+            Typeface typefaceTitle = null;
+            GlyphTypeface glyphTypefaceNormal = null;
+            GlyphTypeface glyphTypefaceTitle = null;
+
             try
             {
                 if (Settings.Instance.FontName.Length > 0)
                 {
-                    typeface = new Typeface(new FontFamily(Settings.Instance.FontName),
+                    typefaceNormal = new Typeface(new FontFamily(Settings.Instance.FontName),
                                                  FontStyles.Normal,
                                                  FontWeights.Normal,
                                                  FontStretches.Normal);
                 }
-            }
-            finally
-            {
-                if (typeface == null)
+                if (Settings.Instance.FontNameTitle.Length > 0)
                 {
-                    typeface = new Typeface(new FontFamily("MS UI Gothic"),
-                                                 FontStyles.Normal,
-                                                 FontWeights.Normal,
-                                                 FontStretches.Normal);
-                }
-            }
-
-            GlyphTypeface glyphTypeface;
-            if (!typeface.TryGetGlyphTypeface(out glyphTypeface))
-                throw new InvalidOperationException("No glyphtypeface found");
-            double size = Settings.Instance.FontSize;
-            foreach (TunerReserveViewItem info in ItemsSource)
-            {
-                dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, info.TopPos, info.Width, info.Height));
-                if (info.Height > 2)
-                {
-                    if (info.Info.ReserveInfo.OverlapMode == 1)
+                    if (Settings.Instance.FontBoldTitle == true)
                     {
-                        dc.DrawRectangle(Brushes.Yellow, null, new Rect(info.LeftPos + 1, info.TopPos + 1, info.Width - 2, info.Height - 2));
+                        typefaceTitle = new Typeface(new FontFamily(Settings.Instance.FontNameTitle),
+                                                     FontStyles.Normal,
+                                                     FontWeights.Bold,
+                                                     FontStretches.Normal);
                     }
                     else
                     {
-                        dc.DrawRectangle(Brushes.White, null, new Rect(info.LeftPos + 1, info.TopPos + 1, info.Width - 2, info.Height - 2));
+                        typefaceTitle = new Typeface(new FontFamily(Settings.Instance.FontNameTitle),
+                                                     FontStyles.Normal,
+                                                     FontWeights.Normal,
+                                                     FontStretches.Normal);
                     }
+                }
+                if (!typefaceNormal.TryGetGlyphTypeface(out glyphTypefaceNormal))
+                {
+                    typefaceNormal = null;
+                }
+                if (!typefaceTitle.TryGetGlyphTypeface(out glyphTypefaceTitle))
+                {
+                    typefaceTitle = null;
+                }
 
-                    if (info.Height > 4)
+                if (typefaceNormal == null)
+                {
+                    typefaceNormal = new Typeface(new FontFamily("MS UI Gothic"),
+                                                 FontStyles.Normal,
+                                                 FontWeights.Normal,
+                                                 FontStretches.Normal);
+                    if (!typefaceNormal.TryGetGlyphTypeface(out glyphTypefaceNormal))
                     {
-                        int maxLine = ((int)info.Height - 4) / ((int)size + 2);
-                        if (info.ReserveInfo.Length > 0 && maxLine > 0)
+                        MessageBox.Show("フォント指定が不正です");
+                        return;
+                    }
+                }
+                if (typefaceTitle == null)
+                {
+                    typefaceTitle = new Typeface(new FontFamily("MS UI Gothic"),
+                                                 FontStyles.Normal,
+                                                 FontWeights.Bold,
+                                                 FontStretches.Normal);
+                    if (!typefaceTitle.TryGetGlyphTypeface(out glyphTypefaceTitle))
+                    {
+                        MessageBox.Show("フォント指定が不正です");
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            try
+            {
+                double sizeNormal = Settings.Instance.FontSize;
+                double sizeTitle = Settings.Instance.FontSizeTitle;
+                foreach (ReserveViewItem info in Items)
+                {
+                    dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, info.TopPos, info.Width, info.Height));
+                    if (info.Height > 2)
+                    {
+                        SolidColorBrush color = Brushes.White;
+                        if (info.ReserveInfo.OverlapMode == 1)
                         {
-                            string text = info.ReserveInfo.Replace("\r", "");
-                            string[] lineText = text.Split('\n');
+                            color = Brushes.Yellow;
+                            //color = CommonManager.Instance.CustContentColorList[0x14];
+                        }
+                        dc.DrawRectangle(color, null, new Rect(info.LeftPos + 1, info.TopPos + 1, info.Width - 2, info.Height - 2));
+                        if (info.Height < 4 + sizeTitle + 2)
+                        {
+                            //高さ足りない
+                            info.TitleDrawErr = true;
+                            continue;
+                        }
 
-                            List<ushort> glyphIndexes = new List<ushort>();
-                            List<double> advanceWidths = new List<double>();
+                        double totalHeight = 0;
 
-                            double totalWidth = 0;
-                            int totalLine = 1;
+                        //分
+                        string min;
+                        min = info.ReserveInfo.StartTime.Minute.ToString("d02") + "  ";
 
-                            foreach (string line in lineText)
+                        double useHeight = 0;
+                        if (RenderText(min, dc, glyphTypefaceNormal, sizeNormal, info.Width - 4, info.Height - 4, info.LeftPos, info.TopPos, ref useHeight) == false)
+                        {
+                            info.TitleDrawErr = true;
+                            continue;
+                        }
+
+                        double widthOffset = sizeNormal * 2;
+
+                        //サービス名
+                        if (info.ReserveInfo.StationName.Length > 0)
+                        {
+                            String serviceName = info.ReserveInfo.StationName;
+                            if (0x7880 <= info.ReserveInfo.OriginalNetworkID && info.ReserveInfo.OriginalNetworkID <= 0x7FE8)
                             {
-                                for (int n = 0; n < line.Length; n++)
-                                {
-                                    ushort glyphIndex = glyphTypeface.CharacterToGlyphMap[line[n]];
-                                    double width = glyphTypeface.AdvanceWidths[glyphIndex] * size;
-                                    if (totalWidth + width > info.Width - 4)
-                                    {
-                                        if (totalLine + 1 > maxLine)
-                                        {
-                                            //次の行はかけない
-                                            glyphIndex = glyphTypeface.CharacterToGlyphMap['…'];
-                                            width = glyphTypeface.AdvanceWidths[glyphIndex] * size;
-                                            if (totalWidth + width > info.Width - 4 && glyphIndexes.Count > 0)
-                                            {
-                                                glyphIndexes[glyphIndexes.Count - 1] = glyphIndex;
-                                                advanceWidths[advanceWidths.Count - 1] = width;
-                                            }
-                                            else
-                                            {
-                                                glyphIndexes.Add(glyphIndex);
-                                                advanceWidths.Add(width);
-                                            }
-                                            break;
-                                        }
-                                        else
-                                        {
-                                            //次の行いける
-                                            Point origin = new Point(info.LeftPos + 2, info.TopPos + totalLine * (size + 2));
-                                            GlyphRun glyphRun = new GlyphRun(glyphTypeface, 0, false, size,
-                                                glyphIndexes, origin, advanceWidths, null, null, null, null,
-                                                null, null);
-
-                                            dc.DrawGlyphRun(Brushes.Black, glyphRun);
-                                            glyphIndexes = new List<ushort>();
-                                            advanceWidths = new List<double>();
-                                            totalWidth = 0;
-                                            totalLine++;
-                                        }
-                                    }
-                                    glyphIndexes.Add(glyphIndex);
-                                    advanceWidths.Add(width);
-
-                                    totalWidth += width;
-                                }
-
-                                if (totalLine == maxLine)
-                                {
-                                    //終了
-                                    if (glyphIndexes.Count > 0)
-                                    {
-                                        Point origin = new Point(info.LeftPos + 2, info.TopPos + totalLine * (size + 2));
-                                        GlyphRun glyphRun = new GlyphRun(glyphTypeface, 0, false, size,
-                                            glyphIndexes, origin, advanceWidths, null, null, null, null,
-                                            null, null);
-
-                                        dc.DrawGlyphRun(Brushes.Black, glyphRun);
-                                        glyphIndexes = new List<ushort>();
-                                        advanceWidths = new List<double>();
-                                    }
-                                    break;
-                                }
-                                else if (totalLine + 1 > maxLine)
-                                {
-                                    //次の行はいけない
-                                    ushort glyphIndex = glyphTypeface.CharacterToGlyphMap['…'];
-                                    double width = glyphTypeface.AdvanceWidths[glyphIndex] * size;
-                                    if (totalWidth + width > info.Width - 4 && glyphIndexes.Count > 0)
-                                    {
-                                        glyphIndexes[glyphIndexes.Count - 1] = glyphIndex;
-                                        advanceWidths[advanceWidths.Count - 1] = width;
-                                    }
-                                    else
-                                    {
-                                        glyphIndexes.Add(glyphIndex);
-                                        advanceWidths.Add(width);
-                                    }
-                                    Point origin = new Point(info.LeftPos + 2, info.TopPos + totalLine * (size + 2));
-                                    GlyphRun glyphRun = new GlyphRun(glyphTypeface, 0, false, size,
-                                        glyphIndexes, origin, advanceWidths, null, null, null, null,
-                                        null, null);
-
-                                    dc.DrawGlyphRun(Brushes.Black, glyphRun);
-                                    break;
-                                }
-                                else
-                                {
-                                    //次の行いける
-                                    if (glyphIndexes.Count > 0)
-                                    {
-                                        Point origin = new Point(info.LeftPos + 2, info.TopPos + totalLine * (size + 2));
-                                        GlyphRun glyphRun = new GlyphRun(glyphTypeface, 0, false, size,
-                                            glyphIndexes, origin, advanceWidths, null, null, null, null,
-                                            null, null);
-
-                                        dc.DrawGlyphRun(Brushes.Black, glyphRun);
-                                        glyphIndexes = new List<ushort>();
-                                        advanceWidths = new List<double>();
-                                    }
-                                    totalWidth = 0;
-                                    totalLine++;
-                                }
+                                serviceName += " (地デジ)";
                             }
+                            else if (info.ReserveInfo.OriginalNetworkID == 0x0004)
+                            {
+                                serviceName += " (BS)";
+                            }
+                            else if (info.ReserveInfo.OriginalNetworkID == 0x0006)
+                            {
+                                serviceName += " (CS1)";
+                            }
+                            else if (info.ReserveInfo.OriginalNetworkID == 0x0007)
+                            {
+                                serviceName += " (CS2)";
+                            }
+                            else
+                            {
+                                serviceName += " (その他)";
+                            }
+                            if (RenderText(serviceName, dc, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight) == false)
+                            {
+                                info.TitleDrawErr = true;
+                                continue;
+                            }
+                            totalHeight += useHeight + (sizeNormal / 2);
+                        }
+                        widthOffset = 2;
+                        //番組名
+                        if (info.ReserveInfo.Title.Length > 0)
+                        {
+                            if (RenderText(info.ReserveInfo.Title, dc, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight) == false)
+                            {
+                                info.TitleDrawErr = true;
+                                continue;
+                            }
+                            totalHeight += useHeight + sizeNormal;
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
     }

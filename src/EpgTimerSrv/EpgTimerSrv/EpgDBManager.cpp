@@ -841,6 +841,9 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, BOOL titleOnlyFlag, vector<ws
 					return FALSE;
 				}else{
 					if( findKey != NULL ){
+						if( findKey->size() > 0 ){
+							*findKey += L" ";
+						}
 						*findKey += (*keyList)[i];
 					}
 				}

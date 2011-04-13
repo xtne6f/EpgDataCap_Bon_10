@@ -12,6 +12,7 @@
 #include "TunerCtrl.h"
 #include "EpgTimerSrvDef.h"
 #include "TwitterManager.h"
+#include "NotifyManager.h"
 
 class CTunerBankCtrl
 {
@@ -21,7 +22,7 @@ public:
 
 	void SetTwitterCtrl(CTwitterManager* twitterManager);
 	void ReloadSetting();
-	void SetRegistGUI(map<DWORD, DWORD> registGUIMap);
+	void SetNotifyManager(CNotifyManager* manager);
 
 	void SetAutoDel(
 		BOOL autoDel,
@@ -101,6 +102,7 @@ protected:
 	HANDLE lockEvent;
 
 	CTwitterManager* twitterManager;
+	CNotifyManager* notifyManager;
 	CTunerCtrl tunerCtrl;
 	DWORD tunerID;
 	wstring bonFileName;
@@ -179,7 +181,7 @@ protected:
 	HANDLE checkThread;
 	HANDLE checkStopEvent;
 
-	map<DWORD, DWORD> registGUIMap;
+	//map<DWORD, DWORD> registGUIMap;
 	LONGLONG defStartMargine;
 	LONGLONG defEndMargine;
 	LONGLONG recWakeTime;
@@ -227,7 +229,7 @@ protected:
 	void ErrStop();
 	void AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTRL_REC_STOP_RES_PARAM resVal);
 	void CheckRec(LONGLONG delay, BOOL* needShortCheck);
-	BOOL RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL sendTweet);
+	BOOL RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL sendNoyify);
 	BOOL CloseTuner();
 
 	BOOL ContinueRec(RESERVE_WORK* info);

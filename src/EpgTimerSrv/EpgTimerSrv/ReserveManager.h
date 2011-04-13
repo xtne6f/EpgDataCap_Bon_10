@@ -7,21 +7,27 @@
 #include "../../Common/ParseReserveText.h"
 #include "../../Common/ParseRecInfoText.h"
 #include "../../Common/ParseChText5.h"
+#include "../../Common/ParseSearchChgText.h"
+
 #include "TwitterManager.h"
 
+#include "NotifyManager.h"
 #include "ReserveInfo.h"
 #include "TunerManager.h"
 #include "BatManager.h"
+#include "NWCoopManager.h"
 
 class CReserveManager
 {
 public:
 	CReserveManager(void);
 	~CReserveManager(void);
-
+/*
 	void SetRegistGUI(map<DWORD, DWORD> registGUIMap);
 	void SetRegistTCP(map<wstring, REGIST_TCP_INFO> registTCPMap);
-
+*/
+	void SetNotifyManager(CNotifyManager* manager);
+	void ChangeRegist();
 	void ReloadSetting();
 
 	//予約情報の読み込みを行う
@@ -79,7 +85,8 @@ public:
 	//引数：
 	// reserveList		[IN]予約情報
 	BOOL ChgReserveData(
-		vector<RESERVE_DATA>* reserveList
+		vector<RESERVE_DATA>* reserveList,
+		BOOL timeChg = FALSE
 		);
 
 	//予約情報を削除する
@@ -129,6 +136,7 @@ public:
 
 	BOOL StartEpgCap();
 	void StopEpgCap();
+	BOOL IsEpgCap();
 
 	BOOL IsFindReserve(
 		WORD ONID,
@@ -145,8 +153,8 @@ public:
 		DWORD durationSec
 		);
 
-	void SendNotifyUpdate();
-	void SendNotifyEpgReload();
+	void SendNotifyUpdate(DWORD notifyId);
+	void SendNotifyChgReserveAutoAdd(RESERVE_DATA* oldInfo, RESERVE_DATA* newInfo);
 
 	BOOL GetTVTestChgCh(
 		LONGLONG chID,
@@ -178,24 +186,30 @@ public:
 		DWORD* processID
 		);
 
+	//予約追加可能かチェックする
+	BOOL ChkAddReserve(RESERVE_DATA* chkData, WORD* status);
+
 protected:
 	HANDLE lockEvent;
 
 	HANDLE bankCheckThread;
 	HANDLE bankCheckStopEvent;
 
+	WORD notifyStatus;
 
+	/*
 	map<DWORD, DWORD> registGUIMap;
 	map<wstring, REGIST_TCP_INFO> registTCPMap;
 	HANDLE lockNotify;
 	HANDLE notifyThread;
 	HANDLE notifyStopEvent;
-	WORD notifyStatus;
 	HANDLE notifyStatusThread;
 	HANDLE notifyStatusStopEvent;
 
 	HANDLE notifyEpgReloadThread;
 	HANDLE notifyEpgReloadStopEvent;
+	*/
+	CNotifyManager* notifyManager;
 
 	CParseReserveText reserveText;
 	map<DWORD, CReserveInfo*> reserveInfoMap; //キー　reserveID
@@ -203,11 +217,12 @@ protected:
 	CParseRecInfoText recInfoText;
 
 	CParseChText5 chUtil;
+	CParseSearchChgText chgText;
 
 	CTunerManager tunerManager;
 	CBatManager batManager;
 	CTwitterManager twitterManager;
-
+	CNWCoopManager nwCoopManager;
 
 	typedef struct _BANK_WORK_INFO{
 		CReserveInfo* reserveInfo;
@@ -284,16 +299,22 @@ protected:
 	CSendCtrlCmd sendCtrlNWTV;
 	BOOL NWTVUDP;
 	BOOL NWTVTCP;
+	BOOL useSrvCoop;
+	BOOL useResSrvCoop;
+	BOOL useEpgSrvCoop;
+
+	BOOL ngAddResSrvCoop;
+
 
 	int reloadBankMapAlgo;
 protected:
 	//PublicAPI排他制御用
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
 	void UnLock(LPCWSTR log = NULL);
-
+/*
 	BOOL NotifyLock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
 	void NotifyUnLock(LPCWSTR log = NULL);
-
+	*/
 
 	BOOL _AddReserveData(RESERVE_DATA* reserve, BOOL tweet = FALSE);
 	BOOL _ChgReserveData(RESERVE_DATA* reserve, BOOL chgTime);
@@ -309,13 +330,15 @@ protected:
 	BOOL ChangeNGReserve(BANK_WORK_INFO* inItem);
 	DWORD ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
 
-	void _SendNotifyUpdate();
-	static UINT WINAPI SendNotifyThread(LPVOID param);
-	void SendNotifyStatus(WORD status);
+	void _SendNotifyUpdate(DWORD notifyId);
+	void _SendNotifyStatus(WORD status);
+	void _SendNotifyRecEnd(REC_FILE_INFO* item);
+	void _SendNotifyChgReserve(DWORD notifyId, RESERVE_DATA* oldInfo, RESERVE_DATA* newInfo);
+/*	static UINT WINAPI SendNotifyThread(LPVOID param);
 	static UINT WINAPI SendNotifyStatusThread(LPVOID param);
 	void _SendNotifyEpgReload();
 	static UINT WINAPI SendNotifyEpgReloadThread(LPVOID param);
-
+	*/
 	BOOL _DelReserveData(
 		vector<DWORD>* reserveList
 	);
@@ -325,9 +348,11 @@ protected:
 	void CheckErrReserve();
 	void CheckBatWork();
 	void CheckTuijyu();
+	void CheckNWSrvResCoop();
 	BOOL CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, BOOL errEnd = FALSE);
 
 	BOOL CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, BYTE* chgMode = NULL);
+	BOOL CheckChgEventID(EPGDB_EVENT_INFO* info, RESERVE_DATA* data);
 	BOOL CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* ctrl, vector<DWORD>* deleteList);
 	BOOL ChgDurationChk(EPGDB_EVENT_INFO* info);
 
@@ -338,7 +363,7 @@ protected:
 	BOOL GetNextEpgcapTime(LONGLONG* capTime, LONGLONG chkMargineMin);
 
 	BOOL _StartEpgCap();
-	BOOL IsEpgCap();
+	BOOL _IsEpgCap();
 
 	void _SendTweet(
 		SEND_TWEET_MODE mode,
@@ -346,5 +371,7 @@ protected:
 		void* param2,
 		void* param3
 		);
+
+	void GetSrvCoopEpgList(vector<wstring>* fileList);
 };
 

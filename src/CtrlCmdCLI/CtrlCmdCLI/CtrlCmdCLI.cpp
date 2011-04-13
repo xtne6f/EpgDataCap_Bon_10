@@ -254,7 +254,11 @@ void CtrlCmdUtil::CopyData(DateTime src, SYSTEMTIME* dest)
 	FILETIME fTime;
 	fTime.dwHighDateTime = (DWORD)(i64Time>>32);
 	fTime.dwLowDateTime = (DWORD)(i64Time&0x00000000FFFFFFFF);
-	FileTimeToSystemTime(&fTime,dest);
+	if( i64Time <= 0 ){
+		ZeroMemory(dest, sizeof(SYSTEMTIME));
+	}else{
+		FileTimeToSystemTime(&fTime,dest);
+	}
 }
 
 DateTime CtrlCmdUtil::ConvertTime(SYSTEMTIME* src)

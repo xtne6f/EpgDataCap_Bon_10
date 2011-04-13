@@ -44,4 +44,5 @@ public:
 	CButton btnTaskMin;
 	CButton btnEnableEMM;
 	CButton btnOpenLast;
+	UINT epgCapBackStartWaitSec;
 };

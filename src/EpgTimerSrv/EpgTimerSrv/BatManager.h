@@ -2,6 +2,7 @@
 #include "EpgTimerSrvDef.h"
 #include "../../Common/StructDef.h"
 #include "../../Common/SendCtrlCmd.h"
+#include "NotifyManager.h"
 
 class CBatManager
 {
@@ -10,7 +11,8 @@ public:
 	~CBatManager(void);
 
 	void ReloadSetting();
-	void SetRegistGUI(map<DWORD, DWORD> registGUIMap);
+	void SetNotifyManager(CNotifyManager* manager);
+	//void SetRegistGUI(map<DWORD, DWORD> registGUIMap);
 
 	void AddBatWork(BAT_WORK_INFO* info);
 
@@ -24,7 +26,8 @@ public:
 protected:
 	HANDLE lockEvent;
 
-	map<DWORD, DWORD> registGUIMap;
+	CNotifyManager* notifyManager;
+//	map<DWORD, DWORD> registGUIMap;
 
 	vector<BAT_WORK_INFO> workList;
 

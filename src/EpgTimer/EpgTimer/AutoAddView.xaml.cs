@@ -24,10 +24,11 @@ namespace EpgTimer
             InitializeComponent();
         }
 
-        public void ReloadData()
+        public void UpdateAutoAddInfo()
         {
-            epgAutoAddView.ReloadData();
-            manualAutoAddView.ReloadData();
+            epgAutoAddView.UpdateInfo();
+            manualAutoAddView.UpdateInfo();
         }
+
     }
 }

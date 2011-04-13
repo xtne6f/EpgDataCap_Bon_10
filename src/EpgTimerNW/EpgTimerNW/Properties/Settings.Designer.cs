@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace EpgTimerNW.Properties
+namespace EpgTimer.Properties
 {
 
 

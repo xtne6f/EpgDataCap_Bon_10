@@ -19,42 +19,32 @@ namespace EpgTimer
     public partial class SettingWindow : Window
     {
         public bool ServiceStop = false;
+
         public SettingWindow()
         {
             InitializeComponent();
         }
 
-        private void button_ok_Click(object sender, RoutedEventArgs e)
+        private void button_OK_Click(object sender, RoutedEventArgs e)
         {
-            if (setServiceCtrlView.ServiceStop == true)
+            if (setAppView.ServiceStop == true)
             {
                 ServiceStop = true;
             }
             setBasicView.SaveSetting();
-            ChSet5.LoadFile();
-            setTunerView.SaveSetting();
             setAppView.SaveSetting();
-            setApp2View.SaveSetting();
-            setApp3View.SaveSetting();
             setEpgView.SaveSetting();
-            setEpgColor.SaveSetting();
-            setEpgServiceView.SaveSetting();
-            setTVTestView.SaveSetting();
-            setCustBtnView.SaveSetting();
-            setIEPG1View.SaveSetting();
-            setTwitterView.SaveSetting();
+            setOtherAppView.SaveSetting();
+
             Settings.SaveToXmlFile();
             ChSet5.SaveFile();
+            CommonManager.Instance.ReloadCustContentColorList();
 
             this.DialogResult = true;
         }
 
         private void button_cancel_Click(object sender, RoutedEventArgs e)
         {
-            if (setServiceCtrlView.ServiceStop == true)
-            {
-                ServiceStop = true;
-            }
             this.DialogResult = false;
         }
     }

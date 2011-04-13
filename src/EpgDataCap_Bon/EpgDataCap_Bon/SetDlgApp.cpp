@@ -15,6 +15,7 @@ CSetDlgApp::CSetDlgApp(CWnd* pParent /*=NULL*/)
 	: CDialog(CSetDlgApp::IDD, pParent)
 	, startMargine(0)
 	, endMargine(0)
+	, epgCapBackStartWaitSec(0)
 {
 
 }
@@ -38,6 +39,7 @@ void CSetDlgApp::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_CHECK_TASKMIN, btnTaskMin);
 	DDX_Control(pDX, IDC_CHECK_EMM, btnEnableEMM);
 	DDX_Control(pDX, IDC_CHECK_OPENLAST, btnOpenLast);
+	DDX_Text(pDX, IDC_EDIT_BACKSTART_WAITSEC, epgCapBackStartWaitSec);
 }
 
 
@@ -68,6 +70,8 @@ BOOL CSetDlgApp::OnInitDialog()
 	btnEpgCapRec.SetCheck( GetPrivateProfileInt( L"SET", L"EpgCapRec", 1, appIniPath ) );
 	btnTaskMin.SetCheck( GetPrivateProfileInt( L"SET", L"MinTask", 0, appIniPath ) );
 	btnOpenLast.SetCheck( GetPrivateProfileInt( L"SET", L"OpenLast", 1, appIniPath ) );
+
+	epgCapBackStartWaitSec = GetPrivateProfileInt( L"SET", L"EpgCapBackStartWaitSec", 30, appIniPath );
 
 	UpdateData(FALSE);
 
@@ -107,6 +111,10 @@ void CSetDlgApp::SaveIni(void)
 	WritePrivateProfileString( L"SET", L"MinTask", val.GetBuffer(0), appIniPath );
 	val.Format(L"%d",btnOpenLast.GetCheck());
 	WritePrivateProfileString( L"SET", L"OpenLast", val.GetBuffer(0), appIniPath );
+
+	val.Format(L"%d",epgCapBackStartWaitSec);
+	WritePrivateProfileString( L"SET", L"EpgCapBackStartWaitSec", val.GetBuffer(0), appIniPath );
+
 }
 
 

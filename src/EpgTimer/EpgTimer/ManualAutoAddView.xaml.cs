@@ -11,9 +11,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.ComponentModel;
-using System.Collections.ObjectModel;
-using System.Collections;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -25,35 +22,69 @@ namespace EpgTimer
     /// </summary>
     public partial class ManualAutoAddView : UserControl
     {
-        private CtrlCmdUtil cmd = EpgTimerDef.Instance.CtrlCmd;
+        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private List<ManualAutoAddDataItem> resultList = new List<ManualAutoAddDataItem>();
-
+        private bool ReloadInfo = true;
 
         public ManualAutoAddView()
         {
             InitializeComponent();
         }
 
+        /// <summary>
+        /// リストの更新通知
+        /// </summary>
+        public void UpdateInfo()
+        {
+            if (this.IsVisible == true)
+            {
+                ReloadInfoData();
+                ReloadInfo = false;
+            }
+            else
+            {
+                ReloadInfo = true;
+            }
+        }
+        
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            ReloadData();
+            if (ReloadInfo == true && this.IsVisible == true)
+            {
+                ReloadInfoData();
+                ReloadInfo = false;
+            }
         }
 
-        public void ReloadData()
+        private void ReloadInfoData()
         {
             listView_key.DataContext = null;
             resultList.Clear();
 
-            List<ManualAutoAddData> list = new List<ManualAutoAddData>();
-            uint err = cmd.SendEnumManualAdd(ref list);
-            foreach (ManualAutoAddData info in list)
+            ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
+            if (err == ErrCode.CMD_ERR_CONNECT)
+            {
+                MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                return;
+            }
+            if (err == ErrCode.CMD_ERR_TIMEOUT)
+            {
+                MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                return;
+            }
+            if (err != ErrCode.CMD_SUCCESS)
+            {
+                MessageBox.Show("情報の取得でエラーが発生しました。");
+                return;
+            }
+
+            foreach (ManualAutoAddData info in CommonManager.Instance.DB.ManualAutoAddList.Values)
             {
                 ManualAutoAddDataItem item = new ManualAutoAddDataItem(info);
                 resultList.Add(item);
             }
 
             listView_key.DataContext = resultList;
-
         }
 
         private void button_add_Click(object sender, RoutedEventArgs e)
@@ -102,159 +133,5 @@ namespace EpgTimer
             }
         }
 
-    }
-
-    class ManualAutoAddDataItem
-    {
-        public ManualAutoAddDataItem(ManualAutoAddData item)
-        {
-            this.ManualAutoAddInfo = item;
-        }
-
-        public ManualAutoAddData ManualAutoAddInfo
-        {
-            get;
-            set;
-        }
-
-        public String DayOfWeek
-        {
-            get
-            {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x01) != 0)
-                    {
-                        view += "日";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x02) != 0)
-                    {
-                        view += "月";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x04) != 0)
-                    {
-                        view += "火";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x08) != 0)
-                    {
-                        view += "水";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x10) != 0)
-                    {
-                        view += "木";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x20) != 0)
-                    {
-                        view += "金";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x40) != 0)
-                    {
-                        view += "土";
-                    }
-                }
-                return view;
-            }
-        }
-
-        public String Time
-        {
-            get
-            {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    UInt32 hh = ManualAutoAddInfo.startTime / (60 * 60);
-                    UInt32 mm = (ManualAutoAddInfo.startTime % (60 * 60)) / 60;
-                    UInt32 ss = ManualAutoAddInfo.startTime % 60;
-                    view = hh.ToString() + ":" + mm.ToString() + ":" + ss.ToString();
-
-                    UInt32 endTime = ManualAutoAddInfo.startTime + ManualAutoAddInfo.durationSecond;
-                    if (endTime > 24 * 60 * 60)
-                    {
-                        endTime -= 24 * 60 * 60;
-                    }
-                    hh = endTime / (60 * 60);
-                    mm = (endTime % (60 * 60)) / 60;
-                    ss = endTime % 60;
-                    view += " ～ " + hh.ToString() + ":" + mm.ToString() + ":" + ss.ToString();
-                }
-                return view;
-            }
-        }
-
-        public String Title
-        {
-            get
-            {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    view = ManualAutoAddInfo.title;
-                }
-                return view;
-            }
-        }
-
-        public String StationName
-        {
-            get
-            {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    view = ManualAutoAddInfo.stationName;
-                }
-                return view;
-            }
-        }
-
-        public String RecMode
-        {
-            get
-            {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    switch (ManualAutoAddInfo.recSetting.RecMode)
-                    {
-                        case 0:
-                            view = "全サービス";
-                            break;
-                        case 1:
-                            view = "指定サービス";
-                            break;
-                        case 2:
-                            view = "全サービス（デコード処理なし）";
-                            break;
-                        case 3:
-                            view = "指定サービス（デコード処理なし）";
-                            break;
-                        case 4:
-                            view = "視聴";
-                            break;
-                        case 5:
-                            view = "無効";
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                return view;
-            }
-        }
-
-        public String Priority
-        {
-            get
-            {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    view = ManualAutoAddInfo.recSetting.Priority.ToString();
-                }
-                return view;
-            }
-        }
     }
 }

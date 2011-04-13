@@ -79,5 +79,22 @@
 #define REC_END_STATUS_ERR_RECSTART 12		//録画開始に失敗した
 #define REC_END_STATUS_NOT_START_HEAD 13	//一部のみ録画された
 #define REC_END_STATUS_ERR_CH_CHG	14		//チャンネル切り替えに失敗した
+#define REC_END_STATUS_ERR_END2		15		//録画中にエラーが発生した(Writeでexception)
+
+//NotifyID
+#define NOTIFY_UPDATE_EPGDATA		1		//EPGデータが更新された
+#define NOTIFY_UPDATE_RESERVE_INFO	2		//予約情報が更新された
+#define NOTIFY_UPDATE_REC_INFO	3			//録画結果情報が更新された
+#define NOTIFY_UPDATE_AUTOADD_EPG	4		//EPG自動予約登録情報が更新された
+#define NOTIFY_UPDATE_AUTOADD_MANUAL	5	//プログラム自動予約登録情報が更新された
+#define NOTIFY_UPDATE_SRV_STATUS	100		//Srvの動作状況が変更（param1:ステータス 0:通常、1:録画中、2:EPG取得中）
+#define NOTIFY_UPDATE_PRE_REC_START	101		//録画準備開始（param4:ログ用メッセージ）
+#define NOTIFY_UPDATE_REC_START		102		//録画開始（param4:ログ用メッセージ）
+#define NOTIFY_UPDATE_REC_END		103		//録画終了（param4:ログ用メッセージ）
+#define NOTIFY_UPDATE_REC_TUIJYU	104		//録画中に追従が発生（param4:ログ用メッセージ）
+#define NOTIFY_UPDATE_CHG_TUIJYU	105		//EPG自動予約登録で追従が発生（param4:ログ用メッセージ）
+#define NOTIFY_UPDATE_PRE_EPGCAP_START	106	//EPG取得準備開始
+#define NOTIFY_UPDATE_EPGCAP_START	107		//EPG取得開始
+#define NOTIFY_UPDATE_EPGCAP_END	108		//EPG取得終了
 
 #endif

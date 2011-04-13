@@ -180,14 +180,14 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 			ULARGE_INTEGER totalNumberOfFreeBytes;
 			if( _GetDiskFreeSpaceEx(itrMount->first.c_str(), &freeBytesAvailable, &totalNumberOfBytes, &totalNumberOfFreeBytes ) == TRUE ){
 				ULONGLONG free = freeBytesAvailable.QuadPart;
-				if( free > itrMount->second.totalSize ){
+				if( free > (ULONGLONG)itrMount->second.totalSize ){
 					continue;
 				}
 				map<LONGLONG, TS_FILE_INFO> tsFileList;
 				for( size_t i=0; i<itrMount->second.folderPath.size(); i++ ){
 					FindTsFileList(itrMount->second.folderPath[i], &tsFileList);
 				}
-				while( free < itrMount->second.totalSize ){
+				while( free < (ULONGLONG)itrMount->second.totalSize ){
 					map<LONGLONG, TS_FILE_INFO>::iterator itrTS;
 					itrTS = tsFileList.begin();
 					if( itrTS != tsFileList.end() ){

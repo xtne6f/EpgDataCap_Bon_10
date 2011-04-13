@@ -37,6 +37,7 @@ CBonCtrl::CBonCtrl(void)
 	this->enableLiveEpgCap = FALSE;
 	this->enableRecEpgCap = FALSE;
 
+	this->epgCapBackStartWaitSec = 30;
 }
 
 
@@ -403,7 +404,8 @@ DWORD CBonCtrl::SetCh(
 
 DWORD CBonCtrl::_SetCh(
 	DWORD space,
-	DWORD ch
+	DWORD ch,
+	BOOL chScan
 	)
 {
 	DWORD spaceNow=0;
@@ -413,7 +415,7 @@ DWORD CBonCtrl::_SetCh(
 	if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == TRUE ){
 		ret = NO_ERR;
 		if( space != spaceNow || ch != chNow ){
-			this->tsOut.SetChChangeEvent();
+			this->tsOut.SetChChangeEvent(chScan);
 			_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
 			ret = this->bonUtil.SetCh(space, ch);
 
@@ -566,36 +568,45 @@ UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
 		BYTE *data = NULL;
 		DWORD size = 0;
 		DWORD remain = 0;
-		if( sys->bonUtil.GetTsStream(&data,&size,&remain) == TRUE ){
-			if( size != 0 ){
-				TS_DATA* item = new TS_DATA;
-				if( sys->packetInit.GetTSData(data, size, &item->data, &item->size) == TRUE ){
-					if( WaitForSingleObject( sys->buffLockEvent, 50000 ) == WAIT_OBJECT_0 ){
-						if(sys->TSBuff.size()>10000){
-							for( size_t i=9000; i<sys->TSBuff.size(); i++ ){
-								SAFE_DELETE(sys->TSBuff[i]);
+		try{
+			if( sys->bonUtil.GetTsStream(&data,&size,&remain) == TRUE ){
+				if( size != 0 ){
+					TS_DATA* item = new TS_DATA;
+					try{
+						if( sys->packetInit.GetTSData(data, size, &item->data, &item->size) == TRUE ){
+							if( WaitForSingleObject( sys->buffLockEvent, 50000 ) == WAIT_OBJECT_0 ){
+								if(sys->TSBuff.size()>10000){
+									for( size_t i=9000; i<sys->TSBuff.size(); i++ ){
+										SAFE_DELETE(sys->TSBuff[i]);
+									}
+									vector<TS_DATA*>::iterator itr;
+									itr = sys->TSBuff.begin();
+									advance(itr,9000);
+									sys->TSBuff.erase( itr, sys->TSBuff.end() );
+								}
+								sys->TSBuff.push_back(item);
+								if( sys->buffLockEvent != NULL ){
+									SetEvent(sys->buffLockEvent);
+								}
+							}else{
+								delete item;
+								_OutputDebugString(L"★★Buff Write TimeOut");
 							}
-							vector<TS_DATA*>::iterator itr;
-							itr = sys->TSBuff.begin();
-							advance(itr,9000);
-							sys->TSBuff.erase( itr, sys->TSBuff.end() );
+						}else{
+							delete item;
 						}
-						sys->TSBuff.push_back(item);
-						if( sys->buffLockEvent != NULL ){
-							SetEvent(sys->buffLockEvent);
-						}
-					}else{
+					}catch(...){
 						delete item;
-						_OutputDebugString(L"★★Buff Write TimeOut");
+						_OutputDebugString(L"★★RecvThread Exception2");
 					}
 				}else{
-					delete item;
+					Sleep(10);
 				}
 			}else{
 				Sleep(10);
 			}
-		}else{
-			Sleep(10);
+		}catch(...){
+			_OutputDebugString(L"★★RecvThread Exception1");
 		}
 	}
 	return 0;
@@ -611,36 +622,47 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 			break;
 		}
 
-
 		//バッファからデータ取り出し
 		TS_DATA* data = NULL;
-		if( WaitForSingleObject( sys->buffLockEvent, 5000 ) == WAIT_OBJECT_0 ){
-			if(sys->TSBuff.size()>10000){
-				for( size_t i=9000; i<sys->TSBuff.size(); i++ ){
-					SAFE_DELETE(sys->TSBuff[i]);
+		try{
+			if( WaitForSingleObject( sys->buffLockEvent, 5000 ) == WAIT_OBJECT_0 ){
+				if(sys->TSBuff.size()>10000){
+					for( size_t i=9000; i<sys->TSBuff.size(); i++ ){
+						SAFE_DELETE(sys->TSBuff[i]);
+					}
+					vector<TS_DATA*>::iterator itr;
+					itr = sys->TSBuff.begin();
+					advance(itr,9000);
+					sys->TSBuff.erase( itr, sys->TSBuff.end() );
 				}
-				vector<TS_DATA*>::iterator itr;
-				itr = sys->TSBuff.begin();
-				advance(itr,9000);
-				sys->TSBuff.erase( itr, sys->TSBuff.end() );
+				if( sys->TSBuff.size() != 0 ){
+					data = sys->TSBuff[0];
+					sys->TSBuff.erase( sys->TSBuff.begin() );
+				}
+				if( sys->buffLockEvent != NULL ){
+					SetEvent(sys->buffLockEvent);
+				}
+			}else{
+				Sleep(10);
+				continue ;
 			}
-			if( sys->TSBuff.size() != 0 ){
-				data = sys->TSBuff[0];
-				sys->TSBuff.erase( sys->TSBuff.begin() );
+		}catch(...){
+			_OutputDebugString(L"★★AnalyzeThread Exception1");
+			if( data != NULL ){
+				sys->tsOut.AddTSBuff(data);
+				SAFE_DELETE(data);
 			}
-			if( sys->buffLockEvent != NULL ){
-				SetEvent(sys->buffLockEvent);
-			}
-		}else{
-			Sleep(10);
 			continue ;
 		}
-
-		if( data != NULL ){
-			sys->tsOut.AddTSBuff(data);
-			SAFE_DELETE(data);
-		}else{
-			Sleep(5);
+		try{
+			if( data != NULL ){
+				sys->tsOut.AddTSBuff(data);
+				SAFE_DELETE(data);
+			}else{
+				Sleep(5);
+			}
+		}catch(...){
+			_OutputDebugString(L"★★AnalyzeThread Exception2");
 		}
 	}
 	return 0;
@@ -1166,7 +1188,7 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 			sys->chSt_space = chkList[chkCount].space;
 			sys->chSt_ch = chkList[chkCount].ch;
 			sys->chSt_chName = chkList[chkCount].chName;
-			sys->_SetCh(chkList[chkCount].space, chkList[chkCount].ch);
+			sys->_SetCh(chkList[chkCount].space, chkList[chkCount].ch, TRUE);
 			if( firstChg == FALSE ){
 				firstChg = TRUE;
 				sys->tsOut.ResetChChange();
@@ -1393,10 +1415,12 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 					chkNext = TRUE;
 				}
 			}else{
-				if( startTime + chkWait + 15*60 < GetTimeCount() || chChgErr == TRUE){
+				if( (startTime + chkWait + 15*60 < GetTimeCount()) || chChgErr == TRUE){
 					//15分以上かかっているなら停止
 					sys->tsOut.StopSaveEPG(FALSE);
 					chkNext = TRUE;
+					wait = 0;
+					_OutputDebugString(L"++15分でEPG取得完了せず or Ch変更でエラー");
 				}else if(startTime + chkWait < GetTimeCount() ){
 					//切り替えから15秒以上過ぎているので取得処理
 					if( startCap == FALSE ){
@@ -1567,12 +1591,14 @@ void CBonCtrl::GetRecWriteSize(
 // BSBasic		[IN]BSで１チャンネルから基本情報のみ取得するかどうか
 // CS1Basic		[IN]CS1で１チャンネルから基本情報のみ取得するかどうか
 // CS2Basic		[IN]CS2で１チャンネルから基本情報のみ取得するかどうか
+// backStartWaitSec	[IN]Ch切り替え、録画開始後、バックグラウンドでのEPG取得を開始するまでの秒数
 void CBonCtrl::SetBackGroundEpgCap(
 	BOOL enableLive,
 	BOOL enableRec,
 	BOOL BSBasic,
 	BOOL CS1Basic,
-	BOOL CS2Basic
+	BOOL CS2Basic,
+	DWORD backStartWaitSec
 	)
 {
 	if( Lock() == FALSE ) return ;
@@ -1582,6 +1608,7 @@ void CBonCtrl::SetBackGroundEpgCap(
 	this->BSBasic = BSBasic;
 	this->CS1Basic = CS1Basic;
 	this->CS2Basic = CS2Basic;
+	this->epgCapBackStartWaitSec = backStartWaitSec;
 
 	StartBackgroundEpgCap();
 
@@ -1619,7 +1646,7 @@ void CBonCtrl::StopBackgroundEpgCap()
 UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 {
 	CBonCtrl* sys = (CBonCtrl*)param;
-	if( ::WaitForSingleObject(sys->epgCapBackStopEvent, 5*60*1000) != WAIT_TIMEOUT ){
+	if( ::WaitForSingleObject(sys->epgCapBackStopEvent, sys->epgCapBackStartWaitSec*1000) != WAIT_TIMEOUT ){
 		//キャンセルされた
 		return 0;
 	}

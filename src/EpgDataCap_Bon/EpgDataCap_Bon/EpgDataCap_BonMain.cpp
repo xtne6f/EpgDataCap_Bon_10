@@ -117,8 +117,9 @@ void CEpgDataCap_BonMain::ReloadSetting()
 
 	BOOL epgCapLive = (BOOL)GetPrivateProfileInt( L"SET", L"EpgCapLive", 1, appIniPath.c_str() );
 	BOOL epgCapRec = (BOOL)GetPrivateProfileInt( L"SET", L"EpgCapRec", 1, appIniPath.c_str() );
+	DWORD epgCapBackStartWaitSec = (DWORD)GetPrivateProfileInt( L"SET", L"EpgCapBackStartWaitSec", 30, appIniPath.c_str() );
 
-	this->bonCtrl.SetBackGroundEpgCap(epgCapLive, epgCapRec, this->BSBasic, this->CS1Basic, this->CS2Basic);
+	this->bonCtrl.SetBackGroundEpgCap(epgCapLive, epgCapRec, this->BSBasic, this->CS1Basic, this->CS2Basic, epgCapBackStartWaitSec);
 	if( this->sendTcpFlag == FALSE && this->sendUdpFlag == FALSE ){
 		this->bonCtrl.SetScramble(this->nwCtrlID, this->enableScrambleFlag);
 	}
@@ -1090,8 +1091,11 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 	case CMD2_VIEW_APP_REC_STOP_ALL:
 		OutputDebugString(L"CMD2_VIEW_APP_REC_STOP_ALL");
 		{
+			DWORD ret = CMD_SUCCESS;
 			if( sys->recCtrlID != 0 ){
-				sys->bonCtrl.EndSave(sys->recCtrlID);
+				if(sys->bonCtrl.EndSave(sys->recCtrlID) == FALSE ){
+					ret = CMD_ERR;
+				}
 				sys->bonCtrl.DeleteServiceCtrl(sys->recCtrlID);
 				sys->recCtrlID = 0;
 			}
@@ -1101,7 +1105,7 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 			}
 			sys->ctrlMap.clear();
 
-			resParam->param = CMD_SUCCESS;
+			resParam->param = ret;
 			PostMessage(sys->msgWnd, WM_RESERVE_REC_STOP, 0, 0);
 		}
 		break;
@@ -1138,6 +1142,7 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 	case CMD2_VIEW_APP_EXEC_VIEW_APP:
 		{
 			sys->ViewAppOpen();
+			resParam->param = CMD_SUCCESS;
 		}
 		break;
 	case CMD2_VIEW_APP_REC_WRITE_SIZE:

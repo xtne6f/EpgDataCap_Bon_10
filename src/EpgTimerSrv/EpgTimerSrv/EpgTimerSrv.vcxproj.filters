@@ -204,6 +204,12 @@
     <ClInclude Include="..\..\Common\CtrlCmdUtil2.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
+    <ClInclude Include="NotifyManager.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="NWCoopManager.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -340,6 +346,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Common\CtrlCmdUtil2.cpp">
       <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="NotifyManager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="NWCoopManager.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -142,5 +142,7 @@ protected:
 
 	BOOL subRecFlag;
 	__int64 writeTotalSize;
+
+	BOOL exceptionErr;
 };
 

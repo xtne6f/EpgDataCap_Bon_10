@@ -13,7 +13,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using CtrlCmdCLI.Def;
 
-namespace EpgTimer
+namespace EpgTimer.TunerReserveViewCtrl
 {
     /// <summary>
     /// TunerReserveNameView.xaml の相互作用ロジック
@@ -23,6 +23,11 @@ namespace EpgTimer
         public TunerReserveNameView()
         {
             InitializeComponent();
+        }
+
+        public void ClearInfo()
+        {
+            stackPanel_tuner.Children.Clear();
         }
 
         public void SetTunerInfo(List<TunerNameViewItem> tunerInfo)
@@ -46,22 +51,4 @@ namespace EpgTimer
         }
     }
 
-    public class TunerNameViewItem
-    {
-        public TunerNameViewItem(TunerReserveInfo info, double width)
-        {
-            TunerInfo = info;
-            Width = width;
-        }
-        public TunerReserveInfo TunerInfo
-        {
-            get;
-            set;
-        }
-        public double Width
-        {
-            get;
-            set;
-        }
-    }
 }

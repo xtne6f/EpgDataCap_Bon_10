@@ -4,44 +4,19 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="700" Loaded="UserControl_Loaded">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type ComboBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type Button}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type ListBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <DataTemplate x:Key="HeaderTemplateArrowUp">
-            <DockPanel>
-                <TextBlock HorizontalAlignment="Center" Text="{Binding}"/>
-                <Path x:Name="arrow" StrokeThickness = "1" Fill = "gray" Data = "M 5,10 L 15,10 L 10,5 L 5,10"/>
-            </DockPanel>
-        </DataTemplate>
-        <DataTemplate x:Key="HeaderTemplateArrowDown">
-            <DockPanel>
-                <TextBlock HorizontalAlignment="Center" Text="{Binding }"/>
-                <Path x:Name="arrow" StrokeThickness = "1" Fill = "gray" Data = "M 5,5 L 10,10 L 15,5 L 5,5"/>
-            </DockPanel>
-        </DataTemplate>
-    </UserControl.Resources>
+             d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="100" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" MouseDoubleClick="listView_recinfo_MouseDoubleClick">
+        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" >
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
                     <Setter Property="Background" Value="{Binding BackColor}" />
+                    <EventSetter Event="MouseDoubleClick" Handler="listView_recinfo_MouseDoubleClick"/>
                 </Style>
                 <Style TargetType="GridViewColumnHeader">
                     <Setter Property="HorizontalContentAlignment" Value="Left"/>
@@ -50,6 +25,7 @@
             <ListView.View>
                 <GridView x:Name="gridView_recinfo">
                     <GridViewColumn Header="日時" DisplayMemberBinding="{Binding Path=StartTime}" />
+                    <GridViewColumn Header="ネットワーク" DisplayMemberBinding="{Binding Path=NetworkName}" />
                     <GridViewColumn Header="サービス名" DisplayMemberBinding="{Binding Path=ServiceName}" />
                     <GridViewColumn Header="番組名" DisplayMemberBinding="{Binding Path=EventName}" />
                     <GridViewColumn Header="Drop" DisplayMemberBinding="{Binding Path=Drops}" />

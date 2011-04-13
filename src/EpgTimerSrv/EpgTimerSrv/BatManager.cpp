@@ -18,6 +18,8 @@ CBatManager::CBatManager(void)
 	this->lastSuspendMode = 0xFF;
 	this->lastRebootFlag = 0xFF;
 
+	this->notifyManager = NULL;
+
 	ReloadSetting();
 }
 
@@ -49,12 +51,17 @@ BOOL CBatManager::Lock(LPCWSTR log, DWORD timeOut)
 	if( this->lockEvent == NULL ){
 		return FALSE;
 	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
+	//if( log != NULL ){
+	//	_OutputDebugString(L"◆%s",log);
+	//}
 	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
 	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
+		dwRet == WAIT_FAILED ||
+		dwRet == WAIT_TIMEOUT){
+			OutputDebugString(L"◆CBatManager::Lock FALSE");
+			if( log != NULL ){
+				OutputDebugString(log);
+			}
 		return FALSE;
 	}
 	return TRUE;
@@ -77,12 +84,21 @@ void CBatManager::ReloadSetting()
 	
 	UnLock();
 }
-
+/*
 void CBatManager::SetRegistGUI(map<DWORD, DWORD> registGUIMap)
 {
 	if( Lock() == FALSE ) return ;
 
 	this->registGUIMap = registGUIMap;
+
+	UnLock();
+}
+*/
+void CBatManager::SetNotifyManager(CNotifyManager* manager)
+{
+	if( Lock(L"CBatManager::SetNotifyManager") == FALSE ) return;
+
+	this->notifyManager = manager;
 
 	UnLock();
 }
@@ -201,7 +217,11 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 					BOOL send = FALSE;
 					DWORD PID = 0;
 					map<DWORD, DWORD>::iterator itr;
-					for( itr = sys->registGUIMap.begin(); itr != sys->registGUIMap.end(); itr++ ){
+					map<DWORD, DWORD> registGUIMap;
+					if( sys->notifyManager != NULL ){
+						sys->notifyManager->GetRegistGUI(&registGUIMap);
+					}
+					for( itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
 						wstring pipeName = L"";
 						wstring waitEventName = L"";
 

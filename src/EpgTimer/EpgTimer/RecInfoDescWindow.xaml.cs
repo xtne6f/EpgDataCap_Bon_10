@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+
 using CtrlCmdCLI.Def;
 
 namespace EpgTimer
@@ -20,6 +21,7 @@ namespace EpgTimer
     public partial class RecInfoDescWindow : Window
     {
         private RecFileInfo recInfo = null;
+
         public RecInfoDescWindow()
         {
             InitializeComponent();
@@ -40,14 +42,25 @@ namespace EpgTimer
                 {
                     try
                     {
-                        System.Diagnostics.Process.Start(recInfo.RecFilePath);
+                        System.Diagnostics.Process process;
+                        if (Settings.Instance.FilePlayExe.Length == 0)
+                        {
+                            process = System.Diagnostics.Process.Start(recInfo.RecFilePath);
+                        }
+                        else
+                        {
+                            String cmdLine = Settings.Instance.FilePlayCmd;
+                            cmdLine = cmdLine.Replace("$FilePath$", recInfo.RecFilePath);
+                            process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
+
+                        }
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(ex.Message);
+                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                     }
                 }
             }
-        }
+        }        
     }
 }

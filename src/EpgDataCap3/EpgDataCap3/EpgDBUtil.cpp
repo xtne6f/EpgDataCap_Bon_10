@@ -1323,9 +1323,9 @@ DWORD CEpgDBUtil::GetEpgInfo(
 	}else if( itr->second->nextEvent != NULL && nextFlag == TRUE ){
 		if( itr->second->nextEvent->StartTimeFlag == TRUE && itr->second->nextEvent->DurationFlag == TRUE){
 			__int64 startTime = ConvertI64Time(itr->second->nextEvent->start_time);
-			__int64 endTime = GetSumTime(itr->second->nextEvent->start_time, itr->second->nextEvent->durationSec);
-			if( startTime <= nowTime64 && nowTime64 < endTime ){
-				//時間内にあるので正しいはず
+			//__int64 endTime = GetSumTime(itr->second->nextEvent->start_time, itr->second->nextEvent->durationSec);
+			if( nowTime64 <= startTime ){
+				//開始時間先にあるので正しいはず
 				this->epgInfo = new EPG_EVENT_INFO;
 				CopyEpgInfo(this->epgInfo, itr->second->nextEvent);
 				goto Err_End;
@@ -1337,7 +1337,7 @@ DWORD CEpgDBUtil::GetEpgInfo(
 			goto Err_End;
 		}
 	}
-
+	/*
 	//p/fで確認できなかったのでDBの時間的にあうもの探す
 	if( nextFlag == FALSE ){
 		//現在
@@ -1376,7 +1376,7 @@ DWORD CEpgDBUtil::GetEpgInfo(
 			}
 		}
 	}
-
+	*/
 Err_End:
 	if( this->epgInfo == NULL ){
 		UnLock();

@@ -5,62 +5,38 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type ComboBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type Button}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type ListBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <DataTemplate x:Key="HeaderTemplateArrowUp">
-            <DockPanel>
-                <TextBlock HorizontalAlignment="Center" Text="{Binding}"/>
-                <Path x:Name="arrow" StrokeThickness = "1" Fill = "gray" Data = "M 5,10 L 15,10 L 10,5 L 5,10"/>
-            </DockPanel>
-        </DataTemplate>
-        <DataTemplate x:Key="HeaderTemplateArrowDown">
-            <DockPanel>
-                <TextBlock HorizontalAlignment="Center" Text="{Binding }"/>
-                <Path x:Name="arrow" StrokeThickness = "1" Fill = "gray" Data = "M 5,5 L 10,10 L 15,5 L 5,5"/>
-            </DockPanel>
-        </DataTemplate>
-    </UserControl.Resources>
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="130" />
-        </Grid.ColumnDefinitions>
-        <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" MouseDoubleClick="listView_key_MouseDoubleClick">
-            <ListView.Resources>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="ToolTipService.ShowDuration" Value="20000" />
-                    <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
-                </Style>
-                <Style TargetType="GridViewColumnHeader">
-                    <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                </Style>
-            </ListView.Resources>
-            <ListView.View>
-                <GridView x:Name="gridView_key">
-                    <GridViewColumn Header="曜日" DisplayMemberBinding="{Binding Path=DayOfWeek}" />
-                    <GridViewColumn Header="時間" DisplayMemberBinding="{Binding Path=Time}" />
-                    <GridViewColumn Header="番組名" DisplayMemberBinding="{Binding Path=Title}" />
-                    <GridViewColumn Header="サービス名" DisplayMemberBinding="{Binding Path=StationName}" />
-                    <GridViewColumn Header="録画モード" DisplayMemberBinding="{Binding Path=RecMode}" />
-                    <GridViewColumn Header="優先度" DisplayMemberBinding="{Binding Path=Priority}" />
-                </GridView>
-            </ListView.View>
-        </ListView>
-        <StackPanel Grid.Column="1" Name="stackPanel_button">
-            <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,10" Click="button_add_Click" />
-            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />
-            <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" />
-        </StackPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="130" />
+            </Grid.ColumnDefinitions>
+            <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" MouseDoubleClick="listView_key_MouseDoubleClick">
+                <ListView.Resources>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="ToolTipService.ShowDuration" Value="20000" />
+                        <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
+                    </Style>
+                    <Style TargetType="GridViewColumnHeader">
+                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                    </Style>
+                </ListView.Resources>
+                <ListView.View>
+                    <GridView x:Name="gridView_key">
+                        <GridViewColumn Header="曜日" DisplayMemberBinding="{Binding Path=DayOfWeek}" />
+                        <GridViewColumn Header="時間" DisplayMemberBinding="{Binding Path=Time}" />
+                        <GridViewColumn Header="番組名" DisplayMemberBinding="{Binding Path=Title}" />
+                        <GridViewColumn Header="サービス名" DisplayMemberBinding="{Binding Path=StationName}" />
+                        <GridViewColumn Header="録画モード" DisplayMemberBinding="{Binding Path=RecMode}" />
+                        <GridViewColumn Header="優先度" DisplayMemberBinding="{Binding Path=Priority}" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+            <StackPanel Grid.Column="1" Name="stackPanel_button">
+                <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,10" Click="button_add_Click" Style="{StaticResource ButtonStyle1}" />
+                <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" Style="{StaticResource ButtonStyle1}" />
+                <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" Style="{StaticResource ButtonStyle1}" />
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

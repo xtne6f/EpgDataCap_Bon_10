@@ -17,9 +17,6 @@ using System.Collections;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Net;
 
 namespace EpgTimer
 {
@@ -28,11 +25,15 @@ namespace EpgTimer
     /// </summary>
     public partial class ReserveView : UserControl
     {
-        private CtrlCmdUtil cmd = EpgTimerDef.Instance.CtrlCmd;
-        private List<ReserveItem> resultList = new List<ReserveItem>();
+        private bool RedrawReserve = true;
+        private List<ReserveItem> reserveList = new List<ReserveItem>();
 
-        GridViewColumn _lastHeaderClicked = null;
+        string _lastHeaderClicked = null;
         ListSortDirection _lastDirection = ListSortDirection.Ascending;
+        string _lastHeaderClicked2 = null;
+        ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
+
+        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
         public ReserveView()
         {
@@ -68,11 +69,17 @@ namespace EpgTimer
                 {
                     gridView_reserve.Columns[6].Width = Settings.Instance.ResColumnWidth6;
                 }
+                if (Settings.Instance.ResColumnWidth7 != 0)
+                {
+                    gridView_reserve.Columns[7].Width = Settings.Instance.ResColumnWidth7;
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
+
 
         public void SaveSize()
         {
@@ -85,109 +92,155 @@ namespace EpgTimer
                 Settings.Instance.ResColumnWidth4 = gridView_reserve.Columns[4].Width;
                 Settings.Instance.ResColumnWidth5 = gridView_reserve.Columns[5].Width;
                 Settings.Instance.ResColumnWidth6 = gridView_reserve.Columns[6].Width;
+                Settings.Instance.ResColumnWidth7 = gridView_reserve.Columns[7].Width;
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
-        public bool GetNextReserve(ref ReserveData item)
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            ReserveItem next = null;
-            foreach (ReserveItem info in resultList)
+            if (RedrawReserve == true && this.IsVisible == true)
             {
-                if (info.ReserveInfo.RecSetting.RecMode != 5)
+                if (ReDrawReserveData() == true)
                 {
-                    if (next == null)
+                    RedrawReserve = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 予約情報の更新通知
+        /// </summary>
+        public void UpdateReserveData()
+        {
+            RedrawReserve = true;
+            if (this.IsVisible == true)
+            {
+                if (ReDrawReserveData() == true)
+                {
+                    RedrawReserve = false;
+                }
+            }
+        }
+
+        private bool ReDrawReserveData()
+        {
+            try
+            {
+                ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
+                if (err == ErrCode.CMD_ERR_CONNECT)
+                {
+                    this.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        next = info;
-                    }
-                    else
+                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                    }), null); 
+                    return false;
+                }
+                if (err == ErrCode.CMD_ERR_TIMEOUT)
+                {
+                    this.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        if (next.ReserveInfo.StartTime > info.ReserveInfo.StartTime)
+                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                    }), null);
+                    return false;
+                }
+                if (err != ErrCode.CMD_SUCCESS)
+                {
+                    this.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        MessageBox.Show("情報の取得でエラーが発生しました。");
+                    }), null);
+                    return false;
+                }
+
+                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_reserve.DataContext);
+                if (dataView != null)
+                {
+                    dataView.SortDescriptions.Clear();
+                    dataView.Refresh();
+                }
+                listView_reserve.DataContext = null;
+                reserveList.Clear();
+
+                foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
+                {
+                    ReserveItem item = new ReserveItem(info);
+                    reserveList.Add(item);
+                }
+
+                listView_reserve.DataContext = reserveList;
+                if (_lastHeaderClicked != null)
+                {
+                    //string header = ((Binding)_lastHeaderClicked.DisplayMemberBinding).Path.Path;
+                    Sort(_lastHeaderClicked, _lastDirection);
+                }
+                else
+                {
+                    bool sort = false;
+                    foreach (GridViewColumn info in gridView_reserve.Columns)
+                    {
+                        string header = ((Binding)info.DisplayMemberBinding).Path.Path;
+                        if (String.Compare(header, Settings.Instance.ResColumnHead, true) == 0)
                         {
-                            next = info;
+                            Sort(header, Settings.Instance.ResSortDirection);
+
+                            _lastHeaderClicked = header;
+                            _lastDirection = Settings.Instance.ResSortDirection;
+
+                            sort = true;
+                            break;
                         }
+                    }
+                    if (gridView_reserve.Columns.Count > 0 && sort == false)
+                    {
+                        string header = ((Binding)gridView_reserve.Columns[0].DisplayMemberBinding).Path.Path;
+                        Sort(header, _lastDirection);
+                        _lastHeaderClicked = header;
                     }
                 }
             }
-            if (next == null)
+            catch (Exception ex)
             {
+                this.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                }), null);
                 return false;
             }
-            else
-            {
-                item = next.ReserveInfo;
-                return true;
-            }
+            return true;
         }
 
-        public void ReloadReserve()
+        private void Sort(string sortBy, ListSortDirection direction)
         {
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_reserve.DataContext);
-            if (dataView != null)
+            try
             {
+                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_reserve.DataContext);
+
                 dataView.SortDescriptions.Clear();
-                dataView.Refresh();
-            }
-            listView_reserve.DataContext = null;
-            resultList.Clear();
 
-            List<ReserveData> list = new List<ReserveData>();
-            uint err = cmd.SendEnumReserve(ref list);
-            foreach (ReserveData info in list)
-            {
-                ReserveItem item = new ReserveItem(info);
-                resultList.Add(item);
-            }
-
-            listView_reserve.DataContext = resultList;
-            if (_lastHeaderClicked != null)
-            {
-                string header = ((Binding)_lastHeaderClicked.DisplayMemberBinding).Path.Path;
-                Sort(header, _lastDirection);
-            }
-            else
-            {
-                bool sort = false;
-                foreach (GridViewColumn info in gridView_reserve.Columns)
+                SortDescription sd = new SortDescription(sortBy, direction);
+                dataView.SortDescriptions.Add(sd);
+                if (_lastHeaderClicked2 != null)
                 {
-                    string header = ((Binding)info.DisplayMemberBinding).Path.Path;
-                    if( String.Compare(header, Settings.Instance.ResColumnHead, true ) == 0 ){
-                        Sort(header, Settings.Instance.ResSortDirection);
-
-                        if (Settings.Instance.ResSortDirection == ListSortDirection.Ascending)
-                        {
-                            info.HeaderTemplate =
-                              Resources["HeaderTemplateArrowUp"] as DataTemplate;
-                        }
-                        else
-                        {
-                            info.HeaderTemplate =
-                              Resources["HeaderTemplateArrowDown"] as DataTemplate;
-                        }
-
-                        _lastHeaderClicked = info;
-                        _lastDirection = Settings.Instance.ResSortDirection;
-
-                        sort = true;
-                        break;
+                    if (String.Compare(sortBy, _lastHeaderClicked2) != 0)
+                    {
+                        SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
+                        dataView.SortDescriptions.Add(sd2);
                     }
                 }
-                if (gridView_reserve.Columns.Count > 0 && sort == false)
-                {
-                    string header = ((Binding)gridView_reserve.Columns[0].DisplayMemberBinding).Path.Path;
-                    Sort(header, _lastDirection);
-                    gridView_reserve.Columns[0].HeaderTemplate =
-                      Resources["HeaderTemplateArrowUp"] as DataTemplate;
-                    _lastHeaderClicked = gridView_reserve.Columns[0];
-                }
-            }
-        }
+                dataView.Refresh();
 
-        public void GetReserveList(ref List<ReserveItem> reserveList)
-        {
-            reserveList = this.resultList;
+                Settings.Instance.ResColumnHead = sortBy;
+                Settings.Instance.ResSortDirection = direction;
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
         }
 
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
@@ -199,9 +252,12 @@ namespace EpgTimer
             {
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
-                    if (headerClicked.Column != _lastHeaderClicked)
+                    string header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
+                    if (String.Compare( header, _lastHeaderClicked) != 0 )
                     {
                         direction = ListSortDirection.Ascending;
+                        _lastHeaderClicked2 = _lastHeaderClicked;
+                        _lastDirection2 = _lastDirection;
                     }
                     else
                     {
@@ -215,249 +271,197 @@ namespace EpgTimer
                         }
                     }
 
-                    string header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
                     Sort(header, direction);
 
-                    if (direction == ListSortDirection.Ascending)
-                    {
-                        headerClicked.Column.HeaderTemplate =
-                          Resources["HeaderTemplateArrowUp"] as DataTemplate;
-                    }
-                    else
-                    {
-                        headerClicked.Column.HeaderTemplate =
-                          Resources["HeaderTemplateArrowDown"] as DataTemplate;
-                    }
-
-                    // Remove arrow from previously sorted header
-                    if (_lastHeaderClicked != null && _lastHeaderClicked != headerClicked.Column)
-                    {
-                        _lastHeaderClicked.HeaderTemplate = null;
-                    }
-
-
-                    _lastHeaderClicked = headerClicked.Column;
+                    _lastHeaderClicked = header;
                     _lastDirection = direction;
                 }
-            }
-
-        }
-
-        private void Sort(string sortBy, ListSortDirection direction)
-        {
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_reserve.DataContext);
-
-            dataView.SortDescriptions.Clear();
-
-            SortDescription sd = new SortDescription(sortBy, direction);
-            dataView.SortDescriptions.Add(sd);
-            dataView.Refresh();
-
-            Settings.Instance.ResColumnHead = sortBy;
-            Settings.Instance.ResSortDirection = direction;
-        }
-
-        private void button_del_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_reserve.SelectedItems.Count > 0)
-            {
-                List<UInt32> reserveIDList = new List<uint>();
-                foreach (ReserveItem info in listView_reserve.SelectedItems)
-                {
-                    reserveIDList.Add(info.ReserveInfo.ReserveID);
-                }
-                cmd.SendDelReserve(reserveIDList);
-            }
-        }
-
-        private void button_no_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_reserve.SelectedItems.Count > 0)
-            {
-                List<ReserveData> reserveList = new List<ReserveData>();
-                foreach (ReserveItem info in listView_reserve.SelectedItems)
-                {
-                    info.ReserveInfo.RecSetting.RecMode = 0x05;
-                    reserveList.Add(info.ReserveInfo);
-                }
-                cmd.SendChgReserve(reserveList);
-            }
-        }
-
-        private void button_change_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_reserve.SelectedItem != null)
-            {
-                ChangeReserveWindow dlg = new ChangeReserveWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                ReserveItem item = listView_reserve.SelectedItem as ReserveItem;
-                dlg.SetReserve(item.ReserveInfo);
-                if (item.ReserveInfo.EventID != 0xFFFF)
-                {
-                    EpgEventInfo eventInfo = new EpgEventInfo();
-                    UInt64 pgID = ((UInt64)item.ReserveInfo.OriginalNetworkID) << 48 |
-                        ((UInt64)item.ReserveInfo.TransportStreamID) << 32 |
-                        ((UInt64)item.ReserveInfo.ServiceID) << 16 |
-                        (UInt64)item.ReserveInfo.EventID;
-                    if (cmd.SendGetPgInfo(pgID, ref eventInfo) == 1)
-                    {
-                        dlg.SetEpgEventInfo(eventInfo);
-                    }
-                }
-                if (dlg.ShowDialog() == true)
-                {
-                    if (dlg.DeleteEnd == false)
-                    {
-                        List<ReserveData> addList = new List<ReserveData>();
-                        addList.Add(dlg.setInfo);
-                        cmd.SendChgReserve(addList);
-                    }
-                    else
-                    {
-                        List<UInt32> deleteList = new List<uint>();
-                        deleteList.Add(item.ReserveInfo.ReserveID);
-                        cmd.SendDelReserve(deleteList);
-                    }
-                }
-            }
-        }
-
-        private void button_add_manual_Click(object sender, RoutedEventArgs e)
-        {
-            ChangeReserveWindow dlg = new ChangeReserveWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.AddReserveMode(true);
-            if (dlg.ShowDialog() == true)
-            {
-                List<ReserveData> addList = new List<ReserveData>();
-                addList.Add(dlg.setInfo);
-                cmd.SendAddReserve(addList);
             }
         }
 
         private void listView_reserve_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (listView_reserve.SelectedItem != null)
-            {
-                ChangeReserveWindow dlg = new ChangeReserveWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                ReserveItem item = listView_reserve.SelectedItem as ReserveItem;
-                dlg.SetReserve(item.ReserveInfo);
-                if (item.ReserveInfo.EventID != 0xFFFF)
-                {
-                    EpgEventInfo eventInfo = new EpgEventInfo();
-                    UInt64 pgID = ((UInt64)item.ReserveInfo.OriginalNetworkID) << 48 |
-                        ((UInt64)item.ReserveInfo.TransportStreamID) << 32 |
-                        ((UInt64)item.ReserveInfo.ServiceID) << 16 |
-                        (UInt64)item.ReserveInfo.EventID;
-                    if (cmd.SendGetPgInfo(pgID, ref eventInfo) == 1)
-                    {
-                        dlg.SetEpgEventInfo(eventInfo);
-                    }
-                } 
-                if (dlg.ShowDialog() == true)
-                {
-                    if (dlg.DeleteEnd == false)
-                    {
-                        List<ReserveData> addList = new List<ReserveData>();
-                        addList.Add(dlg.setInfo);
-                        cmd.SendChgReserve(addList);
-                    }
-                    else
-                    {
-                        List<UInt32> deleteList = new List<uint>();
-                        deleteList.Add(item.ReserveInfo.ReserveID);
-                        cmd.SendDelReserve(deleteList);
-                    }
-                }
-            }
+            ChangeReserve();
         }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        private void button_change_Click(object sender, RoutedEventArgs e)
         {
-            if (resultList.Count == 0)
+            ChangeReserve();
+        }
+
+        private void ChangeReserve()
+        {
+            if (listView_reserve.SelectedItem != null)
             {
-                ReloadReserve();
+                ReserveItem item = listView_reserve.SelectedItem as ReserveItem;
+                ChgReserveWindow dlg = new ChgReserveWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                dlg.SetReserveInfo(item.ReserveInfo);
+                if (dlg.ShowDialog() == true)
+                {
+                }
             }
         }
 
         private void recmode_Click(object sender, RoutedEventArgs e)
         {
-            byte recMode = 0;
-            if (sender == recmode_all)
+            try
             {
-                recMode = 0;
-            }
-            else if (sender == recmode_only)
-            {
-                recMode = 1;
-            }
-            else if (sender == recmode_all_nodec)
-            {
-                recMode = 2;
-            }
-            else if (sender == recmode_only_nodec)
-            {
-                recMode = 3;
-            }
-            else if (sender == recmode_view)
-            {
-                recMode = 4;
-            }
-            else
-            {
-                return;
-            }
-
-            if (listView_reserve.SelectedItems.Count > 0)
-            {
-                List<ReserveData> reserveList = new List<ReserveData>();
-                foreach (ReserveItem info in listView_reserve.SelectedItems)
+                List<ReserveData> list = new List<ReserveData>();
+                foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
-                    info.ReserveInfo.RecSetting.RecMode = recMode;
-                    reserveList.Add(info.ReserveInfo);
+                    ReserveData reserveInfo = item.ReserveInfo;
+
+                    byte recMode = 0;
+                    if (sender == recmode_all)
+                    {
+                        recMode = 0;
+                    }
+                    else if (sender == recmode_only)
+                    {
+                        recMode = 1;
+                    }
+                    else if (sender == recmode_all_nodec)
+                    {
+                        recMode = 2;
+                    }
+                    else if (sender == recmode_only_nodec)
+                    {
+                        recMode = 3;
+                    }
+                    else if (sender == recmode_view)
+                    {
+                        recMode = 4;
+                    }
+                    else if (sender == recmode_no)
+                    {
+                        recMode = 5;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                    reserveInfo.RecSetting.RecMode = recMode;
+
+                    list.Add(reserveInfo);
                 }
-                cmd.SendChgReserve(reserveList);
+                if (list.Count > 0)
+                {
+                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                    if (err == ErrCode.CMD_ERR_CONNECT)
+                    {
+                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                    }
+                    if (err == ErrCode.CMD_ERR_TIMEOUT)
+                    {
+                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                    }
+                    if (err != ErrCode.CMD_SUCCESS)
+                    {
+                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void button_no_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                List<ReserveData> list = new List<ReserveData>();
+                foreach (ReserveItem item in listView_reserve.SelectedItems)
+                {
+                    ReserveData reserveInfo = item.ReserveInfo;
+
+                    reserveInfo.RecSetting.RecMode = 5;
+
+                    list.Add(reserveInfo);
+                }
+                if (list.Count > 0)
+                {
+                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                    if (err == ErrCode.CMD_ERR_CONNECT)
+                    {
+                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                    }
+                    if (err == ErrCode.CMD_ERR_TIMEOUT)
+                    {
+                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                    }
+                    if (err != ErrCode.CMD_SUCCESS)
+                    {
+                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
         private void priority_Click(object sender, RoutedEventArgs e)
         {
-            byte priority = 1;
-            if (sender == priority_1)
+            try
             {
-                priority = 1;
-            }
-            else if (sender == priority_2)
-            {
-                priority = 2;
-            }
-            else if (sender == priority_3)
-            {
-                priority = 3;
-            }
-            else if (sender == priority_4)
-            {
-                priority = 4;
-            }
-            else if (sender == priority_5)
-            {
-                priority = 5;
-            }
-            else
-            {
-                return;
-            }
-
-            if (listView_reserve.SelectedItems.Count > 0)
-            {
-                List<ReserveData> reserveList = new List<ReserveData>();
-                foreach (ReserveItem info in listView_reserve.SelectedItems)
+                List<ReserveData> list = new List<ReserveData>();
+                foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
-                    info.ReserveInfo.RecSetting.Priority = priority;
-                    reserveList.Add(info.ReserveInfo);
+                    ReserveData reserveInfo = item.ReserveInfo;
+
+                    byte priority = 1;
+                    if (sender == priority_1)
+                    {
+                        priority = 1;
+                    }
+                    else if (sender == priority_2)
+                    {
+                        priority = 2;
+                    }
+                    else if (sender == priority_3)
+                    {
+                        priority = 3;
+                    }
+                    else if (sender == priority_4)
+                    {
+                        priority = 4;
+                    }
+                    else if (sender == priority_5)
+                    {
+                        priority = 5;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                    reserveInfo.RecSetting.Priority = priority;
+
+                    list.Add(reserveInfo);
                 }
-                cmd.SendChgReserve(reserveList);
+                if (list.Count > 0)
+                {
+                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                    if (err == ErrCode.CMD_ERR_CONNECT)
+                    {
+                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                    }
+                    if (err == ErrCode.CMD_ERR_TIMEOUT)
+                    {
+                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                    }
+                    if (err != ErrCode.CMD_SUCCESS)
+                    {
+                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -465,434 +469,84 @@ namespace EpgTimer
         {
             if (listView_reserve.SelectedItem != null)
             {
-                
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetViewMode(1);
 
-                SearchKeyInfo key = new SearchKeyInfo();
+                EpgSearchKeyInfo key = new EpgSearchKeyInfo();
 
                 ReserveItem item = listView_reserve.SelectedItem as ReserveItem;
 
-                key.AndKey = item.ReserveInfo.Title;
+                key.andKey = item.ReserveInfo.Title;
                 Int64 sidKey = ((Int64)item.ReserveInfo.OriginalNetworkID) << 32 | ((Int64)item.ReserveInfo.TransportStreamID) << 16 | ((Int64)item.ReserveInfo.ServiceID);
-                key.ServiceList.Add(sidKey);
-                try
-                {
-                    dlg.SetDefSearchKey(key);
-                    dlg.ShowDialog();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
+                key.serviceList.Add(sidKey);
+
+                dlg.SetSearchDefKey(key);
+                dlg.ShowDialog();
             }
         }
 
         private void timeShiftPlay_Click(object sender, RoutedEventArgs e)
         {
-            if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 0)
-            {
-                MessageBox.Show("追っかけ再生を行うには、動作設定でネットワーク接続を許可する必要があります。");
-                return;
-            }
-            if (Settings.Instance.TvTestExe.Length == 0)
-            {
-                MessageBox.Show("TVTest連携でexeのパスが設定されていません。");
-                return;
-            }
             if (listView_reserve.SelectedItem != null)
             {
                 ReserveItem info = listView_reserve.SelectedItem as ReserveItem;
-                NWPlayTimeShiftInfo playInfo = new NWPlayTimeShiftInfo();
-                UInt32 err = cmd.SendNwTimeShiftOpen(info.ReserveInfo.ReserveID, ref playInfo);
-                if (err == 1)
-                {
-                    try
-                    {
-                        bool open = false;
-                        CtrlCmdUtil tvTestCmd = new CtrlCmdUtil();
-                        tvTestCmd.SetConnectTimeOut(15 * 1000);
-                        foreach (Process p in Process.GetProcesses())
-                        {
-                            if (String.Compare(p.ProcessName, "tvtest", true) == 0)
-                            {
-                                open = true;
-                                if (p.MainWindowHandle != IntPtr.Zero)
-                                {
-                                    tvTestCmd.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + p.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + p.Id.ToString());
-                                    WakeupWindow(p.MainWindowHandle);
-                                }
-                            }
-                        }
-                        if (open == false)
-                        {
-                            System.Diagnostics.Process process;
-                            String cmdLine = "";
-                            cmdLine += Settings.Instance.TvTestCmd;
-                            if (cmdLine.IndexOf("/d") < 0)
-                            {
-                                if (Settings.Instance.TvTestCmd.Length > 0)
-                                {
-                                    if (cmdLine.Length > 0)
-                                    {
-                                        cmdLine += " ";
-                                    }
-                                }
-                                if (Settings.Instance.NwTvModeUDP == true)
-                                {
-                                    cmdLine = "/d BonDriver_UDP.dll";
-                                }
-                                else if (Settings.Instance.NwTvModeTCP)
-                                {
-                                    cmdLine = "/d BonDriver_TCP.dll";
-                                }
-                            }
-                            process = System.Diagnostics.Process.Start(Settings.Instance.TvTestExe, cmdLine);
-                            tvTestCmd.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + process.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + process.Id.ToString());
-                        }
-
-                        TVTestStreamingInfo sendInfo = new TVTestStreamingInfo();
-                        sendInfo.enableMode = 1;
-                        sendInfo.ctrlID = playInfo.ctrlID;
-                        sendInfo.serverIP = 0x7F000001;
-
-                        string hostname = Dns.GetHostName();
-                        IPAddress[] adrList = Dns.GetHostAddresses(hostname);
-                        foreach (IPAddress address in adrList)
-                        {
-                            if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                            {
-                                UInt32 ip = 0;
-                                Int32 shift = 24;
-                                foreach (string word in address.ToString().Split('.'))
-                                {
-                                    ip |= Convert.ToUInt32(word) << shift;
-                                    shift -= 8;
-                                }
-                                sendInfo.serverIP = ip;
-                                break;
-                            }
-                        }
-
-                        sendInfo.serverPort = (UInt32)IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath);
-                        sendInfo.filePath = playInfo.filePath;
-                        if (Settings.Instance.NwTvModeUDP == true)
-                        {
-                            sendInfo.udpSend = 1;
-                        }
-                        if (Settings.Instance.NwTvModeTCP == true)
-                        {
-                            sendInfo.tcpSend = 1;
-                        }
-                        if (tvTestCmd.SendViewSetStreamingInfo(sendInfo) != 1)
-                        {
-                            System.Threading.Thread.Sleep(5 * 1000);
-                            tvTestCmd.SendViewSetStreamingInfo(sendInfo);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
-                }
-                else if (err == 205)
-                {
-                    MessageBox.Show("サーバーに接続できませんでした");
-                }
-                else
-                {
-                    MessageBox.Show("まだ録画が開始されていません");
-                }
+                CommonManager.Instance.TVTestCtrl.StartTimeShift(info.ReserveInfo.ReserveID);
             }
         }
-        // 外部プロセスのウィンドウを起動する
-        public static void WakeupWindow(IntPtr hWnd)
+
+        private void button_del_Click(object sender, RoutedEventArgs e)
         {
-            // メイン・ウィンドウが最小化されていれば元に戻す
-            if (IsIconic(hWnd))
+            try
             {
-                ShowWindowAsync(hWnd, SW_RESTORE);
-            }
+                List<UInt32> list = new List<UInt32>();
+                foreach (ReserveItem item in listView_reserve.SelectedItems)
+                {
+                    ReserveData reserveInfo = item.ReserveInfo;
 
-            // メイン・ウィンドウを最前面に表示する
-            SetForegroundWindow(hWnd);
+                    list.Add(reserveInfo.ReserveID);
+                }
+                if (list.Count > 0)
+                {
+                    ErrCode err = (ErrCode)cmd.SendDelReserve(list);
+                    if (err == ErrCode.CMD_ERR_CONNECT)
+                    {
+                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                    }
+                    if (err == ErrCode.CMD_ERR_TIMEOUT)
+                    {
+                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                    }
+                    if (err != ErrCode.CMD_SUCCESS)
+                    {
+                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
         }
-        // 外部プロセスのメイン・ウィンドウを起動するためのWin32 API
-        [DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-        [DllImport("user32.dll")]
-        private static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
-        [DllImport("user32.dll")]
-        private static extern bool IsIconic(IntPtr hWnd);
-        // ShowWindowAsync関数のパラメータに渡す定義値
-        private const int SW_RESTORE = 9;  // 画面を元の大きさに戻す
+
+        private void button_add_manual_Click(object sender, RoutedEventArgs e)
+        {
+            ChgReserveWindow dlg = new ChgReserveWindow();
+            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            dlg.AddReserveMode(true);
+            dlg.ShowDialog();
+        }
+
+        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (RedrawReserve == true && this.IsVisible == true)
+            {
+                if (ReDrawReserveData() == true)
+                {
+                    RedrawReserve = false;
+                }
+            }
+        }
+
     }
-
-    public class ReserveItem
-    {
-        public ReserveItem(ReserveData item)
-        {
-            this.ReserveInfo = item;
-        }
-        public ReserveData ReserveInfo
-        {
-            get;
-            set;
-        }
-        public String EventName
-        {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.Title;
-                }
-                return view;
-            }
-        }
-        public String ServiceName
-        {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.StationName;
-                }
-                return view;
-            }
-        }
-        public String StartTime
-        {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                    view += endTime.ToString("HH:mm:ss");
-                }
-                return view;
-            }
-        }
-        public String RecMode
-        {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    switch (ReserveInfo.RecSetting.RecMode)
-                    {
-                        case 0:
-                            view = "全サービス";
-                            break;
-                        case 1:
-                            view = "指定サービス";
-                            break;
-                        case 2:
-                            view = "全サービス（デコード処理なし）";
-                            break;
-                        case 3:
-                            view = "指定サービス（デコード処理なし）";
-                            break;
-                        case 4:
-                            view = "視聴";
-                            break;
-                        case 5:
-                            view = "無効";
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                return view;
-            }
-        }
-        public String Priority
-        {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.RecSetting.Priority.ToString();
-                }
-                return view;
-            }
-        }
-        public String Tuijyu
-        {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.TuijyuuFlag == 0)
-                    {
-                        view = "しない";
-                    }
-                    else if (ReserveInfo.RecSetting.TuijyuuFlag == 1)
-                    {
-                        view = "する";
-                    }
-                }
-                return view;
-            }
-        }
-        public String Pittari
-        {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.PittariFlag == 0)
-                    {
-                        view = "しない";
-                    }
-                    else if (ReserveInfo.RecSetting.PittariFlag == 1)
-                    {
-                        view = "する";
-                    }
-                }
-                return view;
-            }
-        }
-        public SolidColorBrush BackColor
-        {
-            get
-            {
-                SolidColorBrush color = Brushes.White;
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.RecMode == 5)
-                    {
-                        color = Brushes.DarkGray;
-                    }
-                    else if (ReserveInfo.OverlapMode == 2)
-                    {
-                        color = Brushes.Red;
-                    }
-                    else if (ReserveInfo.OverlapMode == 1)
-                    {
-                        color = Brushes.Yellow;
-                    }
-                }
-                return color;
-            }
-        }
-        public TextBlock ToolTipView
-        {
-            get
-            {
-                if (Settings.Instance.NoToolTip == true)
-                {
-                    return null;
-                }
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                    view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-
-                    view += ServiceName + "\r\n";
-                    view += EventName + "\r\n\r\n";
-                    view += "録画モード : " + RecMode + "\r\n";
-                    view += "優先度 : " + Priority + "\r\n";
-                    view += "追従 : " + Tuijyu + "\r\n";
-                    //view += "ぴったり（？） : " + Pittari + "\r\n";
-                    if ((ReserveInfo.RecSetting.ServiceMode & 0x01) == 0)
-                    {
-                        view += "指定サービス対象データ : デフォルト\r\n";
-                    }
-                    else
-                    {
-                        view += "指定サービス対象データ : ";
-                        if ((ReserveInfo.RecSetting.ServiceMode & 0x10) > 0)
-                        {
-                            view += "字幕含む ";
-                        }
-                        if ((ReserveInfo.RecSetting.ServiceMode & 0x20) > 0)
-                        {
-                            view += "データカルーセル含む";
-                        }
-                        view += "\r\n";
-                    }
-
-                    view += "録画実行bat : " + ReserveInfo.RecSetting.BatFilePath + "\r\n";
-
-                    if (ReserveInfo.RecSetting.RecFolderList.Count == 0)
-                    {
-                        view += "録画フォルダ : デフォルト\r\n";
-                    }
-                    else
-                    {
-                        view += "録画フォルダ : \r\n";
-                        foreach (RecFileSetInfo info in ReserveInfo.RecSetting.RecFolderList)
-                        {
-                            view += info.RecFolder + " (WritePlugIn:" + info.WritePlugIn + ")\r\n";
-                        }
-                    }
-
-                    if (ReserveInfo.RecSetting.UseMargineFlag == 0)
-                    {
-                        view += "録画マージン : デフォルト\r\n";
-                    }
-                    else
-                    {
-                        view += "録画マージン : 開始 " + ReserveInfo.RecSetting.StartMargine.ToString() + 
-                            " 終了 " + ReserveInfo.RecSetting.EndMargine.ToString() + "\r\n";
-                    }
-
-                    if (ReserveInfo.RecSetting.SuspendMode == 0)
-                    {
-                        view += "録画後動作 : デフォルト\r\n";
-                    }
-                    else
-                    {
-                        view += "録画後動作 : ";
-                        switch (ReserveInfo.RecSetting.SuspendMode)
-                        {
-                            case 1:
-                                view += "スタンバイ";
-                                break;
-                            case 2:
-                                view += "休止";
-                                break;
-                            case 3:
-                                view += "シャットダウン";
-                                break;
-                            case 4:
-                                view += "何もしない";
-                                break;
-                        }
-                        if (ReserveInfo.RecSetting.RebootFlag == 1)
-                        {
-                            view += " 復帰後再起動する";
-                        }
-                        view += "\r\n";
-                    }
-
-                }
-                view += "OriginalNetworkID : " + ReserveInfo.OriginalNetworkID.ToString() + " (0x" + ReserveInfo.OriginalNetworkID.ToString("X4") + ")\r\n";
-                view += "TransportStreamID : " + ReserveInfo.TransportStreamID.ToString() + " (0x" + ReserveInfo.TransportStreamID.ToString("X4") + ")\r\n";
-                view += "ServiceID : " + ReserveInfo.ServiceID.ToString() + " (0x" + ReserveInfo.ServiceID.ToString("X4") + ")\r\n";
-                view += "EventID : " + ReserveInfo.EventID.ToString() + " (0x" + ReserveInfo.EventID.ToString("X4") + ")\r\n";
-
-
-                TextBlock block = new TextBlock();
-                block.Text = view;
-                block.MaxWidth = 400;
-                block.TextWrapping = TextWrapping.Wrap;
-                return block;
-            }
-        }
-    }
-
-
 }

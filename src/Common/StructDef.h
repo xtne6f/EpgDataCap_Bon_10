@@ -869,6 +869,66 @@ typedef struct _NWPLAY_TIMESHIFT_INFO{
 	};
 } NWPLAY_TIMESHIFT_INFO;
 
+//情報通知用パラメーター
+typedef struct _NOTIFY_SRV_INFO{
+	DWORD notifyID;		//通知情報の種類
+	SYSTEMTIME time;	//通知状態の発生した時間
+	DWORD param1;		//パラメーター１（種類によって内容変更）
+	DWORD param2;		//パラメーター２（種類によって内容変更）
+	DWORD param3;		//パラメーター３（種類によって内容変更）
+	wstring param4;		//パラメーター４（種類によって内容変更）
+	wstring param5;		//パラメーター５（種類によって内容変更）
+	wstring param6;		//パラメーター６（種類によって内容変更）
+	//=オペレーターの処理
+	_NOTIFY_SRV_INFO(void){
+		notifyID= 0;
+		param1 = 0;
+		param2 = 0;
+		param3 = 0;
+	};
+	_NOTIFY_SRV_INFO & operator= (const _NOTIFY_SRV_INFO & o) {
+		notifyID = o.notifyID;
+		time = o.time;
+		param1 = o.param1;
+		param2 = o.param2;
+		param3 = o.param3;
+		param4 = o.param4;
+		param5 = o.param5;
+		param6 = o.param6;
+		return *this;
+	};
+} NOTIFY_SRV_INFO;
+
+
+//連携サーバー情報
+typedef struct _COOP_SERVER_INFO{
+	wstring hostName;	//アドレス
+	WORD srvPort;		//サーバーアプリ待ち受けポート
+	BOOL wolFlag;		//WOLによる起動を行う
+	BYTE mac[6];		//サーバーMACアドレス
+	WORD magicSendPort;	//マジックパケット送信用ポート（0でLAN内ブロードキャスト、0以外でWANへの送信）
+	BYTE suspendMode;	//登録後のサスペンド動作
+	//=オペレーターの処理
+	_COOP_SERVER_INFO(void){
+		hostName= L"";
+		srvPort = 0;
+		wolFlag = FALSE;
+		memset(mac, 0, 6);
+		magicSendPort = 0;
+		suspendMode = 0;
+	};
+	_COOP_SERVER_INFO & operator= (const _COOP_SERVER_INFO & o) {
+		hostName= o.hostName;
+		srvPort = o.srvPort;
+		wolFlag = o.wolFlag;
+		memcpy(mac, o.mac, 6);
+		magicSendPort = o.magicSendPort;
+		suspendMode = o.suspendMode;
+		return *this;
+	};
+} COOP_SERVER_INFO;
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用
 typedef struct _OLD_RESERVE_DATA{

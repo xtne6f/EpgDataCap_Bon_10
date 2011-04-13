@@ -99,6 +99,8 @@ BOOL CWriteTSFile::StartSave(
 	if( Lock() == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
+	exceptionErr = FALSE;
+
 	if( saveFolder->size() == 0 ){
 		UnLock();
 		return FALSE;
@@ -282,6 +284,10 @@ BOOL CWriteTSFile::EndSave()
 	}
 	this->fileList.clear();
 
+	if(exceptionErr == TRUE ){
+		ret = FALSE;
+	}
+
 	UnLock();
 	return ret;
 }
@@ -328,62 +334,71 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 			//キャンセルされた
 			break;
 		}
-
 		//バッファからデータ取り出し
 		TS_DATA* data = NULL;
-		if( WaitForSingleObject( sys->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
-			if( sys->TSBuff.size() != 0 ){
-				data = sys->TSBuff[0];
-				sys->TSBuff.erase( sys->TSBuff.begin() );
+		try{
+			if( WaitForSingleObject( sys->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
+				if( sys->TSBuff.size() != 0 ){
+					data = sys->TSBuff[0];
+					sys->TSBuff.erase( sys->TSBuff.begin() );
+				}
+				if( sys->buffLockEvent != NULL ){
+					SetEvent(sys->buffLockEvent);
+				}
+			}else{
+				Sleep(10);
+				continue ;
 			}
-			if( sys->buffLockEvent != NULL ){
-				SetEvent(sys->buffLockEvent);
-			}
-		}else{
-			Sleep(10);
+		}catch(...){
+			_OutputDebugString(L"★★CWriteTSFile::OutThread Exception1");
+			sys->exceptionErr = TRUE;
 			continue ;
 		}
 
 		if( data != NULL ){
 			for( size_t i=0; i<sys->fileList.size(); i++ ){
-				if( sys->fileList[i]->writeUtil != NULL ){
-					DWORD write = 0;
-					if( sys->fileList[i]->writeUtil->AddTSBuff( data->data, data->size, &write) == FALSE ){
-						//空きがなくなった
-						sys->writeTotalSize = -1;
-						sys->fileList[i]->writeUtil->StopSave();
+				try{
+					if( sys->fileList[i]->writeUtil != NULL ){
+						DWORD write = 0;
+						if( sys->fileList[i]->writeUtil->AddTSBuff( data->data, data->size, &write) == FALSE ){
+							//空きがなくなった
+							sys->writeTotalSize = -1;
+							sys->fileList[i]->writeUtil->StopSave();
 
-						if( sys->fileList[i]->freeChk == TRUE ){
-							//次の空きを探す
-							wstring freeFolderPath = L"";
-							if( sys->GetFreeFolder(200*1024*1024, freeFolderPath) == TRUE ){
-								wstring recFilePath = freeFolderPath;
-								recFilePath += L"\\";
-								recFilePath += sys->fileList[i]->recFileName;
+							if( sys->fileList[i]->freeChk == TRUE ){
+								//次の空きを探す
+								wstring freeFolderPath = L"";
+								if( sys->GetFreeFolder(200*1024*1024, freeFolderPath) == TRUE ){
+									wstring recFilePath = freeFolderPath;
+									recFilePath += L"\\";
+									recFilePath += sys->fileList[i]->recFileName;
 
-								//開始
-								if( sys->fileList[i]->writeUtil->StartSave(recFilePath.c_str(), sys->fileList[i]->overWriteFlag, 0) == FALSE ){
-									//失敗したので終わり
-									SAFE_DELETE(sys->fileList[i]->writeUtil);
-								}else{
-									WCHAR saveFilePath[512] = L"";
-									DWORD saveFilePathSize = 512;
-									sys->fileList[i]->writeUtil->GetSaveFilePath(saveFilePath, &saveFilePathSize);
-									sys->fileList[i]->subRecPath.push_back(saveFilePath);
-									sys->subRecFlag = TRUE;
+									//開始
+									if( sys->fileList[i]->writeUtil->StartSave(recFilePath.c_str(), sys->fileList[i]->overWriteFlag, 0) == FALSE ){
+										//失敗したので終わり
+										SAFE_DELETE(sys->fileList[i]->writeUtil);
+									}else{
+										WCHAR saveFilePath[512] = L"";
+										DWORD saveFilePathSize = 512;
+										sys->fileList[i]->writeUtil->GetSaveFilePath(saveFilePath, &saveFilePathSize);
+										sys->fileList[i]->subRecPath.push_back(saveFilePath);
+										sys->subRecFlag = TRUE;
 
-									if( data->size > write ){
-										sys->fileList[i]->writeUtil->AddTSBuff( data->data+write, data->size-write, &write);
+										if( data->size > write ){
+											sys->fileList[i]->writeUtil->AddTSBuff( data->data+write, data->size-write, &write);
+										}
 									}
-									sys->writeTotalSize += data->size;
 								}
 							}
 						}
-					}else{
-						sys->writeTotalSize += write;
 					}
+				}catch(...){
+					sys->fileList[i]->writeUtil = NULL;
+					sys->exceptionErr = TRUE;
+					_OutputDebugString(L"★★CWriteTSFile::OutThread Exception2");
 				}
 			}
+			sys->writeTotalSize += data->size;
 
 			SAFE_DELETE(data);
 		}else{

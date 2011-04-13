@@ -11,9 +11,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.ComponentModel;
-using System.Collections.ObjectModel;
-using System.Collections;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -25,29 +22,77 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgAutoAddView : UserControl
     {
-        private CtrlCmdUtil cmd = EpgTimerDef.Instance.CtrlCmd;
+        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private List<EpgAutoDataItem> resultList = new List<EpgAutoDataItem>();
+        private bool ReloadInfo = true;
 
         public EpgAutoAddView()
         {
             InitializeComponent();
         }
 
-        public void ReloadData()
+        /// <summary>
+        /// リストの更新通知
+        /// </summary>
+        public void UpdateInfo()
+        {
+            if (this.IsVisible == true)
+            {
+                ReloadInfoData();
+                ReloadInfo = false;
+            }
+            else
+            {
+                ReloadInfo = true;
+            }
+        }
+
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (ReloadInfo == true && this.IsVisible == true)
+            {
+                ReloadInfoData();
+                ReloadInfo = false;
+            }
+        }
+
+        private void ReloadInfoData()
         {
             listView_key.DataContext = null;
             resultList.Clear();
 
-            List<EpgAutoAddData> list = new List<EpgAutoAddData>();
-            uint err = cmd.SendEnumEpgAutoAdd(ref list);
-            foreach (EpgAutoAddData info in list)
+            ErrCode err = CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
+            if (err == ErrCode.CMD_ERR_CONNECT)
+            {
+                MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                return;
+            }
+            if (err == ErrCode.CMD_ERR_TIMEOUT)
+            {
+                MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                return;
+            }
+            if (err != ErrCode.CMD_SUCCESS)
+            {
+                MessageBox.Show("情報の取得でエラーが発生しました。");
+                return;
+            }
+
+            foreach (EpgAutoAddData info in CommonManager.Instance.DB.EpgAutoAddList.Values)
             {
                 EpgAutoDataItem item = new EpgAutoDataItem(info);
                 resultList.Add(item);
             }
 
             listView_key.DataContext = resultList;
+        }
 
+        private void button_add_Click(object sender, RoutedEventArgs e)
+        {
+            SearchWindow dlg = new SearchWindow();
+            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            dlg.SetViewMode(1);
+            dlg.ShowDialog();
         }
 
         private void button_del_Click(object sender, RoutedEventArgs e)
@@ -72,26 +117,10 @@ namespace EpgTimer
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetViewMode(2);
                 dlg.SetChgAutoAddID(info.EpgAutoAddInfo.dataID);
-                dlg.SetDefSearchKey(info.EpgAutoAddInfo.searchInfo);
-                dlg.SetDefRecSetting(info.EpgAutoAddInfo.recSetting);
+                dlg.SetSearchDefKey(info.EpgAutoAddInfo.searchInfo);
+                dlg.SetRecInfoDef(info.EpgAutoAddInfo.recSetting);
                 dlg.ShowDialog();
             }
-        }
-
-        private void button_add_Click(object sender, RoutedEventArgs e)
-        {
-            SearchWindow dlg = new SearchWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.SetViewMode(1);
-            dlg.ShowDialog();
-        }
-
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (resultList.Count == 0)
-            {
-                ReloadData();
-            } 
         }
 
         private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -103,347 +132,51 @@ namespace EpgTimer
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetViewMode(2);
                 dlg.SetChgAutoAddID(info.EpgAutoAddInfo.dataID);
-                dlg.SetDefSearchKey(info.EpgAutoAddInfo.searchInfo);
-                dlg.SetDefRecSetting(info.EpgAutoAddInfo.recSetting);
+                dlg.SetSearchDefKey(info.EpgAutoAddInfo.searchInfo);
+                dlg.SetRecInfoDef(info.EpgAutoAddInfo.recSetting);
                 dlg.ShowDialog();
             }
         }
-    }
 
-    class EpgAutoDataItem
-    {
-        public EpgAutoDataItem(EpgAutoAddData item)
+        private void button_up_Click(object sender, RoutedEventArgs e)
         {
-            this.EpgAutoAddInfo = item;
-        }
-
-        public EpgAutoAddData EpgAutoAddInfo
-        {
-            get;
-            set;
-        }
-
-        public String AndKey
-        {
-            get
+            if (listView_key.SelectedIndex > 0)
             {
-                String view = "";
-                if (EpgAutoAddInfo != null)
+                EpgAutoDataItem info1 = listView_key.SelectedItem as EpgAutoDataItem;
+                EpgAutoDataItem info2 = listView_key.Items.GetItemAt(listView_key.SelectedIndex - 1) as EpgAutoDataItem;
+
+                UInt32 tempId = info1.EpgAutoAddInfo.dataID;
+                info1.EpgAutoAddInfo.dataID = info2.EpgAutoAddInfo.dataID;
+                info2.EpgAutoAddInfo.dataID = tempId;
+
+                List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
+                addList.Add(info1.EpgAutoAddInfo);
+                addList.Add(info2.EpgAutoAddInfo);
+                if (cmd.SendChgEpgAutoAdd(addList) != 1)
                 {
-                    view = EpgAutoAddInfo.searchInfo.andKey;
+                    MessageBox.Show("変更に失敗しました");
                 }
-                return view;
             }
         }
-        public String NotKey
-        {
-            get
-            {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    view = EpgAutoAddInfo.searchInfo.notKey;
-                }
-                return view;
-            }
-        }
-        public String RegExp
-        {
-            get
-            {
-                String view = "×";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo.regExpFlag == 1)
-                    {
-                        view = "○";
-                    }
-                }
-                return view;
-            }
-        }
-        public String TitleOnly
-        {
-            get
-            {
-                String view = "×";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo.titleOnlyFlag == 1)
-                    {
-                        view = "○";
-                    }
-                }
-                return view;
-            }
-        }
-        public String JyanruKey
-        {
-            get
-            {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo.contentList.Count == 1)
-                    {
-                        int nibble1 = EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1;
-                        int nibble2 = EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_2;
 
-                        UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
-                        UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
-                        if (nibble2 != 0xFF)
-                        {
-                            if (EpgTimerDef.Instance.ContentKindDictionary.ContainsKey(contentKey1) == true)
-                            {
-                                view += EpgTimerDef.Instance.ContentKindDictionary[contentKey1];
-                            }
-                            if (EpgTimerDef.Instance.ContentKindDictionary.ContainsKey(contentKey2) == true)
-                            {
-                                view += " - " + EpgTimerDef.Instance.ContentKindDictionary[contentKey2];
-                            }
-                        }
-                        else
-                        {
-                            if (EpgTimerDef.Instance.ContentKindDictionary.ContainsKey(contentKey1) == true)
-                            {
-                                view += EpgTimerDef.Instance.ContentKindDictionary[contentKey1];
-                            }
-                        }
-                    }
-                    else if (EpgAutoAddInfo.searchInfo.contentList.Count > 1)
-                    {
-                        view = "複数指定";
-                    }
-                }
-                else
-                {
-                    view = "なし";
-                }
-                return view;
-            }
-        }
-        public String DateKey
+        private void button_down_Click(object sender, RoutedEventArgs e)
         {
-            get
+            if (listView_key.SelectedIndex+1 < listView_key.Items.Count)
             {
-                String view = "なし";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo.dateList.Count == 1)
-                    {
-                        EpgSearchDateInfo info = EpgAutoAddInfo.searchInfo.dateList[0];
-                        view = EpgTimerDef.Instance.DayOfWeekDictionary[info.startDayOfWeek] + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                            " ～ " + EpgTimerDef.Instance.DayOfWeekDictionary[info.endDayOfWeek] + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
-                    }
-                    else if (EpgAutoAddInfo.searchInfo.dateList.Count > 1)
-                    {
-                        view = "複数指定";
-                    }
-                }
-                return view;
-            }
-        }
-        public String ServiceKey
-        {
-            get
-            {
-                String view = "なし";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo.serviceList.Count == 1)
-                    {
-                        try
-                        {
-                            view = ChSet5.Instance.ChList[(ulong)EpgAutoAddInfo.searchInfo.serviceList[0]].ServiceName;
-                        }
-                        catch
-                        {
-                            view = "検索エラー";
-                        }
-                    }
-                    else if (EpgAutoAddInfo.searchInfo.serviceList.Count > 1)
-                    {
-                        view = "複数指定";
-                    }
-                }
-                return view;
-            }
-        }
-        public String RecMode
-        {
-            get
-            {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    switch (EpgAutoAddInfo.recSetting.RecMode)
-                    {
-                        case 0:
-                            view = "全サービス";
-                            break;
-                        case 1:
-                            view = "指定サービス";
-                            break;
-                        case 2:
-                            view = "全サービス（デコード処理なし）";
-                            break;
-                        case 3:
-                            view = "指定サービス（デコード処理なし）";
-                            break;
-                        case 4:
-                            view = "視聴";
-                            break;
-                        case 5:
-                            view = "無効";
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                return view;
-            }
-        }
-        public String Priority
-        {
-            get
-            {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    view = EpgAutoAddInfo.recSetting.Priority.ToString();
-                }
-                return view;
-            }
-        }
-        public String Tuijyu
-        {
-            get
-            {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.recSetting.TuijyuuFlag == 0)
-                    {
-                        view = "しない";
-                    }
-                    else if (EpgAutoAddInfo.recSetting.TuijyuuFlag == 1)
-                    {
-                        view = "する";
-                    }
-                }
-                return view;
-            }
-        }
-        public TextBlock ToolTipView
-        {
-            get
-            {
-                if (Settings.Instance.NoToolTip == true)
-                {
-                    return null;
-                }
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo != null)
-                    {
-                        view += "検索条件\r\n";
-                        view += "Andキーワード：" + AndKey + "\r\n";
-                        view += "Notキーワード：" + NotKey + "\r\n";
-                        view += "正規表現モード：" + RegExp + "\r\n";
-                        view += "番組名のみ検索対象：" + TitleOnly + "\r\n";
-                        view += "ジャンル絞り込み：" + JyanruKey + "\r\n";
-                        view += "時間絞り込み：" + DateKey + "\r\n";
-                        view += "検索対象サービス：" + ServiceKey + "\r\n";
+                EpgAutoDataItem info1 = listView_key.SelectedItem as EpgAutoDataItem;
+                EpgAutoDataItem info2 = listView_key.Items.GetItemAt(listView_key.SelectedIndex + 1) as EpgAutoDataItem;
 
-                        view += "\r\n";
-                    }
-                    if (EpgAutoAddInfo.recSetting != null)
-                    {
-                        view += "録画設定\r\n";
-                        view += "録画モード：" + RecMode + "\r\n";
-                        view += "優先度：" + Priority + "\r\n";
-                        view += "追従：" + Tuijyu + "\r\n";
+                UInt32 tempId = info1.EpgAutoAddInfo.dataID;
+                info1.EpgAutoAddInfo.dataID = info2.EpgAutoAddInfo.dataID;
+                info2.EpgAutoAddInfo.dataID = tempId;
 
-                        if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x01) == 0)
-                        {
-                            view += "指定サービス対象データ : デフォルト\r\n";
-                        }
-                        else
-                        {
-                            view += "指定サービス対象データ : ";
-                            if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x10) > 0)
-                            {
-                                view += "字幕含む ";
-                            }
-                            if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x20) > 0)
-                            {
-                                view += "データカルーセル含む";
-                            }
-                            view += "\r\n";
-                        }
-
-                        view += "録画実行bat : " + EpgAutoAddInfo.recSetting.BatFilePath + "\r\n";
-
-                        if (EpgAutoAddInfo.recSetting.RecFolderList.Count == 0)
-                        {
-                            view += "録画フォルダ : デフォルト\r\n";
-                        }
-                        else
-                        {
-                            view += "録画フォルダ : \r\n";
-                            foreach (RecFileSetInfo info in EpgAutoAddInfo.recSetting.RecFolderList)
-                            {
-                                view += info.RecFolder + " (WritePlugIn:" + info.WritePlugIn + ")\r\n";
-                            }
-                        }
-
-                        if (EpgAutoAddInfo.recSetting.UseMargineFlag == 0)
-                        {
-                            view += "録画マージン : デフォルト\r\n";
-                        }
-                        else
-                        {
-                            view += "録画マージン : 開始 " + EpgAutoAddInfo.recSetting.StartMargine.ToString() +
-                                " 終了 " + EpgAutoAddInfo.recSetting.EndMargine.ToString() + "\r\n";
-                        }
-
-                        if (EpgAutoAddInfo.recSetting.SuspendMode == 0)
-                        {
-                            view += "録画後動作 : デフォルト\r\n";
-                        }
-                        else
-                        {
-                            view += "録画後動作 : ";
-                            switch (EpgAutoAddInfo.recSetting.SuspendMode)
-                            {
-                                case 1:
-                                    view += "スタンバイ";
-                                    break;
-                                case 2:
-                                    view += "休止";
-                                    break;
-                                case 3:
-                                    view += "シャットダウン";
-                                    break;
-                                case 4:
-                                    view += "何もしない";
-                                    break;
-                            }
-                            if (EpgAutoAddInfo.recSetting.RebootFlag == 1)
-                            {
-                                view += " 復帰後再起動する";
-                            }
-                            view += "\r\n";
-                        }
-                    }
+                List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
+                addList.Add(info1.EpgAutoAddInfo);
+                addList.Add(info2.EpgAutoAddInfo);
+                if (cmd.SendChgEpgAutoAdd(addList) != 1)
+                {
+                    MessageBox.Show("変更に失敗しました");
                 }
-
-                TextBlock block = new TextBlock();
-                block.Text = view;
-                block.MaxWidth = 400;
-                block.TextWrapping = TextWrapping.Wrap;
-                return block;
             }
         }
     }

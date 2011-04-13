@@ -1,90 +1,34 @@
 ﻿<Window x:Class="EpgTimer.SettingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="設定" Height="600" Width="800" xmlns:local="clr-namespace:EpgTimer" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" >
+        Title="設定" Height="580" Width="780" xmlns:my="clr-namespace:EpgTimer.Setting" WindowStartupLocation="CenterOwner">
     <Window.Resources>
-        <Style TargetType="{x:Type ComboBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type Button}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type ListBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
+        <ResourceDictionary Source="/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml" />
     </Window.Resources>
     <Grid>
-        <TabControl Name="tabControl" Margin="0,0,0,41">
+        <TabControl Name="tabControl" Margin="0,0,0,42">
             <TabItem Header="基本設定" Name="tabItem_basic">
                 <Grid>
-                    <local:SetBasicView x:Name="setBasicView" />
+                    <my:SetBasicView x:Name="setBasicView" />
                 </Grid>
             </TabItem>
-            <TabItem Header="チューナー設定" Name="tabItem_tuner">
+            <TabItem Header="動作設定" Name="tabItem_app">
                 <Grid>
-                    <local:SetTunerView x:Name="setTunerView" />
+                    <my:SetAppView x:Name="setAppView" />
                 </Grid>
             </TabItem>
-            <TabItem Header="動作設定" Name="tabItem_app1">
+            <TabItem Header="番組表" Name="tabItem_epgView">
                 <Grid>
-                    <local:SetAppView x:Name="setAppView" />
+                    <my:SetEpgView x:Name="setEpgView" />
                 </Grid>
             </TabItem>
-            <TabItem Header="動作設定２" Name="tabItem_app2">
+            <TabItem Header="外部アプリケーション" Name="tabItem_otherApp">
                 <Grid>
-                    <local:SetApp2View x:Name="setApp2View" />
-                </Grid>
-            </TabItem>
-            <TabItem Header="動作設定３" Name="tabItem_app3">
-                <Grid>
-                    <local:SetApp3View x:Name="setApp3View" />
-                </Grid>
-            </TabItem>
-            <TabItem Header="EPG取得設定" Name="tabItem_epg">
-                <Grid>
-                    <local:SetEpgView x:Name="setEpgView"/>
-                </Grid>
-            </TabItem>
-            <TabItem Header="サービス設定" Name="tabItem_service">
-                <Grid>
-                    <local:SetServiceCtrlView x:Name="setServiceCtrlView" />
-                </Grid>
-            </TabItem>
-            <TabItem Header="番組表設定" Name="tabItem_epgColor">
-                <Grid>
-                    <local:SetEpgColor x:Name="setEpgColor" />
-                </Grid>
-            </TabItem>
-            <TabItem Header="番組表設定２" Name="tabItem_epgService">
-                <Grid>
-                    <local:SetEpgServiceView x:Name="setEpgServiceView" />
-                </Grid>
-            </TabItem>
-            <TabItem Header="TVTest連携" Name="tabItem_tvTest">
-                <Grid>
-                    <local:SetTVTestView x:Name="setTVTestView" />
-                </Grid>
-            </TabItem>
-            <TabItem Header="カスタムボタン" Name="tabItem_custBtn">
-                <Grid>
-                    <local:SetCustBtnView x:Name="setCustBtnView" />
-                </Grid>
-            </TabItem>
-            <TabItem Header="iEPG Ver.1" Name="tabItem_iepg">
-                <Grid>
-                    <local:SetIEPG1View x:Name="setIEPG1View" />
-                </Grid>
-            </TabItem>
-            <TabItem Header="Twitter設定" Name="tabItem_twitter">
-                <Grid>
-                    <local:SetTwitterView x:Name="setTwitterView" />
+                    <my:SetOtherAppView x:Name="setOtherAppView" />
                 </Grid>
             </TabItem>
         </TabControl>
-        <Button Content="OK" Height="23" Margin="0,0,104,12" Name="button_ok" VerticalAlignment="Bottom" Click="button_ok_Click" HorizontalAlignment="Right" Width="75" />
-        <Button Content="キャンセル" Height="23" HorizontalAlignment="Right" Margin="0,0,12,12" Name="button_cancel" VerticalAlignment="Bottom" Width="75" Click="button_cancel_Click" />
+        <Button Content="OK" Height="23" HorizontalAlignment="Right" Margin="0,0,114,12" Name="button_OK" VerticalAlignment="Bottom" Width="75" Style="{StaticResource ButtonStyle1}" Click="button_OK_Click" />
+        <Button Content="キャンセル" Margin="0,0,12,12" Name="button_cancel" Height="23" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="75" Style="{StaticResource ButtonStyle1}" Click="button_cancel_Click" />
     </Grid>
 </Window>

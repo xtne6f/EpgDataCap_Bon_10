@@ -459,12 +459,14 @@ public:
 	// BSBasic		[IN]BSで１チャンネルから基本情報のみ取得するかどうか
 	// CS1Basic		[IN]CS1で１チャンネルから基本情報のみ取得するかどうか
 	// CS2Basic		[IN]CS2で１チャンネルから基本情報のみ取得するかどうか
+	// backStartWaitSec	[IN]Ch切り替え、録画開始後、バックグラウンドでのEPG取得を開始するまでの秒数
 	void SetBackGroundEpgCap(
 		BOOL enableLive,
 		BOOL enableRec,
 		BOOL BSBasic,
 		BOOL CS1Basic,
-		BOOL CS2Basic
+		BOOL CS2Basic,
+		DWORD backStartWaitSec
 		);
 
 	BOOL GetViewStatusInfo(
@@ -524,6 +526,7 @@ protected:
 	BOOL enableRecEpgCap;
 	WORD lastSID;
 
+	DWORD epgCapBackStartWaitSec;
 
 protected:
 	//PublicAPI排他制御用
@@ -542,7 +545,8 @@ protected:
 
 	DWORD _SetCh(
 		DWORD space,
-		DWORD ch
+		DWORD ch,
+		BOOL chScan = FALSE
 		);
 
 	void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath);

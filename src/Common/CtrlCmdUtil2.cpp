@@ -1601,3 +1601,150 @@ BOOL ReadVALUE2(WORD ver, vector<RESERVE_DATA*>* val, BYTE* buff, DWORD buffSize
 
 	return TRUE;
 }
+
+DWORD GetVALUESize2(WORD ver, NOTIFY_SRV_INFO* val )
+{
+	DWORD size = sizeof(DWORD);
+	if( val == NULL ){
+		return size;
+	}
+
+	size += GetVALUESize2(ver,val->notifyID);
+	size += GetVALUESize2(ver,&val->time);
+	size += GetVALUESize2(ver,val->param1);
+	size += GetVALUESize2(ver,val->param2);
+	size += GetVALUESize2(ver,val->param3);
+	size += GetVALUESize2(ver,val->param4);
+	size += GetVALUESize2(ver,val->param5);
+	size += GetVALUESize2(ver,val->param6);
+	if( ver>=2 ){
+		goto CMD_END;
+	}
+
+CMD_END:
+	return size;
+}
+
+BOOL WriteVALUE2(WORD ver, NOTIFY_SRV_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize2(ver, val );
+	if( buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE2(ver, valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	if(val != NULL ){
+		if( WriteVALUE2(ver, val->notifyID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, &val->time, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->param1, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->param2, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->param3, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->param4, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->param5, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->param6, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=2 ){
+			goto CMD_END;
+		}
+	}
+
+CMD_END:
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	return TRUE;
+}
+
+BOOL ReadVALUE2(WORD ver, NOTIFY_SRV_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	if( ReadVALUE2(ver, &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+
+	if( pos < valSize ){
+		if( ReadVALUE2(ver, &val->notifyID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->time, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->param1, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->param2, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->param3, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->param4, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->param5, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->param6, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=2 ){
+			goto CMD_END;
+		}
+	}
+
+CMD_END:
+	if( readSize != NULL ){
+		*readSize = valSize;
+	}
+
+	return TRUE;
+}

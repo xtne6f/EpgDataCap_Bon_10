@@ -483,7 +483,11 @@ BOOL CBonDriverUtil::GetTsStream(
 		UnLock();
 		return FALSE;
 	}
-	ret = this->bonIF->GetTsStream(data, size, remain);
+	try{
+		ret = this->bonIF->GetTsStream(data, size, remain);
+	}catch(...){
+		ret = FALSE;
+	}
 	UnLock();
 	return ret;
 }

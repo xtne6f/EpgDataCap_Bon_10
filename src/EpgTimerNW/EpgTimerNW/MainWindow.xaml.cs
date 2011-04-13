@@ -11,15 +11,12 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using Common;
-using EpgTimer;
+
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
 using System.Net;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 
-namespace EpgTimerNW
+namespace EpgTimer
 {
     /// <summary>
     /// MainWindow.xaml の相互作用ロジック
@@ -27,19 +24,32 @@ namespace EpgTimerNW
     public partial class MainWindow : Window
     {
         private System.Threading.Mutex mutex;
+
         private TaskTrayClass taskTray = null;
-        private bool closeFlag = false;
+        private bool serviceMode = false;
         private Dictionary<string, Button> buttonList = new Dictionary<string, Button>();
-        private CtrlCmdUtil cmd = EpgTimerNW.NWConnect.Instance.cmd;
+        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+
+        private PipeServer pipeServer = null;
+        private string pipeName = "\\\\.\\pipe\\EpgTimerGUI_Ctrl_BonPipe_";
+        private string pipeEventName = "Global\\EpgTimerGUI_Ctrl_BonConnect_";
+
+        private bool closeFlag = false;
+        private bool initExe = false;
+
         private bool needUnRegist = true;
-        private bool reloadEpgFlag = false;
+        private bool iniConnectNW = false;
 
         public MainWindow()
         {
-            Settings.LoadFromXmlFile();
+            CommonManager.Instance.NWMode = true;
+            Settings.LoadFromXmlFileNW();
             ChSet5.LoadFile();
-            NWConnect.Instance.cmd.SetSendMode(true);
-            NWConnect.Instance.cmd.SetNWSetting(Settings.Instance.NWServerIP, Settings.Instance.NWServerPort);
+            cmd.SetSendMode(true);
+            cmd.SetNWSetting(Settings.Instance.NWServerIP, Settings.Instance.NWServerPort);
+            CommonManager.Instance.ReloadCustContentColorList();
+            CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
+
 
             mutex = new System.Threading.Mutex(false, "Global\\EpgTimer_BonNW");
             if (!mutex.WaitOne(0, false))
@@ -52,9 +62,83 @@ namespace EpgTimerNW
                 closeFlag = true;
                 Close();
                 return;
-            } 
-            
+            }
+
+            if (CommonManager.Instance.NWMode == false)
+            {
+                bool startExe = false;
+                try
+                {
+                    if (ServiceCtrlClass.ServiceIsInstalled("EpgTimer Service") == true)
+                    {
+                        if (ServiceCtrlClass.IsStarted("EpgTimer Service") == false)
+                        {
+                            bool check = false;
+                            for (int i = 0; i < 5; i++)
+                            {
+                                if (ServiceCtrlClass.StartService("EpgTimer Service") == true)
+                                {
+                                    check = true;
+                                }
+                                System.Threading.Thread.Sleep(1000);
+                                if (ServiceCtrlClass.IsStarted("EpgTimer Service") == true)
+                                {
+                                    check = true;
+                                }
+                            }
+                            if (check == false)
+                            {
+                                MessageBox.Show("サービスの開始に失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
+                                closeFlag = true;
+                                Close();
+                                return;
+                            }
+                            else
+                            {
+                                serviceMode = true;
+                                startExe = true;
+                            }
+                        }
+                        else
+                        {
+                            serviceMode = true;
+                            startExe = true;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    serviceMode = false;
+                }
+                try
+                {
+                    if (serviceMode == false)
+                    {
+                        String moduleFolder = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+                        String exePath = moduleFolder + "\\EpgTimerSrv.exe";
+                        System.Diagnostics.Process process = System.Diagnostics.Process.Start(exePath);
+                        startExe = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    startExe = false;
+                }
+
+                if (startExe == false)
+                {
+                    MessageBox.Show("EpgTimerSrv.exeの起動ができませんでした");
+                    closeFlag = true;
+                    Close();
+                    return;
+                }
+            }
+
             InitializeComponent();
+
+            initExe = true;
 
             try
             {
@@ -62,272 +146,226 @@ namespace EpgTimerNW
                 {
                     this.Visibility = System.Windows.Visibility.Hidden;
                 }
-            }
-            catch
-            {
-            }
 
-            //タスクトレイの表示
-            taskTray = new TaskTrayClass(this);
-            taskTray.Icon = Properties.Resources.TaskIconBlue;
-            taskTray.Visible = true;
-            taskTray.ContextMenuClick += new EventHandler(taskTray_ContextMenuClick);
-
-            //上のボタン
-            Button settingButton = new Button();
-            settingButton.MinWidth = 75;
-            settingButton.Margin = new Thickness(2, 2, 2, 15);
-            settingButton.Click += new RoutedEventHandler(settingButton_Click);
-            settingButton.Content = "設定";
-            buttonList.Add("設定", settingButton);
-
-            Button connectButton = new Button();
-            connectButton.MinWidth = 75;
-            connectButton.Margin = new Thickness(2, 2, 2, 15);
-            connectButton.Click += new RoutedEventHandler(connectButton_Click);
-            connectButton.Content = "再接続";
-            buttonList.Add("再接続", connectButton);
-
-            Button searchButton = new Button();
-            searchButton.MinWidth = 75;
-            searchButton.Margin = new Thickness(2, 2, 2, 15);
-            searchButton.Click += new RoutedEventHandler(searchButton_Click);
-            searchButton.Content = "検索";
-            buttonList.Add("検索", searchButton);
-
-            Button closeButton = new Button();
-            closeButton.MinWidth = 75;
-            closeButton.Margin = new Thickness(2, 2, 2, 15);
-            closeButton.Click += new RoutedEventHandler(closeButton_Click);
-            closeButton.Content = "終了";
-            buttonList.Add("終了", closeButton);
-            
-            Button stanbyButton = new Button();
-            stanbyButton.MinWidth = 75;
-            stanbyButton.Margin = new Thickness(2, 2, 2, 15);
-            stanbyButton.Click += new RoutedEventHandler(standbyButton_Click);
-            stanbyButton.Content = "スタンバイ";
-            buttonList.Add("スタンバイ", stanbyButton);
-
-            Button suspendButton = new Button();
-            suspendButton.MinWidth = 75;
-            suspendButton.Margin = new Thickness(2, 2, 2, 15);
-            suspendButton.Click += new RoutedEventHandler(suspendButton_Click);
-            suspendButton.Content = "休止";
-            buttonList.Add("休止", suspendButton); 
-            
-            Button epgCapButton = new Button();
-            epgCapButton.MinWidth = 75;
-            epgCapButton.Margin = new Thickness(2, 2, 2, 15);
-            epgCapButton.Click += new RoutedEventHandler(epgCapButton_Click);
-            epgCapButton.Content = "EPG取得";
-            buttonList.Add("EPG取得", epgCapButton);
-
-            Button epgReloadButton = new Button();
-            epgReloadButton.MinWidth = 75;
-            epgReloadButton.Margin = new Thickness(2, 2, 2, 15);
-            epgReloadButton.Click += new RoutedEventHandler(epgReloadButton_Click);
-            epgReloadButton.Content = "EPG再読み込み";
-            buttonList.Add("EPG再読み込み", epgReloadButton);
-
-            Button custum1Button = new Button();
-            custum1Button.MinWidth = 75;
-            custum1Button.Margin = new Thickness(2, 2, 2, 15);
-            custum1Button.Click += new RoutedEventHandler(custum1Button_Click);
-            custum1Button.Content = "カスタム１";
-            buttonList.Add("カスタム１", custum1Button);
-
-            Button custum2Button = new Button();
-            custum2Button.MinWidth = 75;
-            custum2Button.Margin = new Thickness(2, 2, 2, 15);
-            custum2Button.Click += new RoutedEventHandler(custum2Button_Click);
-            custum2Button.Content = "カスタム２";
-            buttonList.Add("カスタム２", custum2Button);
-
-            Button nwTVEndButton = new Button();
-            nwTVEndButton.MinWidth = 75;
-            nwTVEndButton.Margin = new Thickness(2, 2, 2, 15);
-            nwTVEndButton.Click += new RoutedEventHandler(nwTVEndButton_Click);
-            nwTVEndButton.Content = "NetworkTV終了";
-            buttonList.Add("NetworkTV終了", nwTVEndButton);
-
-            //ウインドウ位置の復元
-            if (Settings.Instance.MainWndTop != 0)
-            {
-                this.Top = Settings.Instance.MainWndTop;
-            }
-            if (Settings.Instance.MainWndLeft != 0)
-            {
-                this.Left = Settings.Instance.MainWndLeft;
-            }
-            if (Settings.Instance.MainWndWidth != 0)
-            {
-                this.Width = Settings.Instance.MainWndWidth;
-            }
-            if (Settings.Instance.MainWndHeight != 0)
-            {
-                this.Height = Settings.Instance.MainWndHeight;
-            }
-            this.WindowState = Settings.Instance.LastWindowState;
-
-        }
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            ResetButtonView();
-
-            ResetTaskMenu();
-
-            if (Settings.Instance.WakeReconnectNW == false)
-            {
-                return;
-            }
-
-            if (NWConnect.Instance.ConnectServer(Settings.Instance.NWServerIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, OutsideCmdCallback, this) == false)
-            {
-                if (ConnectCmd(false) == false)
+                //ウインドウ位置の復元
+                if (Settings.Instance.MainWndTop != 0)
                 {
-                    return;
+                    this.Top = Settings.Instance.MainWndTop;
                 }
-            }
-            try
-            {
-                byte[] binData;
-                if (NWConnect.Instance.cmd.SendFileCopy("ChSet5.txt", out binData) == 1)
+                if (Settings.Instance.MainWndLeft != 0)
                 {
-                    string filePath = SettingPath.SettingFolderPath;
-                    System.IO.Directory.CreateDirectory(filePath);
-                    filePath += "\\ChSet5.txt";
-                    using (System.IO.BinaryWriter w = new System.IO.BinaryWriter(System.IO.File.Create(filePath)))
+                    this.Left = Settings.Instance.MainWndLeft;
+                }
+                if (Settings.Instance.MainWndWidth != 0)
+                {
+                    this.Width = Settings.Instance.MainWndWidth;
+                }
+                if (Settings.Instance.MainWndHeight != 0)
+                {
+                    this.Height = Settings.Instance.MainWndHeight;
+                }
+                this.WindowState = Settings.Instance.LastWindowState;
+
+
+                //上のボタン
+                Button settingButton = new Button();
+                settingButton.MinWidth = 75;
+                settingButton.Margin = new Thickness(2, 2, 2, 15);
+                settingButton.Click += new RoutedEventHandler(settingButton_Click);
+                settingButton.Content = "設定";
+                settingButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
+                buttonList.Add("設定", settingButton);
+
+                Button searchButton = new Button();
+                searchButton.MinWidth = 75;
+                searchButton.Margin = new Thickness(2, 2, 2, 15);
+                searchButton.Click += new RoutedEventHandler(searchButton_Click);
+                searchButton.Content = "検索";
+                searchButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
+                buttonList.Add("検索", searchButton);
+
+                Button closeButton = new Button();
+                closeButton.MinWidth = 75;
+                closeButton.Margin = new Thickness(2, 2, 2, 15);
+                closeButton.Click += new RoutedEventHandler(closeButton_Click);
+                closeButton.Content = "終了";
+                closeButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
+                buttonList.Add("終了", closeButton);
+
+                Button stanbyButton = new Button();
+                stanbyButton.MinWidth = 75;
+                stanbyButton.Margin = new Thickness(2, 2, 2, 15);
+                stanbyButton.Click += new RoutedEventHandler(standbyButton_Click);
+                stanbyButton.Content = "スタンバイ";
+                stanbyButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
+                buttonList.Add("スタンバイ", stanbyButton);
+
+                Button suspendButton = new Button();
+                suspendButton.MinWidth = 75;
+                suspendButton.Margin = new Thickness(2, 2, 2, 15);
+                suspendButton.Click += new RoutedEventHandler(suspendButton_Click);
+                suspendButton.Content = "休止";
+                suspendButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
+                buttonList.Add("休止", suspendButton);
+
+                Button epgCapButton = new Button();
+                epgCapButton.MinWidth = 75;
+                epgCapButton.Margin = new Thickness(2, 2, 2, 15);
+                epgCapButton.Click += new RoutedEventHandler(epgCapButton_Click);
+                epgCapButton.Content = "EPG取得";
+                epgCapButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
+                buttonList.Add("EPG取得", epgCapButton);
+
+                Button epgReloadButton = new Button();
+                epgReloadButton.MinWidth = 75;
+                epgReloadButton.Margin = new Thickness(2, 2, 2, 15);
+                epgReloadButton.Click += new RoutedEventHandler(epgReloadButton_Click);
+                epgReloadButton.Content = "EPG再読み込み";
+                epgReloadButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
+                buttonList.Add("EPG再読み込み", epgReloadButton);
+
+                Button custum1Button = new Button();
+                custum1Button.MinWidth = 75;
+                custum1Button.Margin = new Thickness(2, 2, 2, 15);
+                custum1Button.Click += new RoutedEventHandler(custum1Button_Click);
+                custum1Button.Content = "カスタム１";
+                custum1Button.Style = (Style)App.Current.Resources["ButtonStyle1"];
+                buttonList.Add("カスタム１", custum1Button);
+
+                Button custum2Button = new Button();
+                custum2Button.MinWidth = 75;
+                custum2Button.Margin = new Thickness(2, 2, 2, 15);
+                custum2Button.Click += new RoutedEventHandler(custum2Button_Click);
+                custum2Button.Content = "カスタム２";
+                custum2Button.Style = (Style)App.Current.Resources["ButtonStyle1"];
+                buttonList.Add("カスタム２", custum2Button);
+
+                Button nwTVEndButton = new Button();
+                nwTVEndButton.MinWidth = 75;
+                nwTVEndButton.Margin = new Thickness(2, 2, 2, 15);
+                nwTVEndButton.Click += new RoutedEventHandler(nwTVEndButton_Click);
+                nwTVEndButton.Content = "NetworkTV終了";
+                nwTVEndButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
+                buttonList.Add("NetworkTV終了", nwTVEndButton);
+
+                Button logViewButton = new Button();
+                logViewButton.MinWidth = 75;
+                logViewButton.Margin = new Thickness(2, 2, 2, 15);
+                logViewButton.Click += new RoutedEventHandler(logViewButton_Click);
+                logViewButton.Content = "情報通知ログ";
+                logViewButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
+                buttonList.Add("情報通知ログ", logViewButton);
+
+                Button connectButton = new Button();
+                connectButton.MinWidth = 75;
+                connectButton.Margin = new Thickness(2, 2, 2, 15);
+                connectButton.Click += new RoutedEventHandler(connectButton_Click);
+                connectButton.Content = "再接続";
+                connectButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
+                buttonList.Add("再接続", connectButton);
+
+                ResetButtonView();
+
+                //タスクトレイの表示
+                taskTray = new TaskTrayClass(this);
+                taskTray.Icon = Properties.Resources.TaskIconBlue;
+                taskTray.Visible = true;
+                taskTray.ContextMenuClick += new EventHandler(taskTray_ContextMenuClick);
+
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    pipeServer = new PipeServer();
+                    pipeName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+                    pipeEventName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+                    pipeServer.StartServer(pipeEventName, pipeName, OutsideCmdCallback, this);
+
+                    cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
+
+                    CommonManager.Instance.DB.ReloadReserveInfo();
+                    ReserveData item = new ReserveData();
+                    if (CommonManager.Instance.DB.GetNextReserve(ref item) == true)
                     {
-                        w.Write(binData);
-                        w.Close();
+                        String timeView = item.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
+                        DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
+                        timeView += endTime.ToString("HH:mm:ss");
+                        taskTray.Text = "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
                     }
-                    ChSet5.LoadFile();
+                    else
+                    {
+                        taskTray.Text = "次の予約なし";
+                    }
                 }
-                reserveView.ReloadReserve();
-                List<ReserveItem> reserveList = new List<ReserveItem>();
-                reserveView.GetReserveList(ref reserveList);
-                epgView.SetReserveList(reserveList);
-                recInfoView.ReloadRecInfo();
-                autoAddView.ReloadData();
-                if (Settings.Instance.NgAutoEpgLoadNW == false)
-                {
-                    epgView.ReloadEpgData();
-                    epgView.ReDrawReserve();
-                }
-                
-                List<CtrlCmdCLI.Def.TunerReserveInfo> tunerReserveList = new List<CtrlCmdCLI.Def.TunerReserveInfo>();
-                cmd.SendEnumTunerReserve(ref tunerReserveList);
-                tunerReserveView.SetReserveInfo(tunerReserveList, reserveList);
 
-                CtrlCmdCLI.Def.ReserveData item = new CtrlCmdCLI.Def.ReserveData();
-                if (reserveView.GetNextReserve(ref item) == true)
+                ResetTaskMenu();
+
+                CheckCmdLine();
+
+                if (CommonManager.Instance.NWMode == true)
                 {
-                    String timeView = item.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
-                    timeView += endTime.ToString("HH:mm:ss");
-                    taskTray.Text = "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
-                }
-                else
-                {
-                    taskTray.Text = "次の予約なし";
+                    if (Settings.Instance.WakeReconnectNW == false)
+                    {
+                        return;
+                    }
+
+                    if (CommonManager.Instance.NW.ConnectServer(Settings.Instance.NWServerIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, OutsideCmdCallback, this) == false)
+                    {
+                        return;
+                    }
+                    iniConnectNW = true;
+
+                    byte[] binData;
+                    if (cmd.SendFileCopy("ChSet5.txt", out binData) == 1)
+                    {
+                        string filePath = SettingPath.SettingFolderPath;
+                        System.IO.Directory.CreateDirectory(filePath);
+                        filePath += "\\ChSet5.txt";
+                        using (System.IO.BinaryWriter w = new System.IO.BinaryWriter(System.IO.File.Create(filePath)))
+                        {
+                            w.Write(binData);
+                            w.Close();
+                        }
+                        ChSet5.LoadFile();
+                    }
+
+                    CommonManager.Instance.DB.ReloadReserveInfo();
+                    ReserveData item = new ReserveData();
+                    if (CommonManager.Instance.DB.GetNextReserve(ref item) == true)
+                    {
+                        String timeView = item.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
+                        DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
+                        timeView += endTime.ToString("HH:mm:ss");
+                        taskTray.Text = "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
+                    }
+                    else
+                    {
+                        taskTray.Text = "次の予約なし";
+                    }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void CheckCmdLine()
         {
-            if (Settings.Instance.CloseMin == true && closeFlag == false)
+            foreach (string arg in Environment.GetCommandLineArgs())
             {
-                e.Cancel = true;
-                WindowState = System.Windows.WindowState.Minimized;
-            }
-            else
-            {
-                reserveView.SaveSize();
-                recInfoView.SaveSize();
-                if (NWConnect.Instance.IsConnected == true && needUnRegist == true)
+                String ext = System.IO.Path.GetExtension(arg);
+                if (string.Compare(ext, ".exe", true) == 0)
                 {
-                    if (NWConnect.Instance.cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
-                    {
-                        //MessageBox.Show("サーバーに接続できませんでした");
-                    }
+                    //何もしない
                 }
-                Settings.SaveToXmlFile();
-
-                if (mutex != null)
-                {
-                    mutex.ReleaseMutex();
-                    mutex.Close();
-                }
-            }
-        }
-
-        private void Window_StateChanged(object sender, EventArgs e)
-        {
-            if (this.WindowState == WindowState.Minimized)
-            {
-                this.Visibility = System.Windows.Visibility.Hidden;
-            }
-            if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
-            {
-                taskTray.LastViewState = this.WindowState;
-                Settings.Instance.LastWindowState = this.WindowState;
-            }
-        }
-
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Width > 0 && this.Height > 0)
-                {
-                    Settings.Instance.MainWndWidth = this.Width;
-                    Settings.Instance.MainWndHeight = this.Height;
-                }
-            }
-        }
-
-        private void Window_LocationChanged(object sender, EventArgs e)
-        {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Top > 0 && this.Left > 0)
-                {
-                    Settings.Instance.MainWndTop = this.Top;
-                    Settings.Instance.MainWndLeft = this.Left;
-                }
-            }
-        }
-
-        private void Window_PreviewDragEnter(object sender, DragEventArgs e)
-        {
-            e.Handled = true;
-        }
-
-        private void Window_PreviewDrop(object sender, DragEventArgs e)
-        {
-            string[] filePath = e.Data.GetData(DataFormats.FileDrop, true) as string[];
-            foreach (string path in filePath)
-            {
-                String ext = System.IO.Path.GetExtension(path);
-                if (string.Compare(ext, ".eaa", true) == 0)
+                else if (string.Compare(ext, ".eaa", true) == 0)
                 {
                     //自動予約登録条件追加
                     EAAFileClass eaaFile = new EAAFileClass();
-                    if (eaaFile.LoadEAAFile(path) == true)
+                    if (eaaFile.LoadEAAFile(arg) == true)
                     {
                         List<CtrlCmdCLI.Def.EpgAutoAddData> val = new List<CtrlCmdCLI.Def.EpgAutoAddData>();
                         val.Add(eaaFile.AddKey);
-                        if (NWConnect.Instance.cmd.SendAddEpgAutoAdd(val) == 205)
-                        {
-                            MessageBox.Show("サーバーに接続できませんでした");
-                        }
+                        cmd.SendAddEpgAutoAdd(val);
                     }
                     else
                     {
@@ -338,14 +376,11 @@ namespace EpgTimerNW
                 {
                     //iEPG追加
                     IEPGFileClass iepgFile = new IEPGFileClass();
-                    if (iepgFile.LoadTVPIDFile(path) == true)
+                    if (iepgFile.LoadTVPIDFile(arg) == true)
                     {
                         List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
                         val.Add(iepgFile.AddInfo);
-                        if (NWConnect.Instance.cmd.SendAddReserve(val) == 205)
-                        {
-                            MessageBox.Show("サーバーに接続できませんでした");
-                        }
+                        cmd.SendAddReserve(val);
                     }
                     else
                     {
@@ -356,14 +391,11 @@ namespace EpgTimerNW
                 {
                     //iEPG追加
                     IEPGFileClass iepgFile = new IEPGFileClass();
-                    if (iepgFile.LoadTVPIFile(path) == true)
+                    if (iepgFile.LoadTVPIFile(arg) == true)
                     {
                         List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
                         val.Add(iepgFile.AddInfo);
-                        if (NWConnect.Instance.cmd.SendAddReserve(val) == 205)
-                        {
-                            MessageBox.Show("サーバーに接続できませんでした");
-                        }
+                        cmd.SendAddReserve(val);
                     }
                     else
                     {
@@ -372,325 +404,6 @@ namespace EpgTimerNW
                 }
             }
         }
-
-        void connectButton_Click(object sender, RoutedEventArgs e)
-        {
-            ConnectCmd(true);
-        }
-
-        bool ConnectCmd(bool reloadFlag)
-        {
-            ConnectWindow dlg = new ConnectWindow();
-            PresentationSource topWindow = PresentationSource.FromVisual(this);
-            if (topWindow != null)
-            {
-                dlg.Owner = (Window)topWindow.RootVisual;
-            }
-            if (dlg.ShowDialog() == true)
-            {
-                bool connected = false;
-                String srvIP = Settings.Instance.NWServerIP;
-                try
-                {
-                    foreach (IPAddress address in Dns.GetHostAddresses(srvIP))
-                    {
-                        srvIP = address.ToString();
-                        if (NWConnect.Instance.ConnectServer(srvIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, OutsideCmdCallback, this) == true)
-                        {
-                            connected = true;
-                            break;
-                        }
-                    }
-                }
-                catch
-                {
-                }
-
-                if (connected == false)
-                {
-                    MessageBox.Show("サーバーへの接続に失敗しました");
-                }
-                else
-                {
-                    if (reloadFlag == true)
-                    {
-                        byte[] binData;
-                        if (NWConnect.Instance.cmd.SendFileCopy("ChSet5.txt", out binData) == 1)
-                        {
-                            string filePath = SettingPath.SettingFolderPath;
-                            System.IO.Directory.CreateDirectory(filePath);
-                            filePath += "\\ChSet5.txt";
-                            using (System.IO.BinaryWriter w = new System.IO.BinaryWriter(System.IO.File.Create(filePath)))
-                            {
-                                w.Write(binData);
-                                w.Close();
-                            }
-                            ChSet5.LoadFile();
-                        }
-
-                        reserveView.ReloadReserve();
-                        List<ReserveItem> reserveList = new List<ReserveItem>();
-                        reserveView.GetReserveList(ref reserveList);
-                        epgView.SetReserveList(reserveList);
-                        recInfoView.ReloadRecInfo();
-                        autoAddView.ReloadData();
-
-                        if (Settings.Instance.NgAutoEpgLoadNW == false)
-                        {
-                            epgView.ReloadEpgData();
-                            epgView.ReDrawReserve();
-                        }
-
-                        List<CtrlCmdCLI.Def.TunerReserveInfo> tunerReserveList = new List<CtrlCmdCLI.Def.TunerReserveInfo>();
-                        cmd.SendEnumTunerReserve(ref tunerReserveList);
-                        tunerReserveView.SetReserveInfo(tunerReserveList, reserveList);
-
-                        CtrlCmdCLI.Def.ReserveData item = new CtrlCmdCLI.Def.ReserveData();
-                        if (reserveView.GetNextReserve(ref item) == true)
-                        {
-                            String timeView = item.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                            DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
-                            timeView += endTime.ToString("HH:mm:ss");
-                            taskTray.Text = "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
-                        }
-                        else
-                        {
-                            taskTray.Text = "次の予約なし";
-                        }
-                    }
-
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        void epgReloadButton_Click(object sender, RoutedEventArgs e)
-        {
-            EpgReloadCmd();
-        }
-
-        void EpgReloadCmd()
-        {
-            uint err = NWConnect.Instance.cmd.SendReloadEpg();
-            if (err == 205)
-            {
-                MessageBox.Show("サーバーに接続できませんでした");
-            }
-            else if (err != 1)
-            {
-                MessageBox.Show("EPG再読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
-            }
-            else
-            {
-                reloadEpgFlag = true;
-            }
-        }
-
-        void epgCapButton_Click(object sender, RoutedEventArgs e)
-        {
-            EpgCapCmd();
-        }
-
-        void EpgCapCmd()
-        {
-            uint err = NWConnect.Instance.cmd.SendEpgCapNow();
-            if (err == 205)
-            {
-                MessageBox.Show("サーバーに接続できませんでした");
-            }
-            else if (err != 1)
-            {
-                MessageBox.Show("EPG取得を行える状態ではありません。\r\n（もうすぐ予約が始まる。EPGデータ読み込み中。など）");
-            }
-        }
-
-        void suspendButton_Click(object sender, RoutedEventArgs e)
-        {
-            SuspendCmd();
-        }
-
-        void SuspendCmd()
-        {
-            uint err = NWConnect.Instance.cmd.SendChkSuspend();
-            if (err == 205)
-            {
-                MessageBox.Show("サーバーに接続できませんでした");
-            }
-            else
-            {
-                if (err != 1)
-                {
-                    MessageBox.Show("休止に移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
-                }
-                else
-                {
-                    if (Settings.Instance.SuspendCloseNW == true)
-                    {
-                        if (NWConnect.Instance.IsConnected == true)
-                        {
-                            if (NWConnect.Instance.cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
-                            {
-
-                            }
-                            NWConnect.Instance.cmd.SendSuspend(0xFF02);
-                            closeFlag = true;
-                            needUnRegist = false;
-                            Close();
-                        }
-                    }
-                    else
-                    {
-                        NWConnect.Instance.cmd.SendSuspend(0xFF02);
-                    }
-                }
-            }
-        }
-
-        void standbyButton_Click(object sender, RoutedEventArgs e)
-        {
-            StandbyCmd();
-        }
-
-        void StandbyCmd()
-        {
-            uint err = NWConnect.Instance.cmd.SendChkSuspend();
-            if (err == 205)
-            {
-                MessageBox.Show("サーバーに接続できませんでした");
-            }
-            else
-            {
-                if (err != 1)
-                {
-                    MessageBox.Show("スタンバイに移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
-                }
-                else
-                {
-                    if (Settings.Instance.SuspendCloseNW == true)
-                    {
-                        if (NWConnect.Instance.IsConnected == true)
-                        {
-                            if (NWConnect.Instance.cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
-                            {
-
-                            }
-                            NWConnect.Instance.cmd.SendSuspend(0xFF01);
-                            closeFlag = true;
-                            needUnRegist = false;
-                            Close();
-                        }
-                    }
-                    else
-                    {
-                        NWConnect.Instance.cmd.SendSuspend(0xFF01);
-                    }
-                }
-            }
-        }
-
-        void closeButton_Click(object sender, RoutedEventArgs e)
-        {
-            CloseCmd();
-        }
-
-        void CloseCmd()
-        {
-            closeFlag = true;
-            Close();
-        }
-
-        void searchButton_Click(object sender, RoutedEventArgs e)
-        {
-            SearchCmd();
-        }
-
-        void SearchCmd()
-        {
-            SearchWindow search = new SearchWindow();
-            search.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            search.ShowDialog();
-        }
-
-        void settingButton_Click(object sender, RoutedEventArgs e)
-        {
-            SettingCmd();
-        }
-
-        void SettingCmd()
-        {
-            SettingWindow setting = new SettingWindow();
-            PresentationSource topWindow = PresentationSource.FromVisual(this);
-            if (topWindow != null)
-            {
-                setting.Owner = (Window)topWindow.RootVisual;
-            } 
-            if (setting.ShowDialog() == true)
-            {
-                if (setting.ServiceStop == false)
-                {
-                    epgView.ReDrawEpgView();
-                    //cmd.SendReloadSetting();
-                    ResetButtonView();
-                    ResetTaskMenu();
-                }
-            }
-            ChSet5.LoadFile();
-        }
-
-
-        void custum1Button_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                System.Diagnostics.Process.Start(Settings.Instance.Cust1BtnCmd, Settings.Instance.Cust1BtnCmdOpt);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-        }
-
-        void custum2Button_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                System.Diagnostics.Process.Start(Settings.Instance.Cust2BtnCmd, Settings.Instance.Cust2BtnCmdOpt);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-        }
-        
-        void nwTVEndButton_Click(object sender, RoutedEventArgs e)
-        {
-            cmd.SendNwTVClose();
-            CtrlCmdUtil cmdTvTest = new CtrlCmdUtil();
-            foreach (Process p in Process.GetProcesses())
-            {
-                if (String.Compare(p.ProcessName, "tvtest", true) == 0)
-                {
-                    cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + p.Id.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + p.Id.ToString());
-                    cmdTvTest.SetConnectTimeOut(1000);
-                    String val = "";
-                    if (cmdTvTest.SendViewGetBonDrivere(ref val) == 1)
-                    {
-                        if (String.Compare(val, "BonDriver_UDP.dll", true) == 0)
-                        {
-                            cmdTvTest.SendViewAppClose();
-                            break;
-                        }
-                        else if (String.Compare(val, "BonDriver_TCP.dll", true) == 0)
-                        {
-                            cmdTvTest.SendViewAppClose();
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
         void taskTray_ContextMenuClick(object sender, EventArgs e)
         {
             String tag = sender.ToString();
@@ -733,6 +446,7 @@ namespace EpgTimerNW
             taskTray.SetContextMenu(addList);
         }
 
+
         private void ResetButtonView()
         {
             stackPanel_button.Children.Clear();
@@ -762,10 +476,499 @@ namespace EpgTimerNW
             }
         }
 
+        bool ConnectCmd(bool reloadFlag)
+        {
+            ConnectWindow dlg = new ConnectWindow();
+            PresentationSource topWindow = PresentationSource.FromVisual(this);
+            if (topWindow != null)
+            {
+                dlg.Owner = (Window)topWindow.RootVisual;
+            }
+            if (dlg.ShowDialog() == true)
+            {
+                bool connected = false;
+                String srvIP = Settings.Instance.NWServerIP;
+                try
+                {
+                    foreach (IPAddress address in Dns.GetHostAddresses(srvIP))
+                    {
+                        srvIP = address.ToString();
+                        if (CommonManager.Instance.NW.ConnectServer(srvIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, OutsideCmdCallback, this) == true)
+                        {
+                            connected = true;
+                            break;
+                        }
+                    }
+                }
+                catch
+                {
+                }
+
+                if (connected == false)
+                {
+                    MessageBox.Show("サーバーへの接続に失敗しました");
+                }
+                else
+                {
+                    if (reloadFlag == true)
+                    {
+                        byte[] binData;
+                        if (cmd.SendFileCopy("ChSet5.txt", out binData) == 1)
+                        {
+                            string filePath = SettingPath.SettingFolderPath;
+                            System.IO.Directory.CreateDirectory(filePath);
+                            filePath += "\\ChSet5.txt";
+                            using (System.IO.BinaryWriter w = new System.IO.BinaryWriter(System.IO.File.Create(filePath)))
+                            {
+                                w.Write(binData);
+                                w.Close();
+                            }
+                            ChSet5.LoadFile();
+                        }
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.PlugInFile);
+                        reserveView.UpdateReserveData();
+                        epgView.UpdateReserveData();
+                        tunerReserveView.UpdateReserveData();
+                        autoAddView.UpdateAutoAddInfo();
+                        recInfoView.UpdateInfo();
+                        epgView.UpdateEpgData();
+                    }
+
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (CommonManager.Instance.NWMode == true)
+            {
+                if (iniConnectNW == false)
+                {
+                    if (ConnectCmd(false) == true)
+                    {
+                        byte[] binData;
+                        if (cmd.SendFileCopy("ChSet5.txt", out binData) == 1)
+                        {
+                            string filePath = SettingPath.SettingFolderPath;
+                            System.IO.Directory.CreateDirectory(filePath);
+                            filePath += "\\ChSet5.txt";
+                            using (System.IO.BinaryWriter w = new System.IO.BinaryWriter(System.IO.File.Create(filePath)))
+                            {
+                                w.Write(binData);
+                                w.Close();
+                            }
+                            ChSet5.LoadFile();
+                        }
+                        iniConnectNW = true;
+                    }
+                }
+            }
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (Settings.Instance.CloseMin == true && closeFlag == false)
+            {
+                e.Cancel = true;
+                WindowState = System.Windows.WindowState.Minimized;
+            }
+            else
+            {
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    if (initExe == true)
+                    {
+                        reserveView.SaveSize();
+                        recInfoView.SaveSize();
+
+                        cmd.SetConnectTimeOut(3000);
+                        cmd.SendUnRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
+                        Settings.SaveToXmlFile();
+                    }
+                    pipeServer.StopServer();
+
+                    if (mutex != null)
+                    {
+                        if (serviceMode == false && initExe == true)
+                        {
+                            cmd.SendClose();
+                        }
+                        mutex.ReleaseMutex();
+                        mutex.Close();
+                    }
+                }
+                else
+                {
+                    reserveView.SaveSize();
+                    recInfoView.SaveSize();
+                    if (CommonManager.Instance.NW.IsConnected == true && needUnRegist == true)
+                    {
+                        if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
+                        {
+                            //MessageBox.Show("サーバーに接続できませんでした");
+                        }
+                    }
+                    Settings.SaveToXmlFile();
+
+                    if (mutex != null)
+                    {
+                        mutex.ReleaseMutex();
+                        mutex.Close();
+                    }
+                }
+            }
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (this.WindowState == WindowState.Normal)
+            {
+                if (this.Visibility == System.Windows.Visibility.Visible && this.Width > 0 && this.Height > 0)
+                {
+                    Settings.Instance.MainWndWidth = this.Width;
+                    Settings.Instance.MainWndHeight = this.Height;
+                }
+            }
+        }
+
+        private void Window_LocationChanged(object sender, EventArgs e)
+        {
+            if (this.WindowState == WindowState.Normal)
+            {
+                if (this.Visibility == System.Windows.Visibility.Visible && this.Top > 0 && this.Left > 0)
+                {
+                    Settings.Instance.MainWndTop = this.Top;
+                    Settings.Instance.MainWndLeft = this.Left;
+                }
+            }
+        }
+
+        private void Window_StateChanged(object sender, EventArgs e)
+        {
+            if (this.WindowState == WindowState.Minimized)
+            {
+                this.Visibility = System.Windows.Visibility.Hidden;
+            }
+            if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
+            {
+                taskTray.LastViewState = this.WindowState;
+                Settings.Instance.LastWindowState = this.WindowState;
+            }
+        }
+
+        private void Window_PreviewDragEnter(object sender, DragEventArgs e)
+        {
+            e.Handled = true;
+        }
+
+        private void Window_PreviewDrop(object sender, DragEventArgs e)
+        {
+            string[] filePath = e.Data.GetData(DataFormats.FileDrop, true) as string[];
+            foreach (string path in filePath)
+            {
+                String ext = System.IO.Path.GetExtension(path);
+                if (string.Compare(ext, ".eaa", true) == 0)
+                {
+                    //自動予約登録条件追加
+                    EAAFileClass eaaFile = new EAAFileClass();
+                    if (eaaFile.LoadEAAFile(path) == true)
+                    {
+                        List<CtrlCmdCLI.Def.EpgAutoAddData> val = new List<CtrlCmdCLI.Def.EpgAutoAddData>();
+                        val.Add(eaaFile.AddKey);
+                        cmd.SendAddEpgAutoAdd(val);
+                    }
+                    else
+                    {
+                        MessageBox.Show("解析に失敗しました。");
+                    }
+                }
+                else if (string.Compare(ext, ".tvpid", true) == 0 || string.Compare(ext, ".tvpio", true) == 0)
+                {
+                    //iEPG追加
+                    IEPGFileClass iepgFile = new IEPGFileClass();
+                    if (iepgFile.LoadTVPIDFile(path) == true)
+                    {
+                        List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
+                        val.Add(iepgFile.AddInfo);
+                        cmd.SendAddReserve(val);
+                    }
+                    else
+                    {
+                        MessageBox.Show("解析に失敗しました。デジタル用Version 2のiEPGの必要があります。");
+                    }
+                }
+                else if (string.Compare(ext, ".tvpi", true) == 0)
+                {
+                    //iEPG追加
+                    IEPGFileClass iepgFile = new IEPGFileClass();
+                    if (iepgFile.LoadTVPIFile(path) == true)
+                    {
+                        List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
+                        val.Add(iepgFile.AddInfo);
+                        cmd.SendAddReserve(val);
+                    }
+                    else
+                    {
+                        MessageBox.Show("解析に失敗しました。放送局名がサービスに関連づけされていない可能性があります。");
+                    }
+                }
+            }
+        }
+
+        void settingButton_Click(object sender, RoutedEventArgs e)
+        {
+            SettingCmd();
+        }
+
+        void SettingCmd()
+        {
+            SettingWindow setting = new SettingWindow();
+            PresentationSource topWindow = PresentationSource.FromVisual(this);
+            if (topWindow != null)
+            {
+                setting.Owner = (Window)topWindow.RootVisual;
+            }
+            if (setting.ShowDialog() == true)
+            {
+                if (setting.ServiceStop == false)
+                {
+                    CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
+
+                    epgView.UpdateSetting();
+                    cmd.SendReloadSetting();
+                    ResetButtonView();
+                    ResetTaskMenu();
+                }
+            }
+            if (setting.ServiceStop == true)
+            {
+                MessageBox.Show("サービスの状態を変更したため終了します。");
+                initExe = false;
+                closeFlag = true;
+                Close();
+                return;
+            }
+            ChSet5.LoadFile();
+        }
+
+        void searchButton_Click(object sender, RoutedEventArgs e)
+        {
+            SearchCmd();
+        }
+
+        void SearchCmd()
+        {
+            SearchWindow search = new SearchWindow();
+            PresentationSource topWindow = PresentationSource.FromVisual(this);
+            if (topWindow != null)
+            {
+                search.Owner = (Window)topWindow.RootVisual;
+            }
+            search.SetViewMode(0);
+            search.ShowDialog();
+        }
+
+        void closeButton_Click(object sender, RoutedEventArgs e)
+        {
+            CloseCmd();
+        }
+
+        void CloseCmd()
+        {
+            closeFlag = true;
+            Close();
+        }
+
+        void epgCapButton_Click(object sender, RoutedEventArgs e)
+        {
+            EpgCapCmd();
+        }
+
+        void EpgCapCmd()
+        {
+            if (cmd.SendEpgCapNow() != 1)
+            {
+                MessageBox.Show("EPG取得を行える状態ではありません。\r\n（もうすぐ予約が始まる。EPGデータ読み込み中。など）");
+            }
+        }
+
+        void epgReloadButton_Click(object sender, RoutedEventArgs e)
+        {
+            EpgReloadCmd();
+        }
+
+        void EpgReloadCmd()
+        {
+            if (CommonManager.Instance.NWMode == true)
+            {
+                CommonManager.Instance.DB.SetOneTimeReloadEpg();
+            }
+            if (cmd.SendReloadEpg() != 1)
+            {
+                MessageBox.Show("EPG再読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
+            }
+        }
+
+        void suspendButton_Click(object sender, RoutedEventArgs e)
+        {
+            SuspendCmd();
+        }
+
+        void SuspendCmd()
+        {
+            UInt32 err = cmd.SendChkSuspend();
+            if (err == 205)
+            {
+                MessageBox.Show("サーバーに接続できませんでした");
+            }
+            else if (err != 1)
+            {
+                MessageBox.Show("休止に移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
+            }
+            else
+            {
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
+                    {
+                        cmd.SendSuspend(0x0102);
+                    }
+                    else
+                    {
+                        cmd.SendSuspend(2);
+                    }
+                }
+                else
+                {
+                    if (Settings.Instance.SuspendCloseNW == true)
+                    {
+                        if (CommonManager.Instance.NW.IsConnected == true)
+                        {
+                            if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
+                            {
+
+                            }
+                            cmd.SendSuspend(0xFF02);
+                            closeFlag = true;
+                            needUnRegist = false;
+                            Close();
+                        }
+                    }
+                    else
+                    {
+                        cmd.SendSuspend(0xFF02);
+                    }
+                }
+            }
+        }
+
+        void standbyButton_Click(object sender, RoutedEventArgs e)
+        {
+            StandbyCmd();
+        }
+
+        void StandbyCmd()
+        {
+            UInt32 err = cmd.SendChkSuspend();
+            if (err == 205)
+            {
+                MessageBox.Show("サーバーに接続できませんでした");
+            }
+            else if (err != 1)
+            {
+                MessageBox.Show("スタンバイに移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
+            }
+            else
+            {
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
+                    {
+                        cmd.SendSuspend(0x0101);
+                    }
+                    else
+                    {
+                        cmd.SendSuspend(1);
+                    }
+                }
+                else
+                {
+                    if (Settings.Instance.SuspendCloseNW == true)
+                    {
+                        if (CommonManager.Instance.NW.IsConnected == true)
+                        {
+                            if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
+                            {
+
+                            }
+                            cmd.SendSuspend(0xFF01);
+                            closeFlag = true;
+                            needUnRegist = false;
+                            Close();
+                        }
+                    }
+                    else
+                    {
+                        cmd.SendSuspend(0xFF01);
+                    }
+                }
+            }
+        }
+
+        void custum1Button_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(Settings.Instance.Cust1BtnCmd, Settings.Instance.Cust1BtnCmdOpt);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        void custum2Button_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(Settings.Instance.Cust2BtnCmd, Settings.Instance.Cust2BtnCmdOpt);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        void nwTVEndButton_Click(object sender, RoutedEventArgs e)
+        {
+            CommonManager.Instance.TVTestCtrl.CloseTVTest();
+        }
+
+        void logViewButton_Click(object sender, RoutedEventArgs e)
+        {
+            NotifyLogWindow dlg = new NotifyLogWindow();
+            PresentationSource topWindow = PresentationSource.FromVisual(this);
+            if (topWindow != null)
+            {
+                dlg.Owner = (Window)topWindow.RootVisual;
+            }
+            dlg.ShowDialog();
+        }
+
+        void connectButton_Click(object sender, RoutedEventArgs e)
+        {
+            ConnectCmd(true);
+        }
+
         private int OutsideCmdCallback(object pParam, CMD_STREAM pCmdParam, ref CMD_STREAM pResParam)
         {
-            MainWindow sys = (MainWindow)pParam;
-
             System.Diagnostics.Trace.WriteLine((CtrlCmd)pCmdParam.uiParam);
             switch ((CtrlCmd)pCmdParam.uiParam)
             {
@@ -780,19 +983,19 @@ namespace EpgTimerNW
                         pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
                         if (Dispatcher.CheckAccess() == true)
                         {
-                            reserveView.ReloadReserve();
-                            List<ReserveItem> reserveList = new List<ReserveItem>();
-                            reserveView.GetReserveList(ref reserveList);
-                            epgView.SetReserveList(reserveList);
-                            recInfoView.ReloadRecInfo();
-                            autoAddView.ReloadData();
+                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
+                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
+                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
+                            reserveView.UpdateReserveData();
+                            epgView.UpdateReserveData();
+                            tunerReserveView.UpdateReserveData();
+                            autoAddView.UpdateAutoAddInfo();
+                            recInfoView.UpdateInfo();
 
-                            List<CtrlCmdCLI.Def.TunerReserveInfo> tunerReserveList = new List<CtrlCmdCLI.Def.TunerReserveInfo>();
-                            cmd.SendEnumTunerReserve(ref tunerReserveList);
-                            tunerReserveView.SetReserveInfo(tunerReserveList, reserveList);
-
-                            CtrlCmdCLI.Def.ReserveData item = new CtrlCmdCLI.Def.ReserveData();
-                            if (reserveView.GetNextReserve(ref item) == true)
+                            CommonManager.Instance.DB.ReloadReserveInfo();
+                            ReserveData item = new ReserveData();
+                            if (CommonManager.Instance.DB.GetNextReserve(ref item) == true)
                             {
                                 String timeView = item.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
                                 DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
@@ -808,19 +1011,19 @@ namespace EpgTimerNW
                         {
                             Dispatcher.BeginInvoke(new Action(() =>
                             {
-                                reserveView.ReloadReserve();
-                                List<ReserveItem> reserveList = new List<ReserveItem>();
-                                reserveView.GetReserveList(ref reserveList);
-                                epgView.SetReserveList(reserveList);
-                                recInfoView.ReloadRecInfo();
-                                autoAddView.ReloadData();
+                                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
+                                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
+                                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
+                                reserveView.UpdateReserveData();
+                                epgView.UpdateReserveData();
+                                tunerReserveView.UpdateReserveData();
+                                autoAddView.UpdateAutoAddInfo();
+                                recInfoView.UpdateInfo();
 
-                                List<CtrlCmdCLI.Def.TunerReserveInfo> tunerReserveList = new List<CtrlCmdCLI.Def.TunerReserveInfo>();
-                                cmd.SendEnumTunerReserve(ref tunerReserveList);
-                                tunerReserveView.SetReserveInfo(tunerReserveList, reserveList);
-
-                                CtrlCmdCLI.Def.ReserveData item = new CtrlCmdCLI.Def.ReserveData();
-                                if (reserveView.GetNextReserve(ref item) == true)
+                                CommonManager.Instance.DB.ReloadReserveInfo();
+                                ReserveData item = new ReserveData();
+                                if (CommonManager.Instance.DB.GetNextReserve(ref item) == true)
                                 {
                                     String timeView = item.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
                                     DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
@@ -831,6 +1034,7 @@ namespace EpgTimerNW
                                 {
                                     taskTray.Text = "次の予約なし";
                                 }
+
                             }));
                         }
                     }
@@ -840,32 +1044,94 @@ namespace EpgTimerNW
                         pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
                         if (Dispatcher.CheckAccess() == true)
                         {
-                            if (Settings.Instance.NgAutoEpgLoadNW == false || reloadEpgFlag == true)
-                            {
-                                epgView.ReloadEpgData();
-                                epgView.ReDrawReserve();
-                                reloadEpgFlag = false;
-                            }
+                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
+                            epgView.UpdateEpgData();
                         }
                         else
                         {
                             Dispatcher.BeginInvoke(new Action(() =>
                             {
-                                if (Settings.Instance.NgAutoEpgLoadNW == false || reloadEpgFlag == true)
-                                {
-                                    epgView.ReloadEpgData();
-                                    epgView.ReDrawReserve();
-                                    reloadEpgFlag = false;
-                                }
+                                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
+                                epgView.UpdateEpgData();
                             }));
                         }
+                    }
+                    break;
+                case CtrlCmd.CMD_TIMER_GUI_VIEW_EXECUTE:
+                    {
+                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
+                        String exeCmd = "";
+                        CmdStreamUtil.ReadStreamData(ref exeCmd, pCmdParam);
+                        try
+                        {
+                            string[] cmd = exeCmd.Split('\"');
+                            System.Diagnostics.Process process;
+                            if (cmd.Length >= 3)
+                            {
+                                process = System.Diagnostics.Process.Start(cmd[1], cmd[2]);
+                            }
+                            else if (cmd.Length >= 2)
+                            {
+                                process = System.Diagnostics.Process.Start(cmd[1]);
+                            }
+                            else
+                            {
+                                process = System.Diagnostics.Process.Start(cmd[0]);
+                            }
+                            CmdStreamUtil.CreateStreamData(process.Id, ref pResParam);
+                        }
+                        catch
+                        {
+                        }
+                    }
+                    break;
+                case CtrlCmd.CMD_TIMER_GUI_QUERY_SUSPEND:
+                    {
+                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
+
+                        UInt16 param = 0;
+                        CmdStreamUtil.ReadStreamData(ref param, pCmdParam);
+
+                        Byte reboot = (Byte)((param & 0xFF00) >> 8);
+                        Byte suspendMode = (Byte)(param & 0x00FF);
+
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            SuspendCheckWindow dlg = new SuspendCheckWindow();
+                            dlg.SetMode(0, suspendMode);
+                            if (dlg.ShowDialog() != true)
+                            {
+                                cmd.SendSuspend(param);
+                            }
+                        }));
+                    }
+                    break;
+                case CtrlCmd.CMD_TIMER_GUI_QUERY_REBOOT:
+                    {
+                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
+
+                        UInt16 param = 0;
+                        CmdStreamUtil.ReadStreamData(ref param, pCmdParam);
+
+                        Byte reboot = (Byte)((param & 0xFF00) >> 8);
+                        Byte suspendMode = (Byte)(param & 0x00FF);
+
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            SuspendCheckWindow dlg = new SuspendCheckWindow();
+                            dlg.SetMode(reboot, suspendMode);
+                            if (dlg.ShowDialog() != true)
+                            {
+                                cmd.SendReboot();
+                            }
+                        }));
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_CHG:
                     {
                         pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
                         UInt16 status = 0;
-                        ReadStreamData(ref status, pCmdParam);
+                        CmdStreamUtil.ReadStreamData(ref status, pCmdParam);
 
                         if (Dispatcher.CheckAccess() == true)
                         {
@@ -902,6 +1168,25 @@ namespace EpgTimerNW
                         }
                     }
                     break;
+                case CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_NOTIFY2:
+                    {
+                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
+
+                        NotifySrvInfo status = new NotifySrvInfo();
+                        CmdStreamUtil.ReadStreamData(ref status, pCmdParam);
+                        if (Dispatcher.CheckAccess() == true)
+                        {
+                            NotifyStatus(status);
+                        }
+                        else
+                        {
+                            Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                NotifyStatus(status);
+                            }));
+                        }
+                    }
+                    break;
                 default:
                     pResParam.uiParam = (uint)ErrCode.CMD_NON_SUPPORT;
                     break;
@@ -909,106 +1194,127 @@ namespace EpgTimerNW
             return 0;
         }
 
-        private void CheckCmdLine()
+        void NotifyStatus(NotifySrvInfo status)
         {
-            foreach (string arg in Environment.GetCommandLineArgs())
+            System.Diagnostics.Trace.WriteLine((UpdateNotifyItem)status.notifyID);
+
+            switch ((UpdateNotifyItem)status.notifyID)
             {
-                String ext = System.IO.Path.GetExtension(arg);
-                if (string.Compare(ext, ".exe", true) == 0)
-                {
-                    //何もしない
-                }
-                else if (string.Compare(ext, ".eaa", true) == 0)
-                {
-                    //自動予約登録条件追加
-                    EAAFileClass eaaFile = new EAAFileClass();
-                    if (eaaFile.LoadEAAFile(arg) == true)
+                case UpdateNotifyItem.EpgData:
                     {
-                        List<CtrlCmdCLI.Def.EpgAutoAddData> val = new List<CtrlCmdCLI.Def.EpgAutoAddData>();
-                        val.Add(eaaFile.AddKey);
-                        if (NWConnect.Instance.cmd.SendAddEpgAutoAdd(val) == 205)
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
+                        epgView.UpdateEpgData();
+                    }
+                    break;
+                case UpdateNotifyItem.ReserveInfo:
+                    {
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        reserveView.UpdateReserveData();
+                        epgView.UpdateReserveData();
+                        tunerReserveView.UpdateReserveData();
+
+                    }
+                    break;
+                case UpdateNotifyItem.RecInfo:
+                    {
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
+                        recInfoView.UpdateInfo();
+                    }
+                    break;
+                case UpdateNotifyItem.AutoAddEpgInfo:
+                    {
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
+                        autoAddView.UpdateAutoAddInfo();
+                    }
+                    break;
+                case UpdateNotifyItem.AutoAddManualInfo:
+                    {
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
+                        autoAddView.UpdateAutoAddInfo();
+                    }
+                    break;
+                case UpdateNotifyItem.SrvStatus:
+                    {
+                        if (status.param1 == 1)
                         {
-                            MessageBox.Show("サーバーに接続できませんでした");
+                            taskTray.Icon = Properties.Resources.TaskIconRed;
+                        }
+                        else if (status.param1 == 2)
+                        {
+                            taskTray.Icon = Properties.Resources.TaskIconGreen;
+                        }
+                        else
+                        {
+                            taskTray.Icon = Properties.Resources.TaskIconBlue;
                         }
                     }
-                    else
+                    break;
+                case UpdateNotifyItem.PreRecStart:
                     {
-                        MessageBox.Show("解析に失敗しました。");
+                        taskTray.ShowBalloonTip("予約録画開始準備", status.param4, 10 * 1000);
+                        CommonManager.Instance.NotifyLogList.Add(status);
                     }
-                }
-                else if (string.Compare(ext, ".tvpid", true) == 0 || string.Compare(ext, ".tvpio", true) == 0)
-                {
-                    //iEPG追加
-                    IEPGFileClass iepgFile = new IEPGFileClass();
-                    if (iepgFile.LoadTVPIDFile(arg) == true)
+                    break;
+                case UpdateNotifyItem.RecStart:
                     {
-                        List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
-                        val.Add(iepgFile.AddInfo);
-                        if (NWConnect.Instance.cmd.SendAddReserve(val) == 205)
-                        {
-                            MessageBox.Show("サーバーに接続できませんでした");
-                        }
+                        taskTray.ShowBalloonTip("録画開始", status.param4, 10 * 1000);
+                        CommonManager.Instance.NotifyLogList.Add(status);
                     }
-                    else
+                    break;
+                case UpdateNotifyItem.RecEnd:
                     {
-                        MessageBox.Show("解析に失敗しました。デジタル用Version 2のiEPGの必要があります。");
+                        taskTray.ShowBalloonTip("録画終了", status.param4, 10 * 1000);
+                        CommonManager.Instance.NotifyLogList.Add(status);
                     }
-                }
-                else if (string.Compare(ext, ".tvpi", true) == 0)
-                {
-                    //iEPG追加
-                    IEPGFileClass iepgFile = new IEPGFileClass();
-                    if (iepgFile.LoadTVPIFile(arg) == true)
+                    break;
+                case UpdateNotifyItem.RecTuijyu:
                     {
-                        List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
-                        val.Add(iepgFile.AddInfo);
-                        if (NWConnect.Instance.cmd.SendAddReserve(val) == 205)
-                        {
-                            MessageBox.Show("サーバーに接続できませんでした");
-                        }
+                        taskTray.ShowBalloonTip("追従発生", status.param4, 10 * 1000);
+                        CommonManager.Instance.NotifyLogList.Add(status);
                     }
-                    else
+                    break;
+                case UpdateNotifyItem.ChgTuijyu:
                     {
-                        MessageBox.Show("解析に失敗しました。放送局名がサービスに関連づけされていない可能性があります。");
+                        taskTray.ShowBalloonTip("番組変更", status.param4, 10 * 1000);
+                        CommonManager.Instance.NotifyLogList.Add(status);
                     }
-                }
+                    break;
+                case UpdateNotifyItem.PreEpgCapStart:
+                    {
+                        taskTray.ShowBalloonTip("EPG取得", status.param4, 10 * 1000);
+                        CommonManager.Instance.NotifyLogList.Add(status);
+                    }
+                    break;
+                case UpdateNotifyItem.EpgCapStart:
+                    {
+                        taskTray.ShowBalloonTip("EPG取得", "開始", 10 * 1000);
+                        CommonManager.Instance.NotifyLogList.Add(status);
+                    }
+                    break;
+                case UpdateNotifyItem.EpgCapEnd:
+                    {
+                        taskTray.ShowBalloonTip("EPG取得", "終了", 10 * 1000);
+                        CommonManager.Instance.NotifyLogList.Add(status);
+                    }
+                    break;
+                default:
+                    break;
             }
-        }
 
-        public static bool ReadStreamData(ref String value, CMD_STREAM cmd)
-        {
-            int iPos = 0;
-            int iStrSize = 0;
-            Encoding uniEnc = Encoding.GetEncoding("unicode");
+            CommonManager.Instance.DB.ReloadReserveInfo();
+            ReserveData item = new ReserveData();
 
-            if (cmd.uiSize != cmd.bData.Length)
+            if (CommonManager.Instance.DB.GetNextReserve(ref item) == true)
             {
-                return false;
+                String timeView = item.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
+                DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
+                timeView += endTime.ToString("HH:mm:ss");
+                taskTray.Text = "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
             }
-
-            iStrSize = BitConverter.ToInt32(cmd.bData, iPos);
-            iPos += sizeof(int);
-            iStrSize -= sizeof(int) + 2;
-
-            value = uniEnc.GetString(cmd.bData, iPos, iStrSize);
-            iPos += iStrSize;
-
-            return true;
-        }
-
-        public static bool ReadStreamData(ref UInt16 value, CMD_STREAM cmd)
-        {
-            int iPos = 0;
-
-            if (cmd.uiSize != cmd.bData.Length)
+            else
             {
-                return false;
+                taskTray.Text = "次の予約なし";
             }
-
-            value = BitConverter.ToUInt16(cmd.bData, iPos);
-            iPos += sizeof(uint);
-
-            return true;
         }
     }
 }

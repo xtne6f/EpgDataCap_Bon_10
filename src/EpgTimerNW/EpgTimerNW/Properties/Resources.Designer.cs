@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace EpgTimerNW.Properties {
+namespace EpgTimer.Properties {
     using System;
     
     
@@ -60,30 +60,30 @@ namespace EpgTimerNW.Properties {
             }
         }
         
-        internal static System.Drawing.Icon BlueIcon {
+        internal static System.Drawing.Icon EpgTimer_Bon_Vista_blue_rev2 {
             get {
-                object obj = ResourceManager.GetObject("BlueIcon", resourceCulture);
+                object obj = ResourceManager.GetObject("EpgTimer_Bon_Vista_blue_rev2", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }
         
-        internal static System.Drawing.Icon GrayIcon {
+        internal static System.Drawing.Icon EpgTimer_Bon_Vista_gray_rev2 {
             get {
-                object obj = ResourceManager.GetObject("GrayIcon", resourceCulture);
+                object obj = ResourceManager.GetObject("EpgTimer_Bon_Vista_gray_rev2", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }
         
-        internal static System.Drawing.Icon GreenIcon {
+        internal static System.Drawing.Icon EpgTimer_Bon_Vista_green_rev2 {
             get {
-                object obj = ResourceManager.GetObject("GreenIcon", resourceCulture);
+                object obj = ResourceManager.GetObject("EpgTimer_Bon_Vista_green_rev2", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }
         
-        internal static System.Drawing.Icon RedIcon {
+        internal static System.Drawing.Icon EpgTimer_Bon_Vista_red_rev2 {
             get {
-                object obj = ResourceManager.GetObject("RedIcon", resourceCulture);
+                object obj = ResourceManager.GetObject("EpgTimer_Bon_Vista_red_rev2", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }

@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Collections;
+
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
 
@@ -24,11 +25,13 @@ namespace EpgTimer
     /// </summary>
     public partial class RecInfoView : UserControl
     {
-        private CtrlCmdUtil cmd = EpgTimerDef.Instance.CtrlCmd;
         private List<RecInfoItem> resultList = new List<RecInfoItem>();
 
         private GridViewColumn _lastHeaderClicked = null;
         private ListSortDirection _lastDirection = ListSortDirection.Ascending;
+        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+
+        private bool ReloadInfo = true;
 
         public RecInfoView()
         {
@@ -60,9 +63,14 @@ namespace EpgTimer
                 {
                     gridView_recinfo.Columns[5].Width = Settings.Instance.RecInfoColumnWidth5;
                 }
+                if (Settings.Instance.RecInfoColumnWidth6 != 0)
+                {
+                    gridView_recinfo.Columns[6].Width = Settings.Instance.RecInfoColumnWidth6;
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -76,172 +84,238 @@ namespace EpgTimer
                 Settings.Instance.RecInfoColumnWidth3 = gridView_recinfo.Columns[3].Width;
                 Settings.Instance.RecInfoColumnWidth4 = gridView_recinfo.Columns[4].Width;
                 Settings.Instance.RecInfoColumnWidth5 = gridView_recinfo.Columns[5].Width;
+                Settings.Instance.RecInfoColumnWidth6 = gridView_recinfo.Columns[6].Width;
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-        }
-
-        public void ReloadRecInfo()
-        {
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
-            if (dataView != null)
-            {
-                dataView.SortDescriptions.Clear();
-                dataView.Refresh();
-            }
-            listView_recinfo.DataContext = null;
-            resultList.Clear();
-
-            List<RecFileInfo> list = new List<RecFileInfo>();
-            uint err = cmd.SendEnumRecInfo(ref list);
-            foreach (RecFileInfo info in list)
-            {
-                RecInfoItem item = new RecInfoItem(info);
-                resultList.Add(item);
-            }
-
-            listView_recinfo.DataContext = resultList;
-            if (_lastHeaderClicked != null)
-            {
-                string header = ((Binding)_lastHeaderClicked.DisplayMemberBinding).Path.Path;
-                Sort(header, _lastDirection);
-            }
-            else
-            {
-                bool sort = false;
-                foreach (GridViewColumn info in gridView_recinfo.Columns)
-                {
-                    string header = ((Binding)info.DisplayMemberBinding).Path.Path;
-                    if (String.Compare(header, Settings.Instance.RecInfoColumnHead, true) == 0)
-                    {
-                        Sort(header, Settings.Instance.RecInfoSortDirection);
-
-                        if (Settings.Instance.RecInfoSortDirection == ListSortDirection.Ascending)
-                        {
-                            info.HeaderTemplate =
-                              Resources["HeaderTemplateArrowUp"] as DataTemplate;
-                        }
-                        else
-                        {
-                            info.HeaderTemplate =
-                              Resources["HeaderTemplateArrowDown"] as DataTemplate;
-                        }
-
-                        _lastHeaderClicked = info;
-                        _lastDirection = Settings.Instance.RecInfoSortDirection;
-                        sort = true;
-                        break;
-                    }
-                }
-                if (gridView_recinfo.Columns.Count > 0 && sort == false)
-                {
-                    string header = ((Binding)gridView_recinfo.Columns[0].DisplayMemberBinding).Path.Path;
-                    Sort(header, _lastDirection);
-                    gridView_recinfo.Columns[0].HeaderTemplate =
-                      Resources["HeaderTemplateArrowUp"] as DataTemplate;
-                    _lastHeaderClicked = gridView_recinfo.Columns[0];
-                }
-            }            
         }
 
         private void button_del_Click(object sender, RoutedEventArgs e)
         {
-            if (listView_recinfo.SelectedItems.Count > 0)
+            try
             {
-                List<UInt32> IDList = new List<uint>();
-                foreach (RecInfoItem info in listView_recinfo.SelectedItems)
+                if (listView_recinfo.SelectedItems.Count > 0)
                 {
-                    IDList.Add(info.RecInfo.ID);
+                    List<UInt32> IDList = new List<uint>();
+                    foreach (RecInfoItem info in listView_recinfo.SelectedItems)
+                    {
+                        IDList.Add(info.RecInfo.ID);
+                    }
+                    cmd.SendDelRecInfo(IDList);
                 }
-                cmd.SendDelRecInfo(IDList);
             }
-        }
-
-        private void button_play_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_recinfo.SelectedItem != null)
+            catch (Exception ex)
             {
-                RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
-                if (info.RecInfo.RecFilePath.Length > 0)
-                {
-                    try
-                    {
-                        System.Diagnostics.Process.Start(info.RecInfo.RecFilePath);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
-                }
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
-            GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            ListSortDirection direction;
-
-            if (headerClicked != null)
+            try
             {
-                if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
+                GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
+                ListSortDirection direction;
+
+                if (headerClicked != null)
                 {
-                    if (headerClicked.Column != _lastHeaderClicked)
+                    if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                     {
-                        direction = ListSortDirection.Ascending;
-                    }
-                    else
-                    {
-                        if (_lastDirection == ListSortDirection.Ascending)
-                        {
-                            direction = ListSortDirection.Descending;
-                        }
-                        else
+                        if (headerClicked.Column != _lastHeaderClicked)
                         {
                             direction = ListSortDirection.Ascending;
                         }
+                        else
+                        {
+                            if (_lastDirection == ListSortDirection.Ascending)
+                            {
+                                direction = ListSortDirection.Descending;
+                            }
+                            else
+                            {
+                                direction = ListSortDirection.Ascending;
+                            }
+                        }
+
+                        string header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
+                        Sort(header, direction);
+
+                        if (direction == ListSortDirection.Ascending)
+                        {
+                            headerClicked.Column.HeaderTemplate =
+                              Resources["HeaderTemplateArrowUp"] as DataTemplate;
+                        }
+                        else
+                        {
+                            headerClicked.Column.HeaderTemplate =
+                              Resources["HeaderTemplateArrowDown"] as DataTemplate;
+                        }
+
+                        // Remove arrow from previously sorted header
+                        if (_lastHeaderClicked != null && _lastHeaderClicked != headerClicked.Column)
+                        {
+                            _lastHeaderClicked.HeaderTemplate = null;
+                        }
+
+
+                        _lastHeaderClicked = headerClicked.Column;
+                        _lastDirection = direction;
                     }
-
-                    string header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
-                    Sort(header, direction);
-
-                    if (direction == ListSortDirection.Ascending)
-                    {
-                        headerClicked.Column.HeaderTemplate =
-                          Resources["HeaderTemplateArrowUp"] as DataTemplate;
-                    }
-                    else
-                    {
-                        headerClicked.Column.HeaderTemplate =
-                          Resources["HeaderTemplateArrowDown"] as DataTemplate;
-                    }
-
-                    // Remove arrow from previously sorted header
-                    if (_lastHeaderClicked != null && _lastHeaderClicked != headerClicked.Column)
-                    {
-                        _lastHeaderClicked.HeaderTemplate = null;
-                    }
-
-
-                    _lastHeaderClicked = headerClicked.Column;
-                    _lastDirection = direction;
                 }
             }
-
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            } 
         }
 
         private void Sort(string sortBy, ListSortDirection direction)
         {
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
+            try
+            {
+                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
 
-            dataView.SortDescriptions.Clear();
+                dataView.SortDescriptions.Clear();
 
-            SortDescription sd = new SortDescription(sortBy, direction);
-            dataView.SortDescriptions.Add(sd);
-            dataView.Refresh();
+                SortDescription sd = new SortDescription(sortBy, direction);
+                dataView.SortDescriptions.Add(sd);
+                dataView.Refresh();
 
-            Settings.Instance.RecInfoColumnHead = sortBy;
-            Settings.Instance.RecInfoSortDirection = direction;
+                Settings.Instance.RecInfoColumnHead = sortBy;
+                Settings.Instance.RecInfoSortDirection = direction;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+
+        public bool ReloadInfoData()
+        {
+            try
+            {
+                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
+                if (dataView != null)
+                {
+                    dataView.SortDescriptions.Clear();
+                    dataView.Refresh();
+                }
+                listView_recinfo.DataContext = null;
+                resultList.Clear();
+
+                ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
+                if (err == ErrCode.CMD_ERR_CONNECT)
+                {
+                    this.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                    }), null);
+                    return false;
+                }
+                if (err == ErrCode.CMD_ERR_TIMEOUT)
+                {
+                    this.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                    }), null);
+                    return false;
+                }
+                if (err != ErrCode.CMD_SUCCESS)
+                {
+                    this.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        MessageBox.Show("情報の取得でエラーが発生しました。");
+                    }), null);
+                    return false;
+                }
+
+                foreach (RecFileInfo info in CommonManager.Instance.DB.RecFileInfo.Values)
+                {
+                    RecInfoItem item = new RecInfoItem(info);
+                    resultList.Add(item);
+                }
+
+                listView_recinfo.DataContext = resultList;
+                if (_lastHeaderClicked != null)
+                {
+                    string header = ((Binding)_lastHeaderClicked.DisplayMemberBinding).Path.Path;
+                    Sort(header, _lastDirection);
+                }
+                else
+                {
+                    bool sort = false;
+                    foreach (GridViewColumn info in gridView_recinfo.Columns)
+                    {
+                        string header = ((Binding)info.DisplayMemberBinding).Path.Path;
+                        if (String.Compare(header, Settings.Instance.RecInfoColumnHead, true) == 0)
+                        {
+                            Sort(header, Settings.Instance.RecInfoSortDirection);
+
+                            if (Settings.Instance.RecInfoSortDirection == ListSortDirection.Ascending)
+                            {
+                                info.HeaderTemplate =
+                                  Resources["HeaderTemplateArrowUp"] as DataTemplate;
+                            }
+                            else
+                            {
+                                info.HeaderTemplate =
+                                  Resources["HeaderTemplateArrowDown"] as DataTemplate;
+                            }
+
+                            _lastHeaderClicked = info;
+                            _lastDirection = Settings.Instance.RecInfoSortDirection;
+                            sort = true;
+                            break;
+                        }
+                    }
+                    if (gridView_recinfo.Columns.Count > 0 && sort == false)
+                    {
+                        string header = ((Binding)gridView_recinfo.Columns[0].DisplayMemberBinding).Path.Path;
+                        Sort(header, _lastDirection);
+                        gridView_recinfo.Columns[0].HeaderTemplate =
+                          Resources["HeaderTemplateArrowUp"] as DataTemplate;
+                        _lastHeaderClicked = gridView_recinfo.Columns[0];
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                this.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                }), null);
+                return false;
+            } 
+            return true;
+        }
+
+        /// <summary>
+        /// リストの更新通知
+        /// </summary>
+        public void UpdateInfo()
+        {
+            ReloadInfo = true;
+            if (this.IsVisible == true)
+            {
+                if (ReloadInfoData() == true)
+                {
+                    ReloadInfo = false;
+                }
+            }
+        }
+
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (ReloadInfo == true && this.IsVisible == true)
+            {
+                if (ReloadInfoData() == true)
+                {
+                    ReloadInfo = false;
+                }
+            }
         }
 
         private void listView_recinfo_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -256,11 +330,22 @@ namespace EpgTimer
             }
         }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        private void button_play_Click(object sender, RoutedEventArgs e)
         {
-            if (resultList.Count == 0)
+            if (listView_recinfo.SelectedItem != null)
             {
-                ReloadRecInfo();
+                RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                if (info.RecInfo.RecFilePath.Length > 0)
+                {
+                    try
+                    {
+                        CommonManager.Instance.FilePlay(info.RecInfo.RecFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message);
+                    }
+                }
             }
         }
 
@@ -268,160 +353,31 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetViewMode(1);
 
-                SearchKeyInfo key = new SearchKeyInfo();
+                EpgSearchKeyInfo key = new EpgSearchKeyInfo();
 
                 RecInfoItem item = listView_recinfo.SelectedItem as RecInfoItem;
 
-                key.AndKey = item.RecInfo.Title;
+                key.andKey = item.RecInfo.Title;
                 Int64 sidKey = ((Int64)item.RecInfo.OriginalNetworkID) << 32 | ((Int64)item.RecInfo.TransportStreamID) << 16 | ((Int64)item.RecInfo.ServiceID);
-                key.ServiceList.Add(sidKey);
+                key.serviceList.Add(sidKey);
 
-                dlg.SetDefSearchKey(key);
+                dlg.SetSearchDefKey(key);
                 dlg.ShowDialog();
             }
         }
-    }
 
-    class RecInfoItem
-    {
-        public RecInfoItem(RecFileInfo item)
+        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            this.RecInfo = item;
-        }
-        public RecFileInfo RecInfo
-        {
-            get;
-            set;
-        }
-        public String EventName
-        {
-            get
+            if (ReloadInfo == true && this.IsVisible == true)
             {
-                String view = "";
-                if (RecInfo != null)
+                if (ReloadInfoData() == true)
                 {
-                    view = RecInfo.Title;
+                    ReloadInfo = false;
                 }
-                return view;
-            }
-        }
-        public String ServiceName
-        {
-            get
-            {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.ServiceName;
-                }
-                return view;
-            }
-        }
-        public String StartTime
-        {
-            get
-            {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = RecInfo.StartTime + TimeSpan.FromSeconds(RecInfo.DurationSecond);
-                    view += endTime.ToString("HH:mm:ss");                
-                }
-                return view;
-            }
-        }
-        public String Drops
-        {
-            get
-            {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Drops.ToString();
-                }
-                return view;
-            }
-        }
-        public String Scrambles
-        {
-            get
-            {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Scrambles.ToString();
-                }
-                return view;
-            }
-        }
-        public String Result
-        {
-            get
-            {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Comment;
-                }
-                return view;
-            }
-        }
-        public SolidColorBrush BackColor
-        {
-            get
-            {
-                SolidColorBrush color = Brushes.White;
-                if (RecInfo != null)
-                {
-                    if (RecInfo.Scrambles > 0)
-                    {
-                        color = Brushes.Yellow;
-                    }
-                    if (RecInfo.Drops > 0)
-                    {
-                        color = Brushes.Red;
-                    }
-                }
-                return color;
-            }
-        }
-        public TextBlock ToolTipView
-        {
-            get
-            {
-                if (Settings.Instance.NoToolTip == true)
-                {
-                    return null;
-                }
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = RecInfo.StartTime + TimeSpan.FromSeconds(RecInfo.DurationSecond);
-                    view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-
-                    view += ServiceName + "\r\n";
-                    view += EventName + "\r\n\r\n";
-                    view += "OriginalNetworkID : " + RecInfo.OriginalNetworkID.ToString() + " (0x" + RecInfo.OriginalNetworkID.ToString("X4") + ")\r\n";
-                    view += "TransportStreamID : " + RecInfo.TransportStreamID.ToString() + " (0x" + RecInfo.TransportStreamID.ToString("X4") + ")\r\n";
-                    view += "ServiceID : " + RecInfo.ServiceID.ToString() + " (0x" + RecInfo.ServiceID.ToString("X4") + ")\r\n";
-                    view += "EventID : " + RecInfo.EventID.ToString() + " (0x" + RecInfo.EventID.ToString("X4") + ")\r\n";
-                    view += "Drops : " + RecInfo.Drops.ToString() + "\r\n";
-                    view += "Scrambles : " + RecInfo.Scrambles.ToString() + "\r\n";
-                }
-
-
-                TextBlock block = new TextBlock();
-                block.Text = view;
-                block.MaxWidth = 400;
-                block.TextWrapping = TextWrapping.Wrap;
-                return block;
             }
         }
     }

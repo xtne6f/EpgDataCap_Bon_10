@@ -4,6 +4,7 @@
 #include "ReserveManager.h"
 #include "SleepUtil.h"
 #include "FileStreamingManager.h"
+#include "NotifyManager.h"
 
 #include "../../Common/ParseEpgAutoAddText.h"
 #include "../../Common/ParseManualAutoAddText.h"
@@ -43,6 +44,7 @@ protected:
 	CReserveManager reserveManager;
 	CSleepUtil sleepUtil;
 	CFileStreamingManager streamingManager;
+	CNotifyManager notifyManager;
 
 	CParseEpgAutoAddText epgAutoAdd;
 	CParseManualAutoAddText manualAutoAdd;
@@ -55,8 +57,8 @@ protected:
 
 	BOOL reloadEpgChkFlag;
 
-	map<DWORD,DWORD> registGUI; //PID,PID
-	map<wstring,REGIST_TCP_INFO> registTCP; //IP:Port
+	//map<DWORD,DWORD> registGUI; //PID,PID
+	//map<wstring,REGIST_TCP_INFO> registTCP; //IP:Port
 
 	BYTE suspendMode;
 	BYTE rebootFlag;
@@ -73,6 +75,7 @@ protected:
 	BOOL chkGroupEvent;
 	BYTE rebootDef;
 	BOOL ngFileStreaming;
+	BOOL ngEpgFileSrvCoop;
 
 	BOOL awayMode;
 
