@@ -196,8 +196,13 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 						//PES
 						continue;
 					}
-					this->epgUtil.AddTSPacket(data->data + i, 188);
-
+					try{
+						this->epgUtil.AddTSPacket(data->data + i, 188);
+					}catch(...){
+						_OutputDebugString(L"★★CTSOut::AddTSBuff epgUtil.AddTSPacket");
+						this->epgUtil.UnInitialize();
+						this->epgUtil.Initialize(FALSE);
+					}
 					WORD onid = 0xFFFF;
 					WORD tsid = 0xFFFF;
 					if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
@@ -216,6 +221,22 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 							}
 							this->decodeUtil.SetEmm(this->emmEnableFlag);
 							ResetErrCount();
+						}else if( this->lastONID == onid && this->lastTSID == tsid &&
+							(GetTimeCount() > this->chChangeTime + 6)
+							){
+							OutputDebugString(L"★Ch NoChange\r\n");
+								this->chChangeFlag = FALSE;
+								this->chChangeErr = FALSE;
+								this->lastONID = onid;
+								this->lastTSID = tsid;
+								this->epgUtil.ClearSectionStatus();
+								if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
+									OutputDebugString(L"★★Decode DLL load err\r\n");
+									Sleep(100);
+									this->decodeUtil.SetNetwork(onid, tsid);
+								}
+								this->decodeUtil.SetEmm(this->emmEnableFlag);
+								ResetErrCount();
 						}else if( GetTimeCount() > this->chChangeTime + 15 ){
 							if( this->lastONID == onid && this->lastTSID == tsid ){
 								this->chChangeFlag = FALSE;

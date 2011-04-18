@@ -118,9 +118,10 @@ void CTunerBankCtrl::ReloadSetting()
 	GetModuleFolderPath(viewIniPath);
 	viewIniPath += L"\\EpgDataCap_Bon.ini";
 
-
-	this->defStartMargine = ((LONGLONG)GetPrivateProfileInt(L"SET", L"StartMargin", 5, iniPath.c_str())) * I64_1SEC;
-	this->defEndMargine = ((LONGLONG)GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath.c_str())) * I64_1SEC;
+	int sec = GetPrivateProfileInt(L"SET", L"StartMargin", 5, iniPath.c_str());
+	this->defStartMargine = ((LONGLONG)sec) * I64_1SEC;
+	sec = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath.c_str());
+	this->defEndMargine = ((LONGLONG)sec) * I64_1SEC;
 	this->recWakeTime = ((LONGLONG)GetPrivateProfileInt(L"SET", L"RecAppWakeTime", 2, iniPath.c_str())) * 60 * I64_1SEC;
 	this->recMinWake = GetPrivateProfileInt(L"SET", L"RecMinWake", 1, iniPath.c_str());
 	this->recView = GetPrivateProfileInt(L"SET", L"RecView", 1, iniPath.c_str());

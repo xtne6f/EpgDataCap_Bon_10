@@ -304,6 +304,11 @@ namespace EpgTimer
             {
                 setInfo.PartialRecFlag = 0;
             }
+            setInfo.PartialRecFolder.Clear();
+            foreach (RecFileSetInfo info in listView_recFolder_1seg.Items)
+            {
+                setInfo.PartialRecFolder.Add(info);
+            }
             if (checkBox_continueRec.IsChecked == true)
             {
                 setInfo.ContinueRecFlag = 1;
@@ -476,6 +481,11 @@ namespace EpgTimer
                 else
                 {
                     checkBox_partial.IsChecked = false;
+                }
+                listView_recFolder_1seg.Items.Clear();
+                foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
+                {
+                    listView_recFolder_1seg.Items.Add(info);
                 }
 
                 foreach (TunerSelectInfo info in comboBox_tuner.Items)

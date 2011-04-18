@@ -28,10 +28,11 @@
         <Button Content="予約" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="126,6,0,0" Name="button_add_reserve" VerticalAlignment="Top" Width="75" Click="button_add_reserve_Click" Style="{StaticResource ButtonStyle1}" />
         <Button Content="自動予約登録条件に追加" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="244,6,0,0" Name="button_add_epgAutoAdd" VerticalAlignment="Top" Width="178" Click="button_add_epgAutoAdd_Click" Style="{StaticResource ButtonStyle1}" />
         <Button Content="自動予約登録条件を変更" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="450,6,0,0" Name="button_chg_epgAutoAdd" VerticalAlignment="Top" Width="178" Click="button_chg_epgAutoAdd_Click" Style="{StaticResource ButtonStyle1}" />
-        <ListView Grid.Row="2" Name="listView_result" Margin="10" SelectionMode="Single" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" MouseDoubleClick="listView_result_MouseDoubleClick">
+        <ListView Grid.Row="2" Name="listView_result" Margin="10" SelectionMode="Single" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click">
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="Background" Value="{Binding BackColor}" />
+                    <EventSetter Event="MouseDoubleClick" Handler="listView_result_MouseDoubleClick"/>
                 </Style>
             </ListView.Resources>
             <ListView.View>

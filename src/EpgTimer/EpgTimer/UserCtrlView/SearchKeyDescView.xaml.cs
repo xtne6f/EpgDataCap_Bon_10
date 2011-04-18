@@ -599,5 +599,68 @@ namespace EpgTimer
             }
         }
 
+        private void button_bs_on2_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (ServiceItem info in listView_service.Items)
+            {
+                if (info.ServiceInfo.ONID == 0x04 &&
+                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
+                {
+                    info.IsSelected = true;
+                }
+            }
+        }
+
+        private void button_cs_on2_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (ServiceItem info in listView_service.Items)
+            {
+                if ((info.ServiceInfo.ONID == 0x06 || info.ServiceInfo.ONID == 0x07) &&
+                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
+                {
+                    info.IsSelected = true;
+                }
+            }
+        }
+
+        private void button_tere_on2_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (ServiceItem info in listView_service.Items)
+            {
+                if ((0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8) &&
+                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
+                {
+                    info.IsSelected = true;
+                }
+            }
+        }
+
+        private void button_1seg_on2_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (ServiceItem info in listView_service.Items)
+            {
+                if ((0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8) &&
+                    info.ServiceInfo.partialReceptionFlag == 1)
+                {
+                    info.IsSelected = true;
+                }
+            }
+        }
+
+        private void button_other_on2_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (ServiceItem info in listView_service.Items)
+            {
+                if (info.ServiceInfo.ONID != 0x04 &&
+                    info.ServiceInfo.ONID != 0x06 &&
+                    info.ServiceInfo.ONID != 0x07 &&
+                    !(0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8)
+                    )
+                {
+                    info.IsSelected = true;
+                }
+            }
+        }
+
     }
 }
