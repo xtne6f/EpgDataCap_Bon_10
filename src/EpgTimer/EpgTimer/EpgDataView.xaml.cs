@@ -35,8 +35,10 @@ namespace EpgTimer
             {
                 if (RedrawEpg == true && this.IsVisible == true)
                 {
-                    ReDrawEpgData();
-                    RedrawEpg = false;
+                    if (ReDrawEpgData() == true)
+                    {
+                        RedrawEpg = false;
+                    }
                 }
             }
             catch (Exception ex)
@@ -54,8 +56,10 @@ namespace EpgTimer
             {
                 if (this.IsVisible == true)
                 {
-                    ReDrawEpgData();
-                    RedrawEpg = false;
+                    if (ReDrawEpgData() == true)
+                    {
+                        RedrawEpg = false;
+                    }
                 }
                 else
                 {
@@ -126,6 +130,13 @@ namespace EpgTimer
             {
                 if (Settings.Instance.UseCustomEpgView == false)
                 {
+                    if (CommonManager.Instance.NWMode == true)
+                    {
+                        if (CommonManager.Instance.NW.IsConnected == false)
+                        {
+                            return false;
+                        }
+                    }
                     ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
                     if (err == ErrCode.CMD_ERR_CONNECT)
                     {

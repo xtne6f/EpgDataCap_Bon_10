@@ -883,17 +883,24 @@ namespace EpgTimer
         {
             try
             {
-                System.Diagnostics.Process process;
-                if (Settings.Instance.FilePlayExe.Length == 0)
+                if (NWMode == false)
                 {
-                    process = System.Diagnostics.Process.Start(filePath);
+                    System.Diagnostics.Process process;
+                    if (Settings.Instance.FilePlayExe.Length == 0)
+                    {
+                        process = System.Diagnostics.Process.Start(filePath);
+                    }
+                    else
+                    {
+                        String cmdLine = Settings.Instance.FilePlayCmd;
+                        cmdLine = cmdLine.Replace("$FilePath$", filePath);
+                        process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
+
+                    }
                 }
                 else
                 {
-                    String cmdLine = Settings.Instance.FilePlayCmd;
-                    cmdLine = cmdLine.Replace("$FilePath$", filePath);
-                    process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
-                    
+                    TVTestCtrl.StartStreamingPlay(filePath, NW.ConnectedIP, NW.ConnectedPort);
                 }
             }
             catch (Exception ex)

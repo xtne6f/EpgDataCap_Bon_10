@@ -326,6 +326,7 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 				Format(pipe, L"%s%d", CMD2_GUI_CTRL_PIPE, itr->first);
 				Format(waitEvent, L"%s%d", CMD2_GUI_CTRL_WAIT_CONNECT, itr->first);
 
+				sendCtrl.SetSendMode(FALSE);
 				sendCtrl.SetPipeSetting(waitEvent, pipe);
 				sendCtrl.SetConnectTimeOut(5*1000);
 				DWORD err = sendCtrl.SendGUINotifyInfo2(&notifyInfo);
@@ -395,9 +396,9 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 		if( sys->NotifyLock() == FALSE ) return 0;
 
 		if( notifyInfo.notifyID <= 100 ){
-			wait = 0;
+			wait = 100;
 		}else{
-			wait = 0;
+			wait = 100;
 			if( sys->notifyList.size() > 0 ){
 				if( sys->notifyList[0].notifyID > 100 ){
 					wait = 5*1000;

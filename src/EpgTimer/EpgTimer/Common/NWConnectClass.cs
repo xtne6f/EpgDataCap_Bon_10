@@ -23,6 +23,7 @@ namespace EpgTimer
         private TcpListener server = null;
 
         private String connectedIP;
+        private UInt32 connectedPort = 0;
 
         private CtrlCmdUtil cmd = null;
 
@@ -39,6 +40,14 @@ namespace EpgTimer
             get
             {
                 return connectedIP;
+            }
+        }
+
+        public UInt32 ConnectedPort
+        {
+            get
+            {
+                return connectedPort;
             }
         }
 
@@ -93,6 +102,7 @@ namespace EpgTimer
             {
                 connectFlag = true;
                 connectedIP = srvIP;
+                connectedPort = srvPort;
                 return true;
             }
         }

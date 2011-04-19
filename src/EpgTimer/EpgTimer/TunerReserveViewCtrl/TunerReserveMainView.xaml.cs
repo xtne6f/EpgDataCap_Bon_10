@@ -560,6 +560,13 @@ namespace EpgTimer
         {
             try
             {
+                if (CommonManager.Instance.NWMode == true)
+                {
+                    if (CommonManager.Instance.NW.IsConnected == false)
+                    {
+                        return false;
+                    }
+                } 
                 ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
                 if (err == ErrCode.CMD_ERR_CONNECT)
                 {

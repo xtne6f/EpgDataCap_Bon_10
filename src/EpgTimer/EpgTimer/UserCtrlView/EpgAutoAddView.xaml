@@ -5,6 +5,11 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
+    <UserControl.Resources>
+        <Style TargetType="{x:Type TextBox}">
+            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
+        </Style>
+    </UserControl.Resources>
     <Grid>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -18,18 +23,39 @@
                         <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
                         <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
                     </Style>
-                    <Style TargetType="GridViewColumnHeader">
-                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                    </Style>
                 </ListView.Resources>
                 <ListView.View>
                     <GridView x:Name="gridView_key">
-                        <GridViewColumn Header="Andキーワード" DisplayMemberBinding="{Binding Path=AndKey}" />
-                        <GridViewColumn Header="Notキーワード" DisplayMemberBinding="{Binding Path=NotKey}" />
-                        <GridViewColumn Header="正規表現" DisplayMemberBinding="{Binding Path=RegExp}" />
-                        <GridViewColumn Header="録画モード" DisplayMemberBinding="{Binding Path=RecMode}" />
-                        <GridViewColumn Header="優先度" DisplayMemberBinding="{Binding Path=Priority}" />
-                        <GridViewColumn Header="追従" DisplayMemberBinding="{Binding Path=Tuijyu}" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=AndKey}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="Andキーワード" HorizontalContentAlignment="Left"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=NotKey}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="Notキーワード" HorizontalContentAlignment="Left"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=RegExp}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="正規表現" HorizontalContentAlignment="Left"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="録画モード" HorizontalContentAlignment="Left"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Priority}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="優先度" HorizontalContentAlignment="Left"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Tuijyu}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="追従" HorizontalContentAlignment="Left"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
                     </GridView>
                 </ListView.View>
             </ListView>

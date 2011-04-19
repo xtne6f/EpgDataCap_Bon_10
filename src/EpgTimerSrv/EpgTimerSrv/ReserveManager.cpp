@@ -2241,6 +2241,7 @@ DWORD CReserveManager::ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* in
 			if( itrBank->second->startTime == inItem->endTime || itrBank->second->endTime == inItem->startTime ){
 				//連続予約の可能性あり
 				status = 2;
+				break;
 			}else if(( itrBank->second->startTime <= inItem->startTime && inItem->startTime <= itrBank->second->endTime ) ||
 				( itrBank->second->startTime <= inItem->endTime && inItem->endTime <= itrBank->second->endTime ) ||
 				( inItem->startTime <= itrBank->second->startTime && itrBank->second->startTime <= inItem->endTime ) ||

@@ -32,6 +32,7 @@ namespace EpgTimer
         private int lastSelectIndex = 0;
         private Dictionary<UInt32, RecSettingData> presetList = new Dictionary<UInt32, RecSettingData>();
 
+        private bool initLoad = false;
         public RecSettingView()
         {
             InitializeComponent();
@@ -109,6 +110,7 @@ namespace EpgTimer
 
             presetList.Add(newInfo.ID, newSet);
             int index = comboBox_preSet.Items.Add(newInfo);
+            SavePreset();
             comboBox_preSet.SelectedIndex = index;
 
         }
@@ -136,6 +138,7 @@ namespace EpgTimer
                     defFolder1SegName += preItem.ID.ToString();
                 }
 
+                IniFileHandler.WritePrivateProfileString(defName, "SetName", preItem.DisplayName, SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString(defName, "RecMode", info.RecMode.ToString(), SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString(defName, "Priority", info.Priority.ToString(), SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString(defName, "TuijyuuFlag", info.TuijyuuFlag.ToString(), SettingPath.TimerSrvIniPath);
@@ -150,7 +153,7 @@ namespace EpgTimer
                     IniFileHandler.WritePrivateProfileString(defFolderName, "WritePlugIn" + j.ToString(), info.RecFolderList[j].WritePlugIn, SettingPath.TimerSrvIniPath);
                     IniFileHandler.WritePrivateProfileString(defFolderName, "RecNamePlugIn" + j.ToString(), info.RecFolderList[j].RecNamePlugIn, SettingPath.TimerSrvIniPath);
                 }
-                IniFileHandler.WritePrivateProfileString(defFolder1SegName, "Count", info.RecFolderList.Count.ToString(), SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString(defFolder1SegName, "Count", info.PartialRecFolder.Count.ToString(), SettingPath.TimerSrvIniPath);
                 for (int j = 0; j < info.PartialRecFolder.Count; j++)
                 {
                     IniFileHandler.WritePrivateProfileString(defFolder1SegName, j.ToString(), info.PartialRecFolder[j].RecFolder, SettingPath.TimerSrvIniPath);
@@ -324,7 +327,11 @@ namespace EpgTimer
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            UpdateView();
+            if (initLoad == false)
+            {
+                UpdateView();
+                initLoad = true;
+            }
         }
 
         private void comboBox_preSet_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -340,6 +347,7 @@ namespace EpgTimer
                     }
                     else
                     {
+                        recSetting = null;
                         recSetting = new RecSettingData();
                         Settings.GetDefRecSetting(item.ID, ref recSetting);
                     }
@@ -617,6 +625,7 @@ namespace EpgTimer
 
                         lastSelectIndex = -1;
                         comboBox_preSet.SelectedIndex = 0;
+                        SavePreset();
                     }
                 }
             }
@@ -641,7 +650,6 @@ namespace EpgTimer
                     String name = "";
                     setting.GetName(ref name);
                     AddPreset(name);
-                    SavePreset();
                 }
             }
             catch (Exception ex)

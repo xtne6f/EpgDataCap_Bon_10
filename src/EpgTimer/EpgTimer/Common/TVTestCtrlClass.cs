@@ -220,6 +220,81 @@ namespace EpgTimer
             return true;
         }
 
+        public bool StartStreamingPlay(String filePath, String srvIP, UInt32 srvPort)
+        {
+            try
+            {
+                if (Settings.Instance.TvTestExe.Length == 0)
+                {
+                    MessageBox.Show("TVTest.exeのパスが設定されていません");
+                    return false;
+                }
+
+                UInt32 ctrlID = 0;
+                UInt32 err = cmd.SendNwPlayOpen(filePath, ref ctrlID);
+                if (err == 205)
+                {
+                    MessageBox.Show("サーバーに接続できませんでした");
+                    return false;
+                }
+                else if (err != 1)
+                {
+                    MessageBox.Show("まだ録画が開始されていません");
+                    return false;
+                }
+
+                if (IsOpenTVTest() == false)
+                {
+                    processID = FindTVTestProcess();
+                    if (processID == -1)
+                    {
+                        Process process;
+                        process = System.Diagnostics.Process.Start(Settings.Instance.TvTestExe, Settings.Instance.TvTestCmd);
+                        processID = process.Id;
+                        System.Threading.Thread.Sleep(1000);
+                    }
+                }
+                cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + processID.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + processID.ToString());
+                cmdTvTest.SetConnectTimeOut(1000);
+
+                UInt32 ip = 0;
+                Int32 shift = 24;
+                foreach (string word in srvIP.Split('.'))
+                {
+                    ip |= Convert.ToUInt32(word) << shift;
+                    shift -= 8;
+                }
+
+                TVTestStreamingInfo sendInfo = new TVTestStreamingInfo();
+                sendInfo.enableMode = 1;
+                sendInfo.ctrlID = ctrlID;
+                sendInfo.serverIP = ip;
+                sendInfo.serverPort = srvPort;
+
+                if (Settings.Instance.NwTvModeUDP == true)
+                {
+                    sendInfo.udpSend = 1;
+                }
+                if (Settings.Instance.NwTvModeTCP == true)
+                {
+                    sendInfo.tcpSend = 1;
+                }
+                if (cmdTvTest.SendViewSetStreamingInfo(sendInfo) != 1)
+                {
+                    System.Threading.Thread.Sleep(5 * 1000);
+                    cmdTvTest.SendViewSetStreamingInfo(sendInfo);
+                }
+
+                WakeupWindow(processID);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+            return true;
+        }
+
+
         private bool IsOpenTVTest()
         {
             bool ret = false;

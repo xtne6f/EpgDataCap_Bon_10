@@ -19,6 +19,9 @@
         <Style TargetType="{x:Type ListBox}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         </Style>
+        <Style TargetType="{x:Type TextBox}">
+            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
+        </Style>
     </UserControl.Resources>
     <Grid>
         <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged">
