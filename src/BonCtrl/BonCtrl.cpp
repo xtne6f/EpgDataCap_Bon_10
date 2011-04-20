@@ -570,7 +570,7 @@ UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
 		DWORD remain = 0;
 		try{
 			if( sys->bonUtil.GetTsStream(&data,&size,&remain) == TRUE ){
-				if( size != 0 ){
+				if( size != 0 && data != NULL){
 					TS_DATA* item = new TS_DATA;
 					try{
 						if( sys->packetInit.GetTSData(data, size, &item->data, &item->size) == TRUE ){
@@ -1292,6 +1292,8 @@ DWORD CBonCtrl::StartEpgCap(
 		UnLock();
 		return ERR_FALSE;
 	}
+
+	StopBackgroundEpgCap();
 
 	if( ::WaitForSingleObject(this->epgCapThread, 0) == WAIT_OBJECT_0 ){
 		CloseHandle(this->epgCapThread);

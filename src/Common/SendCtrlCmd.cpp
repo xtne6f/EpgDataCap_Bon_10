@@ -148,6 +148,7 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	//接続
 	HANDLE pipe = _CreateFile( pipeName, GENERIC_READ|GENERIC_WRITE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if( pipe == INVALID_HANDLE_VALUE ){
+		_OutputDebugString(L"*+* ConnectPipe Err:%d\r\n", GetLastError());
 		return CMD_ERR_CONNECT;
 	}
 

@@ -163,7 +163,14 @@ BOOL CTSOut::GetStreamID(WORD* ONID, WORD* TSID)
 DWORD CTSOut::AddTSBuff(TS_DATA* data)
 {
 	if( Lock() == FALSE ) return ERR_FALSE;
-
+	if( data == NULL ){
+		UnLock();
+		return ERR_FALSE;
+	}
+	if( data->size == 0 || data->data == NULL ){
+		UnLock();
+		return ERR_FALSE;
+	}
 	if( data->size > this->decodeBuffSize ){
 		SAFE_DELETE_ARRAY(this->decodeBuff);
 		this->decodeBuff = new BYTE[data->size*2];
@@ -173,7 +180,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 
 	BYTE* decodeData = NULL;
 	DWORD decodeSize = 0;
-	
+	BOOL chChgComp = FALSE;
 	try{
 		for( DWORD i=0; i<data->size; i+=188 ){
 			CTSPacketUtil packet;
@@ -221,6 +228,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 							}
 							this->decodeUtil.SetEmm(this->emmEnableFlag);
 							ResetErrCount();
+							chChgComp = TRUE;
 						}else if( this->lastONID == onid && this->lastTSID == tsid &&
 							(GetTimeCount() > this->chChangeTime + 6)
 							){
@@ -237,6 +245,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 								}
 								this->decodeUtil.SetEmm(this->emmEnableFlag);
 								ResetErrCount();
+								chChgComp = TRUE;
 						}else if( GetTimeCount() > this->chChangeTime + 15 ){
 							if( this->lastONID == onid && this->lastTSID == tsid ){
 								this->chChangeFlag = FALSE;
@@ -251,6 +260,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 								}
 								this->decodeUtil.SetEmm(this->emmEnableFlag);
 								ResetErrCount();
+								chChgComp = TRUE;
 							}else{
 //								OutputDebugString(L"★Ch Change Err\r\n");
 								//10秒以上たってるなら切り替わったとする
@@ -378,7 +388,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 	}
 	try{
 		if( this->deocdeBuffWriteSize > 0 ){
-			if( this->enableDecodeFlag == TRUE){
+			if( this->enableDecodeFlag == TRUE && this->chChangeFlag == FALSE && chChgComp == FALSE){
 				//デコード必要
 
 				if( decodeUtil.Decode(this->decodeBuff, this->deocdeBuffWriteSize, &decodeData, &decodeSize) == FALSE ){

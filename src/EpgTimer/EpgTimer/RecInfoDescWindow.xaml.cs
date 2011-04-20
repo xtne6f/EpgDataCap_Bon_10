@@ -42,22 +42,11 @@ namespace EpgTimer
                 {
                     try
                     {
-                        System.Diagnostics.Process process;
-                        if (Settings.Instance.FilePlayExe.Length == 0)
-                        {
-                            process = System.Diagnostics.Process.Start(recInfo.RecFilePath);
-                        }
-                        else
-                        {
-                            String cmdLine = Settings.Instance.FilePlayCmd;
-                            cmdLine = cmdLine.Replace("$FilePath$", recInfo.RecFilePath);
-                            process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
-
-                        }
+                        CommonManager.Instance.FilePlay(recInfo.RecFilePath);
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                        MessageBox.Show(ex.Message);
                     }
                 }
             }
