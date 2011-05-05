@@ -30,6 +30,7 @@ CWriteTSFile::~CWriteTSFile(void)
 		this->outStopEvent = NULL;
 	}
 
+
 	if( this->buffLockEvent != NULL ){
 		CloseHandle(this->buffLockEvent);
 		this->buffLockEvent = NULL;
@@ -56,14 +57,18 @@ BOOL CWriteTSFile::Lock(LPCWSTR log, DWORD timeOut)
 	if( this->lockEvent == NULL ){
 		return FALSE;
 	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
+	//if( log != NULL ){
+	//	OutputDebugString(log);
+	//}
 	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
 	if( dwRet == WAIT_ABANDONED || 
 		dwRet == WAIT_FAILED ||
 		dwRet == WAIT_TIMEOUT){
-			OutputDebugString(L"◆CWriteTSFile::Lock FALSE");
+			if( log != NULL ){
+				_OutputDebugString(L"◆CWriteTSFile::Lock FALSE : %s", log);
+			}else{
+				OutputDebugString(L"◆CWriteTSFile::Lock FALSE");
+			}
 		return FALSE;
 	}
 	return TRUE;
@@ -96,7 +101,7 @@ BOOL CWriteTSFile::StartSave(
 	vector<wstring>* saveFolderSub
 )
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"StartSave") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	exceptionErr = FALSE;
@@ -105,7 +110,7 @@ BOOL CWriteTSFile::StartSave(
 		UnLock();
 		return FALSE;
 	}
-
+	
 	if( this->outThread == NULL || this->fileList.size() == 0 ){
 		this->writeTotalSize = 0;
 		this->subRecFlag = FALSE;
@@ -164,7 +169,9 @@ BOOL CWriteTSFile::StartSave(
 					item->freeChk = firstFreeChek;
 					item->overWriteFlag = overWriteFlag;
 					this->fileList.push_back(item);
-
+					if( i==0 ){
+						this->mainSaveFilePath = saveFilePath;
+					}
 					firstFreeChek = FALSE;
 				}
 			}
@@ -245,7 +252,7 @@ BOOL CWriteTSFile::ChkFreeFolder(
 // TRUE（成功）、FALSE（失敗）
 BOOL CWriteTSFile::EndSave()
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"EndSave") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	if( this->outThread != NULL ){
@@ -303,7 +310,7 @@ BOOL CWriteTSFile::AddTSBuff(
 	DWORD size
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"AddTSBuff") == FALSE ) return FALSE;
 
 	if( data == NULL || size == 0 || this->outThread == NULL){
 		UnLock();
@@ -398,6 +405,7 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 					_OutputDebugString(L"★★CWriteTSFile::OutThread Exception2");
 				}
 			}
+
 			sys->writeTotalSize += data->size;
 
 			SAFE_DELETE(data);
@@ -417,12 +425,11 @@ void CWriteTSFile::GetSaveFilePath(
 	BOOL* subRecFlag
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"GetSaveFilePath") == FALSE ) return ;
 
-	if( this->fileList.size() > 0 ){
-		*filePath = this->fileList[0]->recFilePath;
-	}
+	*filePath = this->mainSaveFilePath;
 	*subRecFlag = this->subRecFlag;
+
 	UnLock();
 }
 
@@ -433,7 +440,7 @@ void CWriteTSFile::GetRecWriteSize(
 	__int64* writeSize
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"GetRecWriteSize") == FALSE ) return ;
 
 	if( writeSize != NULL ){
 		*writeSize = this->writeTotalSize;

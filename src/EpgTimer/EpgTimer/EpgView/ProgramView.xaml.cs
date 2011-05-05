@@ -119,7 +119,7 @@ namespace EpgTimer.EpgView
                         {
                             if (info.TopPos <= cursorPos.Y && cursorPos.Y < info.TopPos + info.Height)
                             {
-                                if (info.TitleDrawErr == false)
+                                if (info.TitleDrawErr == false && Settings.Instance.EpgToolTipNoViewOnly == true)
                                 {
                                     break;
                                 }
@@ -345,6 +345,7 @@ namespace EpgTimer.EpgView
 
                             }
 
+                            toolTipTimer.Interval = TimeSpan.FromMilliseconds(Settings.Instance.EpgToolTipViewWait);
                             toolTipTimer.Start();
                             lastPopupPos = CursorPos;
                         }

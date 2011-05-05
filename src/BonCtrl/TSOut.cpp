@@ -68,14 +68,18 @@ BOOL CTSOut::Lock(LPCWSTR log, DWORD timeOut)
 	if( this->lockEvent == NULL ){
 		return FALSE;
 	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
+	//if( log != NULL ){
+	//	OutputDebugString(log);
+	//}
 	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
 	if( dwRet == WAIT_ABANDONED || 
 		dwRet == WAIT_FAILED ||
 		dwRet == WAIT_TIMEOUT){
-			OutputDebugString(L"◆CTSOut::Lock FALSE");
+			if( log != NULL ){
+				_OutputDebugString(L"◆CTSOut::Lock FALSE : %s", log);
+			}else{
+				OutputDebugString(L"◆CTSOut::Lock FALSE");
+			}
 		return FALSE;
 	}
 	return TRUE;
@@ -93,7 +97,7 @@ void CTSOut::UnLock(LPCWSTR log)
 
 DWORD CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"SetChChangeEvent") == FALSE ) return ERR_FALSE;
 
 	this->chChangeFlag = TRUE;
 	this->chChangeErr = FALSE;
@@ -114,7 +118,7 @@ DWORD CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 
 BOOL CTSOut::IsChChanging(BOOL* chChgErr)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"IsChChanging") == FALSE ) return ERR_FALSE;
 
 	BOOL ret = this->chChangeFlag;
 	if( chChgErr != NULL ){
@@ -144,7 +148,7 @@ void CTSOut::ResetChChange()
 
 BOOL CTSOut::GetStreamID(WORD* ONID, WORD* TSID)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"GetStreamID") == FALSE ) return ERR_FALSE;
 
 	BOOL ret = TRUE;
 	if( this->chChangeFlag == TRUE ){
@@ -162,7 +166,7 @@ BOOL CTSOut::GetStreamID(WORD* ONID, WORD* TSID)
 
 DWORD CTSOut::AddTSBuff(TS_DATA* data)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"AddTSBuff") == FALSE ) return ERR_FALSE;
 	if( data == NULL ){
 		UnLock();
 		return ERR_FALSE;
@@ -533,7 +537,7 @@ BOOL CTSOut::StartSaveEPG(
 	wstring epgFilePath
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"StartSaveEPG") == FALSE ) return FALSE;
 	if( this->epgFile != NULL ){
 		UnLock();
 		return FALSE;
@@ -564,7 +568,7 @@ BOOL CTSOut::StopSaveEPG(
 	BOOL copy
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"StopSaveEPG") == FALSE ) return FALSE;
 	if( this->epgFile == NULL ){
 		UnLock();
 		return FALSE;
@@ -588,7 +592,7 @@ BOOL CTSOut::StopSaveEPG(
 //EPGデータの蓄積状態をリセットする
 void CTSOut::ClearSectionStatus()
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"ClearSectionStatus") == FALSE ) return ;
 
 	this->epgUtil.ClearSectionStatus();
 
@@ -605,7 +609,7 @@ EPG_SECTION_STATUS CTSOut::GetSectionStatus(
 	BOOL l_eitFlag
 	)
 {
-	if( Lock() == FALSE ) return EpgNoData;
+	if( Lock(L"GetSectionStatus") == FALSE ) return EpgNoData;
 
 	EPG_SECTION_STATUS status = this->epgUtil.GetSectionStatus(l_eitFlag);
 
@@ -622,7 +626,7 @@ BOOL CTSOut::SetEmm(
 	BOOL enable
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"SetEmm") == FALSE ) return FALSE;
 
 	BOOL err = this->decodeUtil.SetEmm(enable);
 	this->emmEnableFlag = enable;
@@ -636,7 +640,7 @@ BOOL CTSOut::SetEmm(
 // 処理数
 DWORD CTSOut::GetEmmCount()
 {
-	if( Lock() == FALSE ) return 0;
+	if( Lock(L"GetEmmCount") == FALSE ) return 0;
 
 	DWORD count = this->decodeUtil.GetEmmCount();
 
@@ -653,7 +657,7 @@ BOOL CTSOut::GetLoadStatus(
 	wstring& loadErrDll
 	)
 {
-	if( Lock() == FALSE ) return 0;
+	if( Lock(L"GetLoadStatus") == FALSE ) return 0;
 
 	BOOL err = this->decodeUtil.GetLoadStatus(loadErrDll);
 
@@ -672,7 +676,7 @@ DWORD CTSOut::GetServiceListActual(
 	SERVICE_INFO** serviceList
 	)
 {
-	if( Lock() == FALSE ) return 0;
+	if( Lock(L"GetServiceListActual") == FALSE ) return 0;
 
 	DWORD err = this->epgUtil.GetServiceListActual(serviceListSize, serviceList);
 
@@ -729,7 +733,7 @@ BOOL CTSOut::CreateServiceCtrl(
 	DWORD* id
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"CreateServiceCtrl") == FALSE ) return FALSE;
 
 	COneServiceUtil* serviceUtil = new COneServiceUtil;
 	*id = GetNextID();
@@ -753,7 +757,7 @@ BOOL CTSOut::DeleteServiceCtrl(
 	DWORD id
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"DeleteServiceCtrl") == FALSE ) return FALSE;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -780,7 +784,7 @@ BOOL CTSOut::SetServiceID(
 	WORD serviceID
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"SetServiceID") == FALSE ) return FALSE;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -807,7 +811,7 @@ BOOL CTSOut::SendUdp(
 	vector<NW_SEND_INFO>* sendList
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"SendUdp") == FALSE ) return FALSE;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -833,7 +837,7 @@ BOOL CTSOut::SendTcp(
 	vector<NW_SEND_INFO>* sendList
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"SendTcp") == FALSE ) return FALSE;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -949,7 +953,7 @@ DWORD CTSOut::GetEpgInfo(
 	EPGDB_EVENT_INFO* epgInfo
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"GetEpgInfo") == FALSE ) return FALSE;
 
 	EPG_EVENT_INFO* _epgInfo;
 	DWORD err = this->epgUtil.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, &_epgInfo);
@@ -983,7 +987,7 @@ DWORD CTSOut::SearchEpgInfo(
 	EPGDB_EVENT_INFO* epgInfo
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"SearchEpgInfo") == FALSE ) return FALSE;
 
 	EPG_EVENT_INFO* _epgInfo;
 	DWORD err = this->epgUtil.SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, &_epgInfo);
@@ -1004,7 +1008,7 @@ DWORD CTSOut::SearchEpgInfo(
 int CTSOut::GetTimeDelay(
 	)
 {
-	if( Lock() == FALSE ) return 0;
+	if( Lock(L"GetTimeDelay") == FALSE ) return 0;
 
 	int delay = this->epgUtil.GetTimeDelay();
 
@@ -1017,7 +1021,7 @@ int CTSOut::GetTimeDelay(
 // TRUE（録画中）、FALSE（していない）
 BOOL CTSOut::IsRec()
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"IsRec") == FALSE ) return FALSE;
 
 	BOOL ret = FALSE;
 	map<DWORD, COneServiceUtil*>::iterator itr;
@@ -1061,7 +1065,7 @@ BOOL CTSOut::StartSave(
 	vector<wstring>* saveFolderSub
 )
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"StartSave") == FALSE ) return FALSE;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -1085,7 +1089,7 @@ BOOL CTSOut::EndSave(
 	DWORD id
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"EndSave") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -1110,7 +1114,7 @@ BOOL CTSOut::SetScramble(
 	BOOL enable
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"SetScramble") == FALSE ) return FALSE;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -1146,7 +1150,7 @@ void CTSOut::SetServiceMode(
 	BOOL enableData
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"SetServiceMode") == FALSE ) return ;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -1167,7 +1171,7 @@ void CTSOut::ClearErrCount(
 	DWORD id
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"ClearErrCount") == FALSE ) return ;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -1192,7 +1196,7 @@ void CTSOut::GetErrCount(
 	ULONGLONG* scramble
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"GetErrCount") == FALSE ) return ;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -1216,7 +1220,7 @@ void CTSOut::GetRecWriteSize(
 	__int64* writeSize
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"GetRecWriteSize") == FALSE ) return ;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -1249,7 +1253,7 @@ void CTSOut::GetSaveFilePath(
 	BOOL* subRecFlag
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"GetSaveFilePath") == FALSE ) return ;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -1272,7 +1276,7 @@ void CTSOut::SaveErrCount(
 	wstring filePath
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"SaveErrCount") == FALSE ) return ;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);
@@ -1290,7 +1294,7 @@ void CTSOut::SetSignalLevel(
 	float signalLv
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"SetSignalLevel") == FALSE ) return ;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	for( itr = serviceUtilMap.begin(); itr != serviceUtilMap.end(); itr++ ){
@@ -1305,7 +1309,7 @@ void CTSOut::SetBonDriver(
 	wstring bonDriver
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"SetBonDriver") == FALSE ) return ;
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	for( itr = serviceUtilMap.begin(); itr != serviceUtilMap.end(); itr++ ){

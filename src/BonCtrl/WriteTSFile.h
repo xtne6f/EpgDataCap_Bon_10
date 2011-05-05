@@ -65,7 +65,7 @@ public:
 
 protected:
 	//PublicAPI排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 5*1000);
+	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 30*1000);
 	void UnLock(LPCWSTR log = NULL);
 	/*
 	HANDLE OpenFile(
@@ -142,7 +142,9 @@ protected:
 
 	BOOL subRecFlag;
 	__int64 writeTotalSize;
+	wstring mainSaveFilePath;
 
 	BOOL exceptionErr;
+
 };
 

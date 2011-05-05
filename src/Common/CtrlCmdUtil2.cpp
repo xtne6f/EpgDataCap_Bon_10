@@ -1748,3 +1748,1069 @@ CMD_END:
 
 	return TRUE;
 }
+
+DWORD GetVALUESize2(WORD ver, EPGDB_CONTENT_DATA* val )
+{
+	DWORD size = sizeof(DWORD);
+	if( val == NULL ){
+		return size;
+	}
+
+	size += GetVALUESize2(ver, val->content_nibble_level_1);
+	size += GetVALUESize2(ver, val->content_nibble_level_2);
+	size += GetVALUESize2(ver, val->user_nibble_1);
+	size += GetVALUESize2(ver, val->user_nibble_2);
+
+	return size;
+}
+
+BOOL WriteVALUE2(WORD ver, EPGDB_CONTENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize2(ver, val );
+	if( buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE2(ver, valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	if(val != NULL ){
+		if( WriteVALUE2(ver, val->content_nibble_level_1, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->content_nibble_level_2, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->user_nibble_1, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->user_nibble_2, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=2 ){
+			goto CMD_END;
+		}
+	}
+
+CMD_END:
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	return TRUE;
+}
+
+BOOL ReadVALUE2(WORD ver, EPGDB_CONTENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	if( ReadVALUE2(ver, &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+
+	if( pos < valSize ){
+		if( ReadVALUE2(ver, &val->content_nibble_level_1, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->content_nibble_level_2, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->user_nibble_1, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->user_nibble_2, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=2 ){
+			goto CMD_END;
+		}
+	}
+
+CMD_END:
+	if( readSize != NULL ){
+		*readSize = valSize;
+	}
+
+	return TRUE;
+}
+
+DWORD GetVALUESize2(WORD ver, vector<EPGDB_CONTENT_DATA>* val )
+{
+	DWORD size = sizeof(DWORD)*2;
+	if( val == NULL ){
+		return size;
+	}
+
+	for( size_t i=0; i<val->size(); i++ ){
+		size += GetVALUESize2(ver,&(*val)[i]);
+	}
+
+	return size;
+}
+
+BOOL WriteVALUE2(WORD ver, vector<EPGDB_CONTENT_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize2(ver, val );
+	if( val == NULL || buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	//まず全体のサイズ
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE2(ver, valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	
+	DWORD count = 0;
+	if( val != NULL ){
+		count = (DWORD)val->size();
+	}
+	//リストの個数
+	if( WriteVALUE2(ver, count, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	
+	if( val != NULL ){
+		//リストの中身
+		for( DWORD i=0; i < (DWORD)val->size(); i++ ){
+			if( WriteVALUE2(ver, &(*val)[i], buff + pos, buffSize - pos, &size ) == FALSE ){
+				return FALSE;
+			}
+			pos += size;
+		}
+	}
+
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	
+	return TRUE;
+}
+
+BOOL ReadVALUE2(WORD ver, vector<EPGDB_CONTENT_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD)*2 ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	DWORD valCount = 0;
+	//全体のサイズ
+	if( ReadVALUE2(ver, &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+	//リストの個数
+	if( ReadVALUE2(ver, &valCount, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	for( DWORD i= 0; i<valCount; i++ ){
+		EPGDB_CONTENT_DATA data;
+		if( ReadVALUE2(ver, &data, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		val->push_back( data );
+	}
+
+	if( readSize != NULL ){
+		*readSize = pos;
+	}
+
+	return TRUE;
+}
+
+DWORD GetVALUESize2(WORD ver, EPGDB_SEARCH_DATE_INFO* val )
+{
+	DWORD size = sizeof(DWORD);
+	if( val == NULL ){
+		return size;
+	}
+
+	size += GetVALUESize2(ver, val->startDayOfWeek);
+	size += GetVALUESize2(ver, val->startHour);
+	size += GetVALUESize2(ver, val->startMin);
+	size += GetVALUESize2(ver, val->endDayOfWeek);
+	size += GetVALUESize2(ver, val->endHour);
+	size += GetVALUESize2(ver, val->endMin);
+
+	return size;
+}
+
+BOOL WriteVALUE2(WORD ver, EPGDB_SEARCH_DATE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize2(ver, val );
+	if( buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE2(ver, valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	if(val != NULL ){
+		if( WriteVALUE2(ver, val->startDayOfWeek, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->startHour, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->startMin, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->endDayOfWeek, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->endHour, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->endMin, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=2 ){
+			goto CMD_END;
+		}
+	}
+
+CMD_END:
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	return TRUE;
+}
+
+BOOL ReadVALUE2(WORD ver, EPGDB_SEARCH_DATE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	if( ReadVALUE2(ver, &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+
+	if( pos < valSize ){
+		if( ReadVALUE2(ver, &val->startDayOfWeek, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->startHour, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->startMin, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->endDayOfWeek, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->endHour, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->endMin, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=2 ){
+			goto CMD_END;
+		}
+	}
+
+CMD_END:
+	if( readSize != NULL ){
+		*readSize = valSize;
+	}
+
+	return TRUE;
+}
+
+DWORD GetVALUESize2(WORD ver, vector<EPGDB_SEARCH_DATE_INFO>* val )
+{
+	DWORD size = sizeof(DWORD)*2;
+	if( val == NULL ){
+		return size;
+	}
+
+	for( size_t i=0; i<val->size(); i++ ){
+		size += GetVALUESize2(ver,&(*val)[i]);
+	}
+
+	return size;
+}
+
+BOOL WriteVALUE2(WORD ver, vector<EPGDB_SEARCH_DATE_INFO>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize2(ver, val );
+	if( val == NULL || buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	//まず全体のサイズ
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE2(ver, valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	
+	DWORD count = 0;
+	if( val != NULL ){
+		count = (DWORD)val->size();
+	}
+	//リストの個数
+	if( WriteVALUE2(ver, count, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	
+	if( val != NULL ){
+		//リストの中身
+		for( DWORD i=0; i < (DWORD)val->size(); i++ ){
+			if( WriteVALUE2(ver, &(*val)[i], buff + pos, buffSize - pos, &size ) == FALSE ){
+				return FALSE;
+			}
+			pos += size;
+		}
+	}
+
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	
+	return TRUE;
+}
+
+BOOL ReadVALUE2(WORD ver, vector<EPGDB_SEARCH_DATE_INFO>* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD)*2 ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	DWORD valCount = 0;
+	//全体のサイズ
+	if( ReadVALUE2(ver, &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+	//リストの個数
+	if( ReadVALUE2(ver, &valCount, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	for( DWORD i= 0; i<valCount; i++ ){
+		EPGDB_SEARCH_DATE_INFO data;
+		if( ReadVALUE2(ver, &data, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		val->push_back( data );
+	}
+
+	if( readSize != NULL ){
+		*readSize = pos;
+	}
+
+	return TRUE;
+}
+
+DWORD GetVALUESize2(WORD ver, EPGDB_SEARCH_KEY_INFO* val )
+{
+	DWORD size = sizeof(DWORD);
+	if( val == NULL ){
+		return size;
+	}
+
+	size += GetVALUESize2(ver, val->andKey);
+	size += GetVALUESize2(ver, val->notKey);
+	size += GetVALUESize2(ver, val->regExpFlag);
+	size += GetVALUESize2(ver, val->titleOnlyFlag);
+	size += GetVALUESize2(ver, &val->contentList);
+	size += GetVALUESize2(ver, &val->dateList);
+	size += GetVALUESize2(ver, &val->serviceList);
+	size += GetVALUESize2(ver, &val->videoList);
+	size += GetVALUESize2(ver, &val->audioList);
+	size += GetVALUESize2(ver, val->aimaiFlag);
+	size += GetVALUESize2(ver, val->notContetFlag);
+	size += GetVALUESize2(ver, val->notDateFlag);
+	size += GetVALUESize2(ver, val->freeCAFlag);
+
+	return size;
+}
+
+BOOL WriteVALUE2(WORD ver, EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize2(ver, val );
+	if( buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE2(ver, valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	if(val != NULL ){
+		if( WriteVALUE2(ver, val->andKey, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->notKey, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->regExpFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->titleOnlyFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, &val->contentList, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, &val->dateList, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, &val->serviceList, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, &val->videoList, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, &val->audioList, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->aimaiFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->notContetFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->notDateFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->freeCAFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=2 ){
+			goto CMD_END;
+		}
+	}
+
+CMD_END:
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	return TRUE;
+}
+
+BOOL ReadVALUE2(WORD ver, EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	if( ReadVALUE2(ver, &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+
+	if( pos < valSize ){
+		if( ReadVALUE2(ver, &val->andKey, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->notKey, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->regExpFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->titleOnlyFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->contentList, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->dateList, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->serviceList, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->videoList, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->audioList, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->aimaiFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->notContetFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->notDateFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->freeCAFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=2 ){
+			goto CMD_END;
+		}
+	}
+
+CMD_END:
+	if( readSize != NULL ){
+		*readSize = valSize;
+	}
+
+	return TRUE;
+}
+
+DWORD GetVALUESize2(WORD ver, EPG_AUTO_ADD_DATA* val )
+{
+	DWORD size = sizeof(DWORD);
+	if( val == NULL ){
+		return size;
+	}
+
+	size += GetVALUESize2(ver,val->dataID);
+	size += GetVALUESize2(ver,&val->searchInfo);
+	size += GetVALUESize2(ver,&val->recSetting);
+	if( ver>=2 ){
+		goto CMD_END;
+	}
+
+CMD_END:
+	return size;
+}
+
+BOOL WriteVALUE2(WORD ver, EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize2(ver, val );
+	if( buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE2(ver, valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	if(val != NULL ){
+		if( WriteVALUE2(ver, val->dataID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, &val->searchInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, &val->recSetting, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ver>=2 ){
+			goto CMD_END;
+		}
+	}
+
+CMD_END:
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	return TRUE;
+}
+
+BOOL ReadVALUE2(WORD ver, EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	if( ReadVALUE2(ver, &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+
+	if( pos < valSize ){
+		if( ReadVALUE2(ver, &val->dataID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->searchInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->recSetting, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=2 ){
+			goto CMD_END;
+		}
+	}
+
+CMD_END:
+	if( readSize != NULL ){
+		*readSize = valSize;
+	}
+
+	return TRUE;
+}
+
+DWORD GetVALUESize2(WORD ver, vector<EPG_AUTO_ADD_DATA>* val )
+{
+	DWORD size = sizeof(DWORD)*2;
+	if( val == NULL ){
+		return size;
+	}
+
+	for( size_t i=0; i<val->size(); i++ ){
+		size += GetVALUESize2(ver,&(*val)[i]);
+	}
+
+	return size;
+}
+
+BOOL WriteVALUE2(WORD ver, vector<EPG_AUTO_ADD_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize2(ver, val );
+	if( val == NULL || buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	//まず全体のサイズ
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE2(ver, valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	
+	DWORD count = 0;
+	if( val != NULL ){
+		count = (DWORD)val->size();
+	}
+	//リストの個数
+	if( WriteVALUE2(ver, count, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	
+	if( val != NULL ){
+		//リストの中身
+		for( DWORD i=0; i < (DWORD)val->size(); i++ ){
+			if( WriteVALUE2(ver, &(*val)[i], buff + pos, buffSize - pos, &size ) == FALSE ){
+				return FALSE;
+			}
+			pos += size;
+		}
+	}
+
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	
+	return TRUE;
+}
+
+BOOL ReadVALUE2(WORD ver, vector<EPG_AUTO_ADD_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD)*2 ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	DWORD valCount = 0;
+	//全体のサイズ
+	if( ReadVALUE2(ver, &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+	//リストの個数
+	if( ReadVALUE2(ver, &valCount, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	for( DWORD i= 0; i<valCount; i++ ){
+		EPG_AUTO_ADD_DATA data;
+		if( ReadVALUE2(ver, &data, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		val->push_back( data );
+	}
+
+	if( readSize != NULL ){
+		*readSize = pos;
+	}
+
+	return TRUE;
+}
+
+DWORD GetVALUESize2(WORD ver, MANUAL_AUTO_ADD_DATA* val )
+{
+	DWORD size = sizeof(DWORD);
+	if( val == NULL ){
+		return size;
+	}
+
+	size += GetVALUESize2(ver, val->dataID);
+	size += GetVALUESize2(ver, val->dayOfWeekFlag);
+	size += GetVALUESize2(ver, val->startTime);
+	size += GetVALUESize2(ver, val->durationSecond);
+	size += GetVALUESize2(ver, val->title);
+	size += GetVALUESize2(ver, val->stationName);
+	size += GetVALUESize2(ver, val->originalNetworkID);
+	size += GetVALUESize2(ver, val->transportStreamID);
+	size += GetVALUESize2(ver, val->serviceID);
+	size += GetVALUESize2(ver, &val->recSetting);
+
+	return size;
+}
+
+BOOL WriteVALUE2(WORD ver, MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize2(ver, val );
+	if( buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE2(ver, valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	if(val != NULL ){
+		if( WriteVALUE2(ver, val->dataID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->dayOfWeekFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->startTime, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->durationSecond, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->title, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->stationName, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->originalNetworkID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->transportStreamID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->serviceID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, &val->recSetting, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=2 ){
+			goto CMD_END;
+		}
+	}
+
+CMD_END:
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	return TRUE;
+}
+
+BOOL ReadVALUE2(WORD ver, MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	if( ReadVALUE2(ver, &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+
+	if( pos < valSize ){
+		if( ReadVALUE2(ver, &val->dataID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->dayOfWeekFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->startTime, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->durationSecond, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->title, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->stationName, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->originalNetworkID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->transportStreamID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->serviceID, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->recSetting, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=2 ){
+			goto CMD_END;
+		}
+	}
+
+CMD_END:
+	if( readSize != NULL ){
+		*readSize = valSize;
+	}
+
+	return TRUE;
+}
+
+DWORD GetVALUESize2(WORD ver, vector<MANUAL_AUTO_ADD_DATA>* val )
+{
+	DWORD size = sizeof(DWORD)*2;
+	if( val == NULL ){
+		return size;
+	}
+
+	for( size_t i=0; i<val->size(); i++ ){
+		size += GetVALUESize2(ver,&(*val)[i]);
+	}
+
+	return size;
+}
+
+BOOL WriteVALUE2(WORD ver, vector<MANUAL_AUTO_ADD_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	DWORD valSize = GetVALUESize2(ver, val );
+	if( val == NULL || buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+
+	//まず全体のサイズ
+	DWORD pos = 0;
+	DWORD size = 0;
+	if( WriteVALUE2(ver, valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	
+	DWORD count = 0;
+	if( val != NULL ){
+		count = (DWORD)val->size();
+	}
+	//リストの個数
+	if( WriteVALUE2(ver, count, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	
+	if( val != NULL ){
+		//リストの中身
+		for( DWORD i=0; i < (DWORD)val->size(); i++ ){
+			if( WriteVALUE2(ver, &(*val)[i], buff + pos, buffSize - pos, &size ) == FALSE ){
+				return FALSE;
+			}
+			pos += size;
+		}
+	}
+
+	if( writeSize != NULL ){
+		*writeSize = pos;
+	}
+	
+	return TRUE;
+}
+
+BOOL ReadVALUE2(WORD ver, vector<MANUAL_AUTO_ADD_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD)*2 ){
+		return FALSE;
+	}
+
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	DWORD valCount = 0;
+	//全体のサイズ
+	if( ReadVALUE2(ver, &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+	if( buffSize < valSize ){
+		return FALSE;
+	}
+	//リストの個数
+	if( ReadVALUE2(ver, &valCount, buff + pos, buffSize - pos, &size ) == FALSE ){
+		return FALSE;
+	}
+	pos += size;
+
+	for( DWORD i= 0; i<valCount; i++ ){
+		MANUAL_AUTO_ADD_DATA data;
+		if( ReadVALUE2(ver, &data, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		val->push_back( data );
+	}
+
+	if( readSize != NULL ){
+		*readSize = pos;
+	}
+
+	return TRUE;
+}

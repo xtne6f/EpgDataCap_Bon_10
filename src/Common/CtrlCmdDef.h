@@ -53,6 +53,12 @@
 #define CMD2_EPG_SRV_ADDCHK_RESERVE2		2030 //サーバー連携用　予約追加できるかのチェック（戻り値 0:追加不可 1:追加可能 2:追加可能だが開始か終了が重なるものあり 3:すでに同じ物がある）
 #define CMD2_EPG_SRV_GET_EPG_FILETIME2		2031 //サーバー連携用　EPGデータファイルのタイムスタンプ取得
 #define CMD2_EPG_SRV_GET_EPG_FILE2			2032 //サーバー連携用　EPGデータファイル取得
+#define CMD2_EPG_SRV_ENUM_AUTO_ADD2			2131 //自動予約登録の条件一覧取得
+#define CMD2_EPG_SRV_ADD_AUTO_ADD2			2132 //自動予約登録の条件追加
+#define CMD2_EPG_SRV_CHG_AUTO_ADD2			2134 //自動予約登録の条件変更
+#define CMD2_EPG_SRV_ENUM_MANU_ADD2			2141 //プログラム予約自動登録の条件一覧取得
+#define CMD2_EPG_SRV_ADD_MANU_ADD2			2142 //プログラム予約自動登録の条件追加
+#define CMD2_EPG_SRV_CHG_MANU_ADD2			2144 //プログラム予約自動登録の条件変更
 
 #define CMD2_EPG_SRV_ENUM_SERVICE			1021 //読み込まれたEPGデータのサービスの一覧取得
 #define CMD2_EPG_SRV_ENUM_PG_INFO			1022 //サービス指定で番組情報一覧を取得する

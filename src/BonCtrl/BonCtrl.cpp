@@ -131,14 +131,18 @@ BOOL CBonCtrl::Lock(LPCWSTR log, DWORD timeOut)
 	if( this->lockEvent == NULL ){
 		return FALSE;
 	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
+	//if( log != NULL ){
+	//	OutputDebugString(log);
+	//}
 	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
 	if( dwRet == WAIT_ABANDONED || 
 		dwRet == WAIT_FAILED ||
 		dwRet == WAIT_TIMEOUT){
-			OutputDebugString(L"◆CBonCtrl::Lock FALSE");
+			if( log != NULL ){
+				_OutputDebugString(L"◆CBonCtrl::Lock FALSE : %s", log);
+			}else{
+				OutputDebugString(L"◆CBonCtrl::Lock FALSE");
+			}
 		return FALSE;
 	}
 	return TRUE;
@@ -164,7 +168,7 @@ void CBonCtrl::SetSettingFolder(
 	LPCWSTR bonDriverFolderPath
 )
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"SetSettingFolder") == FALSE ) return ;
 	this->bonUtil.SetSettingFolder(settingFolderPath, bonDriverFolderPath);
 
 	if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
@@ -176,7 +180,7 @@ void CBonCtrl::SetSettingFolder(
 
 void CBonCtrl::SetEMMMode(BOOL enable)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"SetEMMMode") == FALSE ) return ;
 
 	this->tsOut.SetEmm(enable);
 
@@ -193,7 +197,7 @@ DWORD CBonCtrl::EnumBonDriver(
 	map<int, wstring>* bonList
 )
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"EnumBonDriver") == FALSE ) return ERR_FALSE;
 	DWORD ret = this->bonUtil.EnumBonDriver(bonList);
 	UnLock();
 	return ret;
@@ -209,7 +213,7 @@ DWORD CBonCtrl::OpenBonDriver(
 	int index
 )
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"OpenBonDriver") == FALSE ) return ERR_FALSE;
 	DWORD ret = this->bonUtil.OpenBonDriver(index);
 	if( ret == NO_ERR ){
 		ret = _OpenBonDriver();
@@ -236,7 +240,7 @@ DWORD CBonCtrl::OpenBonDriver(
 	LPCWSTR bonDriverFile
 )
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"OpenBonDriver-2") == FALSE ) return ERR_FALSE;
 	DWORD ret = this->bonUtil.OpenBonDriver(bonDriverFile);
 	if( ret == NO_ERR ){
 		ret = _OpenBonDriver();
@@ -259,7 +263,7 @@ DWORD CBonCtrl::OpenBonDriver(
 // エラーコード
 DWORD CBonCtrl::CloseBonDriver()
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"CloseBonDriver") == FALSE ) return ERR_FALSE;
 	StopBackgroundEpgCap();
 	DWORD ret = _CloseBonDriver();
 	UnLock();
@@ -275,7 +279,7 @@ BOOL CBonCtrl::GetOpenBonDriver(
 	wstring* bonDriverFile
 	)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"GetOpenBonDriver") == FALSE ) return ERR_FALSE;
 
 	BOOL ret = FALSE;
 
@@ -300,7 +304,7 @@ DWORD CBonCtrl::GetOriginalChList(
 	map<DWORD, BON_SPACE_INFO>* spaceMap
 )
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"GetOriginalChList") == FALSE ) return ERR_FALSE;
 	DWORD ret = this->bonUtil.GetOriginalChList(spaceMap);
 	UnLock();
 	return ret;
@@ -311,7 +315,7 @@ DWORD CBonCtrl::GetOriginalChList(
 // チューナー名
 wstring CBonCtrl::GetTunerName()
 {
-	if( Lock() == FALSE ) return L"err";
+	if( Lock(L"GetTunerName") == FALSE ) return L"err";
 	wstring ret = this->bonUtil.GetTunerName();
 	UnLock();
 	return ret;
@@ -328,7 +332,7 @@ DWORD CBonCtrl::SetCh(
 	DWORD ch
 )
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"SetCh") == FALSE ) return ERR_FALSE;
 
 	if( this->tsOut.IsRec() == TRUE ){
 		UnLock();
@@ -354,7 +358,7 @@ DWORD CBonCtrl::SetCh(
 	WORD SID
 )
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"SetCh-2") == FALSE ) return ERR_FALSE;
 
 	if( this->tsOut.IsRec() == TRUE ){
 		UnLock();
@@ -382,7 +386,7 @@ DWORD CBonCtrl::SetCh(
 	WORD SID
 )
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"SetCh-3") == FALSE ) return ERR_FALSE;
 
 	if( this->tsOut.IsRec() == TRUE ){
 		UnLock();
@@ -444,7 +448,7 @@ BOOL CBonCtrl::GetCh(
 	DWORD* ch
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"GetCh") == FALSE ) return FALSE;
 	BOOL ret = FALSE;
 	if( this->bonUtil.GetSetCh(space, ch) == TRUE ){
 		ret = TRUE;
@@ -459,7 +463,7 @@ BOOL CBonCtrl::GetCh(
 // TRUE（変更中）、FALSE（完了）
 BOOL CBonCtrl::IsChChanging(BOOL* chChgErr)
 {
-	if( Lock() == FALSE ) return 0;
+	if( Lock(L"IsChChanging") == FALSE ) return 0;
 	BOOL ret = this->tsOut.IsChChanging(chChgErr);
 	UnLock();
 	return ret;
@@ -476,7 +480,7 @@ BOOL CBonCtrl::GetStreamID(
 	WORD* TSID
 	)
 {
-	if( Lock() == FALSE ) return 0;
+	if( Lock(L"GetStreamID") == FALSE ) return 0;
 	BOOL ret = this->tsOut.GetStreamID(ONID, TSID);
 	UnLock();
 	return ret;
@@ -487,7 +491,7 @@ BOOL CBonCtrl::GetStreamID(
 // シグナルレベル
 float CBonCtrl::GetSignalLevel()
 {
-	if( Lock() == FALSE ) return 0;
+	if( Lock(L"GetSignalLevel") == FALSE ) return 0;
 	float ret = this->bonUtil.GetSignalLevel();
 	this->tsOut.SetSignalLevel(ret);
 	UnLock();
@@ -522,6 +526,26 @@ DWORD CBonCtrl::_OpenBonDriver()
 // エラーコード
 DWORD CBonCtrl::_CloseBonDriver()
 {
+	if( this->epgCapBackThread != NULL ){
+		::SetEvent(this->epgCapBackStopEvent);
+		// スレッド終了待ち
+		if ( ::WaitForSingleObject(this->epgCapBackThread, 15000) == WAIT_TIMEOUT ){
+			::TerminateThread(this->epgCapBackThread, 0xffffffff);
+		}
+		CloseHandle(this->epgCapBackThread);
+		this->epgCapBackThread = NULL;
+	}
+
+	if( this->epgCapThread != NULL ){
+		::SetEvent(this->epgCapStopEvent);
+		// スレッド終了待ち
+		if ( ::WaitForSingleObject(this->epgCapThread, 15000) == WAIT_TIMEOUT ){
+			::TerminateThread(this->epgCapThread, 0xffffffff);
+		}
+		CloseHandle(this->epgCapThread);
+		this->epgCapThread = NULL;
+	}
+
 	if( this->recvThread != NULL ){
 		::SetEvent(this->recvStopEvent);
 		// スレッド終了待ち
@@ -671,7 +695,7 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 //EPGデータの蓄積状態をリセットする
 void CBonCtrl::ClearSectionStatus()
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"ClearSectionStatus") == FALSE ) return ;
 	this->tsOut.ClearSectionStatus();
 
 	UnLock();
@@ -687,7 +711,7 @@ EPG_SECTION_STATUS CBonCtrl::GetSectionStatus(
 	BOOL l_eitFlag
 	)
 {
-	if( Lock() == FALSE ) return EpgNoData;
+	if( Lock(L"GetSectionStatus") == FALSE ) return EpgNoData;
 	EPG_SECTION_STATUS status = this->tsOut.GetSectionStatus(l_eitFlag);
 
 	UnLock();
@@ -703,7 +727,7 @@ DWORD CBonCtrl::GetServiceListActual(
 	vector<TS_SERVICE_INFO>* serviceList
 	)
 {
-	if( Lock() == FALSE ) return EpgNoData;
+	if( Lock(L"GetServiceListActual") == FALSE ) return EpgNoData;
 
 	DWORD _serviceListSize = 0;
 	SERVICE_INFO* _serviceList = NULL;
@@ -752,7 +776,7 @@ DWORD CBonCtrl::GetServiceList(
 	vector<CH_DATA4>* serviceList
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"GetServiceList") == FALSE ) return FALSE;
 	BOOL ret = this->chUtil.GetEnumService(serviceList);
 
 	UnLock();
@@ -768,7 +792,7 @@ BOOL CBonCtrl::CreateServiceCtrl(
 	DWORD* id
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"CreateServiceCtrl") == FALSE ) return FALSE;
 	BOOL ret = this->tsOut.CreateServiceCtrl(id);
 
 	UnLock();
@@ -784,7 +808,7 @@ BOOL CBonCtrl::DeleteServiceCtrl(
 	DWORD id
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"DeleteServiceCtrl") == FALSE ) return FALSE;
 	BOOL ret = this->tsOut.DeleteServiceCtrl(id);
 
 	UnLock();
@@ -797,7 +821,7 @@ BOOL CBonCtrl::SetServiceID(
 	WORD serviceID
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"SetServiceID") == FALSE ) return FALSE;
 	BOOL ret = this->tsOut.SetServiceID(id,serviceID);
 
 	UnLock();
@@ -815,7 +839,7 @@ BOOL CBonCtrl::SendUdp(
 	vector<NW_SEND_INFO>* sendList
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"SendUdp") == FALSE ) return FALSE;
 	BOOL ret = this->tsOut.SendUdp(id,sendList);
 
 	UnLock();
@@ -833,7 +857,7 @@ BOOL CBonCtrl::SendTcp(
 	vector<NW_SEND_INFO>* sendList
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"SendTcp") == FALSE ) return FALSE;
 	BOOL ret = this->tsOut.SendTcp(id,sendList);
 
 	UnLock();
@@ -869,7 +893,7 @@ BOOL CBonCtrl::StartSave(
 	vector<wstring>* saveFolderSub
 )
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"StartSave") == FALSE ) return FALSE;
 	BOOL ret = this->tsOut.StartSave(id, fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub);
 
 	StartBackgroundEpgCap();
@@ -887,7 +911,7 @@ BOOL CBonCtrl::EndSave(
 	DWORD id
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"EndSave") == FALSE ) return FALSE;
 	BOOL ret = this->tsOut.EndSave(id);
 
 	UnLock();
@@ -904,7 +928,7 @@ BOOL CBonCtrl::SetScramble(
 	BOOL enable
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"SetScramble") == FALSE ) return FALSE;
 	BOOL ret = this->tsOut.SetScramble(id, enable);
 
 	UnLock();
@@ -922,7 +946,7 @@ void CBonCtrl::SetServiceMode(
 	BOOL enableData
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"SetServiceMode") == FALSE ) return ;
 	this->tsOut.SetServiceMode(id, enableCaption, enableData);
 
 	UnLock();
@@ -933,7 +957,7 @@ void CBonCtrl::ClearErrCount(
 	DWORD id
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"ClearErrCount") == FALSE ) return ;
 	this->tsOut.ClearErrCount(id);
 
 	UnLock();
@@ -949,7 +973,7 @@ void CBonCtrl::GetErrCount(
 	ULONGLONG* scramble
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"GetErrCount") == FALSE ) return ;
 	this->tsOut.GetErrCount(id, drop, scramble);
 
 	UnLock();
@@ -972,7 +996,7 @@ DWORD CBonCtrl::GetEpgInfo(
 	EPGDB_EVENT_INFO* epgInfo
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"GetEpgInfo") == FALSE ) return FALSE;
 	DWORD ret = this->tsOut.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, epgInfo);
 
 	UnLock();
@@ -998,7 +1022,7 @@ DWORD CBonCtrl::SearchEpgInfo(
 	EPGDB_EVENT_INFO* epgInfo
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"SearchEpgInfo") == FALSE ) return FALSE;
 	DWORD ret = this->tsOut.SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, epgInfo);
 
 	UnLock();
@@ -1011,7 +1035,7 @@ DWORD CBonCtrl::SearchEpgInfo(
 int CBonCtrl::GetTimeDelay(
 	)
 {
-	if( Lock() == FALSE ) return 0;
+	if( Lock(L"GetTimeDelay") == FALSE ) return 0;
 	int delay = this->tsOut.GetTimeDelay();
 
 	UnLock();
@@ -1022,7 +1046,7 @@ int CBonCtrl::GetTimeDelay(
 // TRUE（録画中）、FALSE（録画していない）
 BOOL CBonCtrl::IsRec()
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"IsRec") == FALSE ) return FALSE;
 
 	BOOL ret = this->tsOut.IsRec();
 
@@ -1034,7 +1058,7 @@ BOOL CBonCtrl::IsRec()
 // エラーコード
 DWORD CBonCtrl::StartChScan()
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"StartChScan") == FALSE ) return ERR_FALSE;
 
 	if( this->tsOut.IsRec() == TRUE ){
 		UnLock();
@@ -1078,7 +1102,7 @@ DWORD CBonCtrl::StartChScan()
 // エラーコード
 DWORD CBonCtrl::StopChScan()
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"StopChScan") == FALSE ) return ERR_FALSE;
 
 	if( this->chScanThread != NULL ){
 		::SetEvent(this->chScanStopEvent);
@@ -1111,7 +1135,7 @@ DWORD CBonCtrl::GetChScanStatus(
 	DWORD* totalNum
 	)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"GetChScanStatus") == FALSE ) return ERR_FALSE;
 
 	DWORD ret;
 	if( space != NULL ){
@@ -1259,7 +1283,7 @@ DWORD CBonCtrl::GetEpgCapService(
 	vector<EPGCAP_SERVICE_INFO>* chList
 	)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"GetEpgCapService") == FALSE ) return ERR_FALSE;
 
 	DWORD ret = NO_ERR;
 	this->chUtil.GetEpgCapService(chList);
@@ -1282,7 +1306,7 @@ DWORD CBonCtrl::StartEpgCap(
 	BOOL CS2Basic
 	)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"StartEpgCap") == FALSE ) return ERR_FALSE;
 
 	if( this->tsOut.IsRec() == TRUE ){
 		UnLock();
@@ -1331,7 +1355,7 @@ DWORD CBonCtrl::StartEpgCap(
 DWORD CBonCtrl::StopEpgCap(
 	)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"StopEpgCap") == FALSE ) return ERR_FALSE;
 
 	if( this->epgCapThread != NULL ){
 		::SetEvent(this->epgCapStopEvent);
@@ -1356,7 +1380,7 @@ DWORD CBonCtrl::GetEpgCapStatus(
 	EPGCAP_SERVICE_INFO* info
 	)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	if( Lock(L"GetEpgCapStatus") == FALSE ) return ERR_FALSE;
 
 	if( info != NULL ){
 		*info = this->epgSt_ch;
@@ -1549,7 +1573,7 @@ void CBonCtrl::GetSaveFilePath(
 	BOOL* subRecFlag
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"GetSaveFilePath") == FALSE ) return ;
 	this->tsOut.GetSaveFilePath(id, filePath, subRecFlag);
 
 	UnLock();
@@ -1564,7 +1588,7 @@ void CBonCtrl::SaveErrCount(
 	wstring filePath
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"SaveErrCount") == FALSE ) return ;
 	this->tsOut.SaveErrCount(id, filePath);
 
 	UnLock();
@@ -1579,7 +1603,7 @@ void CBonCtrl::GetRecWriteSize(
 	__int64* writeSize
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"GetRecWriteSize") == FALSE ) return ;
 	this->tsOut.GetRecWriteSize(id, writeSize);
 
 	UnLock();
@@ -1603,7 +1627,7 @@ void CBonCtrl::SetBackGroundEpgCap(
 	DWORD backStartWaitSec
 	)
 {
-	if( Lock() == FALSE ) return ;
+	if( Lock(L"SetBackGroundEpgCap") == FALSE ) return ;
 
 	this->enableLiveEpgCap = enableLive;
 	this->enableRecEpgCap = enableRec;
@@ -1733,7 +1757,7 @@ BOOL CBonCtrl::GetViewStatusInfo(
 	ULONGLONG* scramble
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock(L"GetViewStatusInfo") == FALSE ) return FALSE;
 	BOOL ret = FALSE;
 
 	this->tsOut.GetErrCount(id, drop, scramble);

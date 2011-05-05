@@ -1462,7 +1462,7 @@ UInt32 CtrlCmdUtil::SendEnumEpgAutoAdd(
 	)
 {
 	vector<EPG_AUTO_ADD_DATA> list;
-	DWORD ret = this->sendCmd->SendEnumEpgAutoAdd(&list);
+	DWORD ret = this->sendCmd->SendEnumEpgAutoAdd2(&list);
 	for( size_t i=0; i<list.size(); i++ ){
 		Def::EpgAutoAddData^ item = gcnew Def::EpgAutoAddData();
 		CopyData(&list[i], item);
@@ -1486,7 +1486,7 @@ UInt32 CtrlCmdUtil::SendAddEpgAutoAdd(
 		CopyData(val[i], &item);
 		list.push_back(item);
 	}
-	DWORD ret = this->sendCmd->SendAddEpgAutoAdd(&list);
+	DWORD ret = this->sendCmd->SendAddEpgAutoAdd2(&list);
 
 	return ret;
 }
@@ -1522,7 +1522,7 @@ UInt32 CtrlCmdUtil::SendChgEpgAutoAdd(
 		CopyData(val[i], &item);
 		list.push_back(item);
 	}
-	DWORD ret = this->sendCmd->SendChgEpgAutoAdd(&list);
+	DWORD ret = this->sendCmd->SendChgEpgAutoAdd2(&list);
 
 	return ret;
 }
@@ -1536,7 +1536,7 @@ UInt32 CtrlCmdUtil::SendEnumManualAdd(
 	)
 {
 	vector<MANUAL_AUTO_ADD_DATA> list;
-	DWORD ret = this->sendCmd->SendEnumManualAdd(&list);
+	DWORD ret = this->sendCmd->SendEnumManualAdd2(&list);
 	for( size_t i=0; i<list.size(); i++ ){
 		Def::ManualAutoAddData^ item = gcnew Def::ManualAutoAddData();
 		CopyData(&list[i], item);
@@ -1560,7 +1560,7 @@ UInt32 CtrlCmdUtil::SendAddManualAdd(
 		CopyData(val[i], &item);
 		list.push_back(item);
 	}
-	DWORD ret = this->sendCmd->SendAddManualAdd(&list);
+	DWORD ret = this->sendCmd->SendAddManualAdd2(&list);
 
 	return ret;
 }
@@ -1596,7 +1596,7 @@ UInt32 CtrlCmdUtil::SendChgManualAdd(
 		CopyData(val[i], &item);
 		list.push_back(item);
 	}
-	DWORD ret = this->sendCmd->SendChgManualAdd(&list);
+	DWORD ret = this->sendCmd->SendChgManualAdd2(&list);
 
 	return ret;
 }

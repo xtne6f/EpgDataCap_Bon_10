@@ -532,6 +532,7 @@ BOOL CEpgDBUtil::AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector
 		//更新必要
 		eventInfo->audioInfo->tableID = eit->table_id;
 		eventInfo->audioInfo->version = eit->version_number;
+		eventInfo->audioInfo->componentList.clear();
 
 		for( size_t i=0; i<descriptorList->size(); i++ ){
 			if( (*descriptorList)[i]->audioComponent != NULL ){
@@ -580,6 +581,7 @@ BOOL CEpgDBUtil::AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, CEventGrou
 		//更新必要
 		eventInfo->eventGroupInfo->tableID = eit->table_id;
 		eventInfo->eventGroupInfo->version = eit->version_number;
+		eventInfo->eventGroupInfo->eventData2List.clear();
 
 		eventInfo->eventGroupInfo->group_type = eventGroup->group_type;
 		eventInfo->eventGroupInfo->event_count = eventGroup->event_count;
@@ -610,6 +612,7 @@ BOOL CEpgDBUtil::AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, CEventGrou
 		//更新必要
 		eventInfo->eventRelayInfo->tableID = eit->table_id;
 		eventInfo->eventRelayInfo->version = eit->version_number;
+		eventInfo->eventGroupInfo->eventData2List.clear();
 
 		eventInfo->eventRelayInfo->group_type = eventGroup->group_type;
 		eventInfo->eventRelayInfo->event_count = eventGroup->event_count;

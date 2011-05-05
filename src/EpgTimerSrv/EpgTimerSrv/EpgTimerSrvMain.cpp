@@ -1543,6 +1543,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_GET_CHG_CH_TVTEST:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_GET_CHG_CH_TVTEST");
 			LONGLONG key = 0;
 
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
@@ -1562,6 +1563,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_NWTV_SET_CH:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_NWTV_SET_CH");
 			SET_CH_INFO val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				if( sys->reserveManager.SetNWTVCh(&val) == TRUE ){
@@ -1572,6 +1574,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_NWTV_CLOSE:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_NWTV_CLOSE");
 			if( sys->reserveManager.CloseNWTV() == TRUE ){
 				resParam->param = CMD_SUCCESS;
 			}
@@ -1579,6 +1582,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_NWTV_MODE:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_NWTV_MODE");
 			DWORD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				sys->reserveManager.SetNWTVMode(val);
@@ -1588,6 +1592,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_NWPLAY_OPEN:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_OPEN");
 			wstring val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				DWORD id=0;
@@ -1606,6 +1611,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_NWPLAY_CLOSE:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_CLOSE");
 			DWORD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				if( sys->streamingManager.CloseFile(val) == TRUE ){
@@ -1616,6 +1622,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_NWPLAY_PLAY:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_PLAY");
 			DWORD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				if( sys->streamingManager.StartSend(val) == TRUE ){
@@ -1626,6 +1633,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_NWPLAY_STOP:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_STOP");
 			DWORD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				if( sys->streamingManager.StopSend(val) == TRUE ){
@@ -1636,6 +1644,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_NWPLAY_GET_POS:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_GET_POS");
 			NWPLAY_POS_CMD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				if( sys->streamingManager.GetPos(&val) == TRUE ){
@@ -1653,6 +1662,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_NWPLAY_SET_POS:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_SET_POS");
 			NWPLAY_POS_CMD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				if( sys->streamingManager.SetPos(&val) == TRUE ){
@@ -1663,6 +1673,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_NWPLAY_SET_IP:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_SET_IP");
 			NWPLAY_PLAY_INFO val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				if( sys->streamingManager.SetIP(&val) == TRUE ){
@@ -1680,6 +1691,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_NWPLAY_TF_OPEN:
 		{
+			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_TF_OPEN");
 			DWORD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				NWPLAY_TIMESHIFT_INFO resVal;
@@ -1945,6 +1957,252 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						}
 					}
 				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_ENUM_AUTO_ADD2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_AUTO_ADD2");
+			if( sys->Lock() == TRUE ){
+				vector<EPG_AUTO_ADD_DATA> val;
+				map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itr;
+				for( itr = sys->epgAutoAdd.dataIDMap.begin(); itr != sys->epgAutoAdd.dataIDMap.end(); itr++ ){
+					val.push_back(*(itr->second));
+				}
+				
+				WORD ver = (WORD)CMD_VER;
+
+				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, NULL) == TRUE ){
+					DWORD writeSize = 0;
+					resParam->param = CMD_SUCCESS;
+					resParam->dataSize = GetVALUESize2(ver, &val)+GetVALUESize2(ver, ver);
+					resParam->data = new BYTE[resParam->dataSize];
+					if( WriteVALUE2(ver, ver, resParam->data, resParam->dataSize, &writeSize) == FALSE ){
+						_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_AUTO_ADD2\r\n");
+						resParam->dataSize = 0;
+						resParam->param = CMD_ERR;
+					}else
+					if( WriteVALUE2(ver, &val, resParam->data+writeSize, resParam->dataSize-writeSize, NULL) == FALSE ){
+						_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_AUTO_ADD2\r\n");
+						resParam->dataSize = 0;
+						resParam->param = CMD_ERR;
+					}
+				}
+				
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_ADD_AUTO_ADD2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_ADD_AUTO_ADD2");
+			if( sys->Lock() == TRUE ){
+				WORD ver = (WORD)CMD_VER;
+				DWORD readSize = 0;
+				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, &readSize) == TRUE ){
+
+					vector<EPG_AUTO_ADD_DATA> list;
+					if( ReadVALUE2(ver, &list, cmdParam->data+readSize, cmdParam->dataSize-readSize, NULL ) == TRUE ){
+						for( size_t i=0; i<list.size(); i++ ){
+							sys->epgAutoAdd.AddData(&list[i]);
+						}
+
+						wstring savePath = L"";
+						GetSettingPath(savePath);
+						savePath += L"\\";
+						savePath += EPG_AUTO_ADD_TEXT_NAME;
+
+						sys->epgAutoAdd.SaveText(savePath.c_str());
+
+						resParam->param = CMD_SUCCESS;
+
+						sys->AutoAddReserveEPG();
+
+						DWORD writeSize = 0;
+						resParam->param = CMD_SUCCESS;
+						resParam->dataSize = GetVALUESize2(ver, ver);
+						resParam->data = new BYTE[resParam->dataSize];
+						if( WriteVALUE2(ver, ver, resParam->data, resParam->dataSize, &writeSize) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_ADD_AUTO_ADD2\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}
+					}
+				}
+				sys->UnLock();
+
+				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+			}else{
+				resParam->param = CMD_ERR_BUSY;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_CHG_AUTO_ADD2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_CHG_AUTO_ADD2");
+			if( sys->Lock() == TRUE ){
+				WORD ver = (WORD)CMD_VER;
+				DWORD readSize = 0;
+				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, &readSize) == TRUE ){
+
+					vector<EPG_AUTO_ADD_DATA> list;
+					if( ReadVALUE2(ver, &list, cmdParam->data+readSize, cmdParam->dataSize-readSize, NULL ) == TRUE ){
+						for( size_t i=0; i<list.size(); i++ ){
+							sys->epgAutoAdd.ChgData(&list[i]);
+						}
+
+						wstring savePath = L"";
+						GetSettingPath(savePath);
+						savePath += L"\\";
+						savePath += EPG_AUTO_ADD_TEXT_NAME;
+
+						sys->epgAutoAdd.SaveText(savePath.c_str());
+
+						resParam->param = CMD_SUCCESS;
+
+						sys->AutoAddReserveEPG();
+
+						DWORD writeSize = 0;
+						resParam->param = CMD_SUCCESS;
+						resParam->dataSize = GetVALUESize2(ver, ver);
+						resParam->data = new BYTE[resParam->dataSize];
+						if( WriteVALUE2(ver, ver, resParam->data, resParam->dataSize, &writeSize) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_CHG_AUTO_ADD2\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}
+					}
+				}
+				sys->UnLock();
+
+				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+			}else{
+				resParam->param = CMD_ERR_BUSY;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_ENUM_MANU_ADD2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_MANU_ADD2");
+			if( sys->Lock() == TRUE ){
+				vector<MANUAL_AUTO_ADD_DATA> val;
+				map<DWORD, MANUAL_AUTO_ADD_DATA*>::iterator itr;
+				for( itr = sys->manualAutoAdd.dataIDMap.begin(); itr != sys->manualAutoAdd.dataIDMap.end(); itr++ ){
+					val.push_back(*(itr->second));
+				}
+				
+				WORD ver = (WORD)CMD_VER;
+
+				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, NULL) == TRUE ){
+					DWORD writeSize = 0;
+					resParam->param = CMD_SUCCESS;
+					resParam->dataSize = GetVALUESize2(ver, &val)+GetVALUESize2(ver, ver);
+					resParam->data = new BYTE[resParam->dataSize];
+					if( WriteVALUE2(ver, ver, resParam->data, resParam->dataSize, &writeSize) == FALSE ){
+						_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_MANU_ADD2\r\n");
+						resParam->dataSize = 0;
+						resParam->param = CMD_ERR;
+					}else
+					if( WriteVALUE2(ver, &val, resParam->data+writeSize, resParam->dataSize-writeSize, NULL) == FALSE ){
+						_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_MANU_ADD2\r\n");
+						resParam->dataSize = 0;
+						resParam->param = CMD_ERR;
+					}
+				}
+				
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_ADD_MANU_ADD2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_ADD_MANU_ADD2");
+			if( sys->Lock() == TRUE ){
+				WORD ver = (WORD)CMD_VER;
+				DWORD readSize = 0;
+				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, &readSize) == TRUE ){
+
+					vector<MANUAL_AUTO_ADD_DATA> list;
+					if( ReadVALUE2(ver, &list, cmdParam->data+readSize, cmdParam->dataSize-readSize, NULL ) == TRUE ){
+						for( size_t i=0; i<list.size(); i++ ){
+							sys->manualAutoAdd.AddData(&list[i]);
+						}
+
+						wstring savePath = L"";
+						GetSettingPath(savePath);
+						savePath += L"\\";
+						savePath += MANUAL_AUTO_ADD_TEXT_NAME;
+
+						sys->manualAutoAdd.SaveText(savePath.c_str());
+
+						resParam->param = CMD_SUCCESS;
+
+						sys->AutoAddReserveProgram();
+
+						DWORD writeSize = 0;
+						resParam->param = CMD_SUCCESS;
+						resParam->dataSize = GetVALUESize2(ver, ver);
+						resParam->data = new BYTE[resParam->dataSize];
+						if( WriteVALUE2(ver, ver, resParam->data, resParam->dataSize, &writeSize) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_ADD_MANU_ADD2\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}
+					}
+				}
+				sys->UnLock();
+
+				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_MANUAL);
+			}else{
+				resParam->param = CMD_ERR_BUSY;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_CHG_MANU_ADD2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_CHG_MANU_ADD2");
+			if( sys->Lock() == TRUE ){
+				WORD ver = (WORD)CMD_VER;
+				DWORD readSize = 0;
+				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, &readSize) == TRUE ){
+
+					vector<MANUAL_AUTO_ADD_DATA> list;
+					if( ReadVALUE2(ver, &list, cmdParam->data+readSize, cmdParam->dataSize-readSize, NULL ) == TRUE ){
+						for( size_t i=0; i<list.size(); i++ ){
+							sys->manualAutoAdd.ChgData(&list[i]);
+						}
+
+						wstring savePath = L"";
+						GetSettingPath(savePath);
+						savePath += L"\\";
+						savePath += MANUAL_AUTO_ADD_TEXT_NAME;
+
+						sys->manualAutoAdd.SaveText(savePath.c_str());
+
+						resParam->param = CMD_SUCCESS;
+
+						sys->AutoAddReserveProgram();
+
+						DWORD writeSize = 0;
+						resParam->param = CMD_SUCCESS;
+						resParam->dataSize = GetVALUESize2(ver, ver);
+						resParam->data = new BYTE[resParam->dataSize];
+						if( WriteVALUE2(ver, ver, resParam->data, resParam->dataSize, &writeSize) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_CHG_MANU_ADD2\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}
+					}
+				}
+				sys->UnLock();
+
+				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_MANUAL);
+			}else{
+				resParam->param = CMD_ERR_BUSY;
 			}
 		}
 		break;

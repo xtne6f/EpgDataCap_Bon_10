@@ -423,6 +423,7 @@ public:
 		NWPLAY_TIMESHIFT_INFO* resVal
 		);
 
+//コマンドバージョン対応版
 	//予約一覧を取得する
 	//戻り値：
 	// エラーコード
@@ -482,6 +483,60 @@ public:
 		wstring val,
 		BYTE** resVal,
 		DWORD* resValSize
+		);
+
+	//自動予約登録条件一覧を取得する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[OUT]条件一覧
+	DWORD SendEnumEpgAutoAdd2(
+		vector<EPG_AUTO_ADD_DATA>* val
+		);
+
+	//自動予約登録条件を追加する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[IN]条件一覧
+	DWORD SendAddEpgAutoAdd2(
+		vector<EPG_AUTO_ADD_DATA>* val
+		);
+
+	//自動予約登録条件を変更する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[IN]条件一覧
+	DWORD SendChgEpgAutoAdd2(
+		vector<EPG_AUTO_ADD_DATA>* val
+		);
+
+	//自動予約登録条件一覧を取得する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[OUT]条件一覧	
+	DWORD SendEnumManualAdd2(
+		vector<MANUAL_AUTO_ADD_DATA>* val
+		);
+
+	//自動予約登録条件を追加する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[IN]条件一覧
+	DWORD SendAddManualAdd2(
+		vector<MANUAL_AUTO_ADD_DATA>* val
+		);
+
+	//プログラム予約自動登録の条件変更
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[IN]条件一覧
+	DWORD SendChgManualAdd2(
+		vector<MANUAL_AUTO_ADD_DATA>* val
 		);
 
 //タイマーGUI（EpgTimer_Bon.exe）用

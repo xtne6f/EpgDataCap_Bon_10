@@ -916,15 +916,15 @@ void CTunerBankCtrl::CreateCtrl(multimap<LONGLONG, RESERVE_WORK*>* sortList, LON
 			LONGLONG chkStartTime = itr->second->stratTime - (60*I64_1SEC) - itr->second->startMargine;
 
 			if( chkStartTime < nowTime ){
+				BOOL createFlag = FALSE;
 				if( this->currentChID == itr->second->chID ){
 					//録画中のものに同一サービスで連続録画設定のものある？
 					if( ContinueRec(itr->second) == FALSE ){
 						CreateCtrl(itr->second);
+						createFlag = TRUE;
 					}
 				}else{
 					//チャンネル違うので録画時間考慮する必要あり
-					BOOL createFlag = FALSE;
-
 					createFlag = CheckOtherChCreate(nowTime, itr->second);
 
 					if( createFlag == TRUE ){
@@ -950,7 +950,7 @@ void CTunerBankCtrl::CreateCtrl(multimap<LONGLONG, RESERVE_WORK*>* sortList, LON
 					}
 				}
 
-				if( this->notifyManager != NULL ){
+				if( this->notifyManager != NULL && createFlag == TRUE ){
 					RESERVE_DATA data;
 					itr->second->reserveInfo->GetData(&data);
 					wstring msg;

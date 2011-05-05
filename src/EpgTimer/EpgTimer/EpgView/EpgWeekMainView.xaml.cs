@@ -773,7 +773,8 @@ namespace EpgTimer
                     return;
                 }
                 MenuItem item = sender as MenuItem;
-                reserve.RecSetting.RecMode = (byte)item.DataContext;
+                Int32 val = (Int32)item.DataContext;
+                reserve.RecSetting.RecMode = (byte)val;
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserve);
                 ErrCode err = (ErrCode)cmd.SendChgReserve(list);
@@ -816,7 +817,8 @@ namespace EpgTimer
                     return;
                 }
                 MenuItem item = sender as MenuItem;
-                reserve.RecSetting.Priority = (byte)item.DataContext;
+                Int32 val = (Int32)item.DataContext;
+                reserve.RecSetting.Priority = (byte)val;
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserve);
                 ErrCode err = (ErrCode)cmd.SendChgReserve(list);

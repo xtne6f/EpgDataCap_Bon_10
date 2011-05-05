@@ -396,9 +396,9 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 		if( sys->NotifyLock() == FALSE ) return 0;
 
 		if( notifyInfo.notifyID <= 100 ){
-			wait = 100;
+			wait = 0;
 		}else{
-			wait = 100;
+			wait = 0;
 			if( sys->notifyList.size() > 0 ){
 				if( sys->notifyList[0].notifyID > 100 ){
 					wait = 5*1000;

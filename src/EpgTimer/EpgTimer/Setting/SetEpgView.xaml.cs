@@ -138,6 +138,8 @@ namespace EpgTimer.Setting
                 textBox_dragScroll.Text = Settings.Instance.DragScroll.ToString();
                 checkBox_descToolTip.IsChecked = Settings.Instance.EpgToolTip;
                 checkBox_title_indent.IsChecked = Settings.Instance.EpgTitleIndent;
+                checkBox_toolTip_noView_only.IsChecked = Settings.Instance.EpgToolTipNoViewOnly;
+                textBox_toolTipWait.Text = Settings.Instance.EpgToolTipViewWait.ToString();
 
                 if (Settings.Instance.UseCustomEpgView == false)
                 {
@@ -235,6 +237,15 @@ namespace EpgTimer.Setting
                 {
                     Settings.Instance.EpgTitleIndent = false;
                 }
+                if (checkBox_toolTip_noView_only.IsChecked == true)
+                {
+                    Settings.Instance.EpgToolTipNoViewOnly = true;
+                }
+                else
+                {
+                    Settings.Instance.EpgToolTipNoViewOnly = false;
+                }
+                Settings.Instance.EpgToolTipViewWait = Convert.ToInt32(textBox_toolTipWait.Text);
 
                 Settings.Instance.ContentColorList[0x00] = ((ColorSelectionItem)(comboBox0.SelectedItem)).ColorName;
                 Settings.Instance.ContentColorList[0x01] = ((ColorSelectionItem)(comboBox1.SelectedItem)).ColorName;
