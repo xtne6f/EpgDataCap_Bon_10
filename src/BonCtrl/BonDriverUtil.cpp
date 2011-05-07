@@ -253,6 +253,11 @@ DWORD CBonDriverUtil::_OpenBonDriver(
 			Sleep(1000);
 			open = this->bonIF->OpenTuner();
 		}
+		wstring dllName = bonDriverFilePath;
+		if( dllName.find(L"Spinel") != string::npos){
+			_OutputDebugString(L"Spinel find : %s", bonDriverFilePath);
+			Sleep(1000);
+		}
 		if( open == FALSE ){
 			//Open失敗
 			OutputDebugString(L"★OpenTunerに失敗しました");

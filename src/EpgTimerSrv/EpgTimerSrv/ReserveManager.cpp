@@ -77,6 +77,7 @@ CReserveManager::CReserveManager(void)
 	this->ngAddResSrvCoop = FALSE;
 	this->useResSrvCoop = FALSE;
 	this->useEpgSrvCoop = FALSE;
+	this->errEndBatRun = FALSE;
 
 	wstring textPath;
 	GetModuleFolderPath(textPath);
@@ -536,6 +537,8 @@ void CReserveManager::ReloadSetting()
 		GetSrvCoopEpgList(&fileList);
 		this->nwCoopManager.SetChkEpgFile(&fileList);
 	}
+
+	this->errEndBatRun = GetPrivateProfileInt(L"SET", L"ErrEndBatRun", 0, iniAppPath.c_str());
 
 	UnLock();
 }
@@ -2604,7 +2607,7 @@ void CReserveManager::CheckEndReserve()
 				_SendNotifyRecEnd(&item);
 
 				//バッチ処理追加
-				if(itrEnd->second->endType == REC_END_STATUS_NORMAL || itrEnd->second->endType == REC_END_STATUS_NEXT_START_END ){
+				if(itrEnd->second->endType == REC_END_STATUS_NORMAL || itrEnd->second->endType == REC_END_STATUS_NEXT_START_END || this->errEndBatRun == TRUE){
 					if( data.recSetting.batFilePath.size() > 0 && itrEnd->second->reserveInfo->IsContinueRec() == FALSE){
 						BAT_WORK_INFO batInfo;
 						batInfo.tunerID = itrEnd->second->tunerID;
@@ -3093,9 +3096,14 @@ void CReserveManager::CheckTuijyu()
 						}
 					}else{
 						//イベントID直前変更対応
-						if( CheckChgEventID(&resNowVal, &data) == TRUE ){
-							chgRes = TRUE;
-						}else{
+						BOOL chkChgID = FALSE;
+						if( nowSuccess == TRUE ){
+							if( CheckChgEventID(&resNowVal, &data) == TRUE ){
+								chgRes = TRUE;
+								chkChgID = TRUE;
+							}
+						}
+						if(chkChgID == FALSE){
 							//p/f正常なので通常検索
 							SEARCH_EPG_INFO_PARAM val;
 							val.ONID = data.originalNetworkID;
@@ -3333,6 +3341,13 @@ BOOL CReserveManager::CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, 
 
 BOOL CReserveManager::CheckChgEventID(EPGDB_EVENT_INFO* info, RESERVE_DATA* data)
 {
+	if( info == NULL || data == NULL ){
+		return FALSE;
+	}
+	if( data->reserveStatus == ADD_RESERVE_RELAY ){
+		//イベントリレーで追加された物はチェックしない
+		return FALSE;
+	}
 	BOOL chgEventID = FALSE;
 	if( info->shortInfo != NULL && (info->event_id != data->eventID)){
 		//似たタイトルになっているかチェック
@@ -3380,7 +3395,10 @@ BOOL CReserveManager::CheckChgEventID(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 					hitCount+=(DWORD)key.size();
 				}
 			}
-			DWORD samePer1 = (hitCount*100) / (hitCount+missCount);
+			DWORD samePer1 = 0;
+			if( hitCount+missCount > 0 ){
+				samePer1 = (hitCount*100) / (hitCount+missCount);
+			}
 
 			hitCount = 0;
 			missCount = 0;
@@ -3398,7 +3416,10 @@ BOOL CReserveManager::CheckChgEventID(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 					hitCount+=(DWORD)key.size();
 				}
 			}
-			DWORD samePer2 = (hitCount*100) / (hitCount+missCount);
+			DWORD samePer2 = 0;
+			if( hitCount+missCount > 0 ){
+				samePer2 = (hitCount*100) / (hitCount+missCount);
+			}
 
 			if( samePer1 > 80 || samePer2 > 80 ){
 				//80%以上の一致で一緒とする

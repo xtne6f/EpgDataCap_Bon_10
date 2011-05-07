@@ -305,6 +305,7 @@ protected:
 
 	BOOL ngAddResSrvCoop;
 
+	BOOL errEndBatRun;
 
 	int reloadBankMapAlgo;
 protected:

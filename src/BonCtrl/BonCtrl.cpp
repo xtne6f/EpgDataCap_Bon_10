@@ -214,6 +214,7 @@ DWORD CBonCtrl::OpenBonDriver(
 )
 {
 	if( Lock(L"OpenBonDriver") == FALSE ) return ERR_FALSE;
+	_CloseBonDriver();
 	DWORD ret = this->bonUtil.OpenBonDriver(index);
 	if( ret == NO_ERR ){
 		ret = _OpenBonDriver();
@@ -241,6 +242,7 @@ DWORD CBonCtrl::OpenBonDriver(
 )
 {
 	if( Lock(L"OpenBonDriver-2") == FALSE ) return ERR_FALSE;
+	_CloseBonDriver();
 	DWORD ret = this->bonUtil.OpenBonDriver(bonDriverFile);
 	if( ret == NO_ERR ){
 		ret = _OpenBonDriver();

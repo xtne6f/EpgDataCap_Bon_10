@@ -98,6 +98,7 @@ namespace EpgTimer
                             {
                                 if (cmdTvTest.SendViewSetBonDrivere(chInfo.bonDriver) == 1)
                                 {
+                                    System.Threading.Thread.Sleep(2000);
                                     cmdTvTest.SendViewSetCh(chInfo.chInfo);
                                 }
                             }
