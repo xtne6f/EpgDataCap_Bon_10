@@ -612,7 +612,7 @@ BOOL CEpgDBUtil::AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, CEventGrou
 		//更新必要
 		eventInfo->eventRelayInfo->tableID = eit->table_id;
 		eventInfo->eventRelayInfo->version = eit->version_number;
-		eventInfo->eventGroupInfo->eventData2List.clear();
+		eventInfo->eventRelayInfo->eventData2List.clear();
 
 		eventInfo->eventRelayInfo->group_type = eventGroup->group_type;
 		eventInfo->eventRelayInfo->event_count = eventGroup->event_count;

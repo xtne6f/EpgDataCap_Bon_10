@@ -129,6 +129,8 @@ EpgTimer.exeの詳細はReadme_EpgTimer.txt
 　◆のないものは基本的に調査を行えません。
 
 ■更新履歴■
+11/05/11　人柱版１０．３５
+・EPGデータの解析に問題あったので修正
 11/05/08　人柱版１０．３４
 ・TVTest連携でBonDriverにSpinelを使用していると、BonDriverが切り替わるようなチャンネル切換で失敗するため
 　BonDriver切換後2秒のwaitを挿入
