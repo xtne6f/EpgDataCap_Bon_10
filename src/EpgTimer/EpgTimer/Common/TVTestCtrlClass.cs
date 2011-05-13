@@ -40,7 +40,7 @@ namespace EpgTimer
                         Process process;
                         process = System.Diagnostics.Process.Start(Settings.Instance.TvTestExe, Settings.Instance.TvTestCmd);
                         processID = process.Id;
-                        System.Threading.Thread.Sleep(1000);
+                        System.Threading.Thread.Sleep(Settings.Instance.TvTestOpenWait);
                     }
                 }
                 cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + processID.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + processID.ToString());
@@ -98,7 +98,7 @@ namespace EpgTimer
                             {
                                 if (cmdTvTest.SendViewSetBonDrivere(chInfo.bonDriver) == 1)
                                 {
-                                    System.Threading.Thread.Sleep(2000);
+                                    System.Threading.Thread.Sleep(Settings.Instance.TvTestChgBonWait);
                                     cmdTvTest.SendViewSetCh(chInfo.chInfo);
                                 }
                             }
@@ -252,7 +252,7 @@ namespace EpgTimer
                         Process process;
                         process = System.Diagnostics.Process.Start(Settings.Instance.TvTestExe, Settings.Instance.TvTestCmd);
                         processID = process.Id;
-                        System.Threading.Thread.Sleep(1000);
+                        System.Threading.Thread.Sleep(Settings.Instance.TvTestOpenWait);
                     }
                 }
                 cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + processID.ToString(), "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + processID.ToString());

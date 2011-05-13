@@ -861,6 +861,34 @@ namespace EpgTimer
                     extInfo += "\r\n";
                 }
 
+                //イベントリレー
+                if (eventInfo.EventRelayInfo != null)
+                {
+                    if (eventInfo.EventRelayInfo.eventDataList.Count > 0)
+                    {
+                        extInfo += "イベントリレーあり：\r\n";
+                        foreach (EpgEventData info in eventInfo.EventRelayInfo.eventDataList)
+                        {
+                            key = ((UInt64)info.original_network_id) << 32 |
+                                ((UInt64)info.transport_stream_id) << 16 |
+                                ((UInt64)info.service_id);
+                            if (ChSet5.Instance.ChList.ContainsKey(key) == true)
+                            {
+                                extInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + " ";
+                            }
+                            else
+                            {
+                                extInfo += "OriginalNetworkID : " + eventInfo.original_network_id.ToString() + " (0x" + eventInfo.original_network_id.ToString("X4") + ") ";
+                                extInfo += "TransportStreamID : " + eventInfo.transport_stream_id.ToString() + " (0x" + eventInfo.transport_stream_id.ToString("X4") + ") ";
+                                extInfo += "ServiceID : " + eventInfo.service_id.ToString() + " (0x" + eventInfo.service_id.ToString("X4") + ") ";
+                            }
+                            extInfo += "EventID : " + info.event_id.ToString() + " (0x" + info.event_id.ToString("X4") + ")\r\n";
+                            extInfo += "\r\n";
+                        }
+                        extInfo += "\r\n";
+                    }
+                }
+
                 extInfo += "OriginalNetworkID : " + eventInfo.original_network_id.ToString() + " (0x" + eventInfo.original_network_id.ToString("X4") + ")\r\n";
                 extInfo += "TransportStreamID : " + eventInfo.transport_stream_id.ToString() + " (0x" + eventInfo.transport_stream_id.ToString("X4") + ")\r\n";
                 extInfo += "ServiceID : " + eventInfo.service_id.ToString() + " (0x" + eventInfo.service_id.ToString("X4") + ")\r\n";

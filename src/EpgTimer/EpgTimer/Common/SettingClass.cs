@@ -188,6 +188,8 @@ namespace EpgTimer
         private bool wakeReconnectNW;
         private bool suspendCloseNW;
         private bool ngAutoEpgLoadNW;
+        private Int32 tvTestOpenWait;
+        private Int32 tvTestChgBonWait;
 
         public bool UseCustomEpgView
         {
@@ -614,6 +616,16 @@ namespace EpgTimer
             get { return ngAutoEpgLoadNW; }
             set { ngAutoEpgLoadNW = value; }
         }
+        public Int32 TvTestOpenWait
+        {
+            get { return tvTestOpenWait; }
+            set { tvTestOpenWait = value; }
+        }
+        public Int32 TvTestChgBonWait
+        {
+            get { return tvTestChgBonWait; }
+            set { tvTestChgBonWait = value; }
+        }
 
         public Settings()
         {
@@ -686,6 +698,8 @@ namespace EpgTimer
             wakeReconnectNW = false;
             suspendCloseNW = false;
             ngAutoEpgLoadNW = false;
+            tvTestOpenWait = 2000;
+            tvTestChgBonWait = 2000;
         }
 
         [NonSerialized()]

@@ -13,6 +13,7 @@
 #include "EpgTimerSrvDef.h"
 #include "TwitterManager.h"
 #include "NotifyManager.h"
+#include "EpgDBManager.h"
 
 class CTunerBankCtrl
 {
@@ -21,6 +22,7 @@ public:
 	~CTunerBankCtrl(void);
 
 	void SetTwitterCtrl(CTwitterManager* twitterManager);
+	void SetEpgDBManager(CEpgDBManager* epgDBManager);
 	void ReloadSetting();
 	void SetNotifyManager(CNotifyManager* manager);
 
@@ -107,6 +109,7 @@ protected:
 	DWORD tunerID;
 	wstring bonFileName;
 	CParseChText4 chUtil;
+	CEpgDBManager* epgDBManager;
 
 	typedef struct _RESERVE_WORK{
 		CReserveInfo* reserveInfo;
@@ -238,6 +241,6 @@ protected:
 	BOOL IsFindContinueReserve(RESERVE_WORK* reserve, DWORD* continueSec);
 
 	void SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, BYTE mode);
-
+	void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo);
 };
 

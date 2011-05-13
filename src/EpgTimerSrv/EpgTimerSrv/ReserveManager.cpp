@@ -259,6 +259,18 @@ void CReserveManager::SetNotifyManager(CNotifyManager* manager)
 	UnLock();
 }
 
+void CReserveManager::SetEpgDBManager(CEpgDBManager* epgDBManager)
+{
+	if( Lock(L"CReserveManager::SetEpgDBManager") == FALSE ) return;
+
+	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
+	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
+		itrCtrl->second->SetEpgDBManager(epgDBManager);
+	}
+
+	UnLock();
+}
+
 void CReserveManager::ChangeRegist()
 {
 	if( Lock(L"CReserveManager::ChangeRegist") == FALSE ) return;

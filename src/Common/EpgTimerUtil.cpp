@@ -695,3 +695,15 @@ void GetChkDrivePath(wstring directoryPath, wstring& mountPath)
 	mountPath = szMount;
 }
 
+void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name)
+{
+	if( contentKindMap.size() == 0 ){
+		CreateContentKindMap();
+	}
+	WORD key = ((WORD)nibble1)<<8 | nibble2;
+	map<WORD, wstring>::iterator itr;
+	itr = contentKindMap.find(key);
+	if( itr != contentKindMap.end()){
+		name = itr->second;
+	}
+}

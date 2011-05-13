@@ -222,3 +222,16 @@ void CheckFileName(wstring& fileName)
 	Replace(fileName, L"|",L"｜");
 }
 
+void CheckFileName(string& fileName)
+{
+	Replace(fileName, "\\","￥");
+	Replace(fileName, "/","／");
+	Replace(fileName, ":","：");
+	Replace(fileName, "*","＊");
+	Replace(fileName, "?","？");
+	Replace(fileName, "\"","”");
+	Replace(fileName, "<","＜");
+	Replace(fileName, ">","＞");
+	Replace(fileName, "|","｜");
+}
+

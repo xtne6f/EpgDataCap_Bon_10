@@ -31,4 +31,6 @@ BOOL IsExt(wstring filePath, wstring ext);
 
 void CheckFileName(wstring& fileName);
 
+void CheckFileName(string& fileName);
+
 #endif

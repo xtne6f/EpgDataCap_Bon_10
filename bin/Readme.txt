@@ -129,6 +129,13 @@ EpgTimer.exeの詳細はReadme_EpgTimer.txt
 　◆のないものは基本的に調査を行えません。
 
 ■更新履歴■
+11/05/14　人柱版１０．３６
+・予約変更ダイアログで番組詳細が表示されない場合があったので修正
+・番組詳細にイベントリレーの情報を追加
+・TVTest連携でTVTest起動時とBonDriver切換時のwaitを変更できる設定を追加（設定方法の詳細はReadme_EpgTimer.txt参照）
+・録画後実行batで使えるマクロを追加（詳細はReadme_EpgTimer.txt参照）
+・RecName_Macro.dllで使えるマクロを追加（詳細はReadme_EpgTimer.txt参照）
+・RecName_PlugInのインターフェースに番組情報も渡すAPIを追加
 11/05/11　人柱版１０．３５
 ・EPGデータの解析に問題あったので修正
 11/05/08　人柱版１０．３４

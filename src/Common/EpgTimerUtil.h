@@ -31,4 +31,6 @@ void _ConvertEpgInfoText2(EPGDB_EVENT_INFO* info, wstring& text, wstring service
 //フォルダパスから実際のドライブパスを取得
 void GetChkDrivePath(wstring directoryPath, wstring& mountPath);
 
+void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name);
+
 #endif

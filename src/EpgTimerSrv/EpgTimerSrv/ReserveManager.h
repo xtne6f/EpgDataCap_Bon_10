@@ -27,6 +27,7 @@ public:
 	void SetRegistTCP(map<wstring, REGIST_TCP_INFO> registTCPMap);
 */
 	void SetNotifyManager(CNotifyManager* manager);
+	void SetEpgDBManager(CEpgDBManager* epgDBManager);
 	void ChangeRegist();
 	void ReloadSetting();
 

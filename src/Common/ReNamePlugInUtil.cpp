@@ -65,6 +65,7 @@ BOOL CReNamePlugInUtil::Initialize(
 	pfnGetPlugInNameRNP = NULL;
 	pfnSettingRNP = NULL;
 	pfnConvertRecNameRNP = NULL;
+	pfnConvertRecName2RNP = NULL;
 
 
 	BOOL ret = TRUE;
@@ -95,8 +96,10 @@ BOOL CReNamePlugInUtil::Initialize(
 		ret = FALSE;
 		goto ERR_END;
 	}
-
-
+	pfnConvertRecName2RNP = ( ConvertRecName2RNP ) ::GetProcAddress( module , "ConvertRecName2");
+	if( !pfnConvertRecName2RNP ){
+		OutputDebugString(L"ConvertRecNameの GetProcAddress に失敗\r\n");
+	}
 
 ERR_END:
 	if( ret == FALSE ){
@@ -120,7 +123,7 @@ void CReNamePlugInUtil::UnInitialize()
 	pfnGetPlugInNameRNP = NULL;
 	pfnSettingRNP = NULL;
 	pfnConvertRecNameRNP = NULL;
-
+	pfnConvertRecName2RNP = NULL;
 }
 
 //PlugInの名前を取得する
@@ -178,6 +181,39 @@ BOOL CReNamePlugInUtil::ConvertRecName(
 	if( Lock() == FALSE ) return FALSE;
 
 	BOOL ret = pfnConvertRecNameRNP(info, recName, recNamesize);
+
+	UnLock();
+
+	return ret;
+}
+
+//入力された予約情報を元に、録画時のファイル名を作成する（拡張子含む）
+//recNameがNULL時は必要なサイズをrecNamesizeで返す
+//通常recNamesize=256で呼び出し
+//戻り値
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// info						[IN]予約情報
+// epgInfo					[IN]番組情報（EPG予約で番組情報が存在する時、存在しない場合のNULL）
+// recName					[OUT]名称
+// recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
+BOOL CReNamePlugInUtil::ConvertRecName2(
+	PLUGIN_RESERVE_INFO* info,
+	EPG_EVENT_INFO* epgInfo,
+	WCHAR* recName,
+	DWORD* recNamesize
+	)
+{
+	if( module == NULL ){
+		return ERR_NOT_INIT;
+	}
+	if( Lock() == FALSE ) return FALSE;
+	BOOL ret = FALSE;
+	if( pfnConvertRecName2RNP != NULL ){
+		ret = pfnConvertRecName2RNP(info, epgInfo, recName, recNamesize);
+	}else{
+		ret = pfnConvertRecNameRNP(info, recName, recNamesize);
+	}
 
 	UnLock();
 

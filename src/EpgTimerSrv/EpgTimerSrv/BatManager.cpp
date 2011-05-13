@@ -373,6 +373,8 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	string strDrops="";
 	string strScrambles="";
 	string strResult="";
+	string strTitleF="";
+	string strTitle2F="";
 
 	WtoA(info->recFileInfo.recFilePath, strRecFilePath);
 
@@ -481,6 +483,10 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	Format(strScrambles, "%I64d", info->recFileInfo.scrambles);
 	WtoA(info->recFileInfo.comment, strResult);
 
+	strTitleF = strTitle;
+	strTitle2F = strTitle2;
+	CheckFileName(strTitleF);
+	CheckFileName(strTitle2F);
 
 	Replace(strRead, "$FilePath$", strRecFilePath);
 	Replace(strRead, "$FileName$", strFileName);
@@ -544,6 +550,8 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	Replace(strRead, "$Drops$", strDrops);
 	Replace(strRead, "$Scrambles$", strScrambles);
 	Replace(strRead, "$Result$", strResult);
+	Replace(strRead, "$TitleF$", strTitleF);
+	Replace(strRead, "$Title2F$", strTitle2F);
 
 	DWORD dwWrite=0;
 	WriteFile(hWrite, strRead.c_str(), (DWORD)strRead.length(), &dwWrite, NULL );

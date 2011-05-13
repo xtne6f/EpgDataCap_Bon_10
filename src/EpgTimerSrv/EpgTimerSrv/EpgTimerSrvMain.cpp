@@ -124,6 +124,7 @@ void CEpgTimerSrvMain::StartMain(
 	this->manualAutoAdd.ParseText(manualAutoAddFilePath.c_str());
 
 	this->reserveManager.SetNotifyManager(&this->notifyManager);
+	this->reserveManager.SetEpgDBManager(&this->epgDB);
 
 	//Pipeサーバースタート
 	if( this->pipeServer == NULL ){

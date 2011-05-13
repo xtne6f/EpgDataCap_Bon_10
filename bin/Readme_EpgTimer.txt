@@ -976,7 +976,10 @@ $DUS$		番組総時間の秒（ファイル名：録画開始時の番組総時�
 $Drops$		録画結果のドロップ数（バッチのみ）
 $Scrambles$	録画結果のスクランブル数（バッチのみ）
 $Result$	録画結果のコメント（バッチのみ）
-
+$TitleF$	$Title$と同内容でファイル名に使用できない記号が存在した場合全角に変換するもの（バッチのみ）
+$Title2F$	$Title2$と同内容でファイル名に使用できない記号が存在した場合全角に変換するもの（バッチのみ）
+$Genre$		番組のジャンル（EPGデータ存在時のみ）（RecName_Macro.dllのみ）
+$Genre2$	番組の詳細ジャンル（EPGデータ存在時のみ）（RecName_Macro.dllのみ）
 
 ■追従の仕様■
 　追従処理には大きく2種類あります。
@@ -1438,3 +1441,10 @@ ID　　　：内部で使用するID
 　EpgTimerSrv.iniのSETにErrEndBatRunを追加することで変更可能です。
 　0:正常に予約録画の行えた物だけ実行、1:エラーが発生した予約録画でも実行（デフォルト 0）
 
+■TVTest連携でTVTest起動時とBonDriver切換時のwaitを変更■
+　SpinelをBonDriverとして使用する場合、連続でコマンドを発行すると正常に
+　動作しない事があるようです。
+　EpgTimer.exe.xmlの<TvTestOpenWait>と<TvTestChgBonWait>の要素を変更する
+　ことで可能です。（存在しない場合は設定を一度保存しなおしてください）
+　<TvTestOpenWait>：TVTest起動後のWaitをミリ秒単位（デフォルト 2000）
+　<TvTestChgBonWait>：BonDriver切換後のWaitをミリ秒単位（デフォルト 2000）
