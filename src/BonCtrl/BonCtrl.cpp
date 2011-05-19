@@ -1232,7 +1232,7 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 					chkNext = TRUE;
 				}
 			}else{
-				if( startTime + chkWait+7 < GetTimeCount() || chChgErr == TRUE){
+				if( startTime + chkWait+8 < GetTimeCount() || chChgErr == TRUE){
 					//チャンネル切り替え成功したけどサービス一覧とれないので無信号と判断
 					OutputDebugString(L"★AutoScan GetService timeout\r\n");
 					chkNext = TRUE;

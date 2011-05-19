@@ -191,6 +191,11 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 			if( packet.Set188TS(data->data + i, 188) == TRUE ){
 				if( this->chChangeFlag == TRUE ){
 					//チャンネル切り替え中
+					if(GetTimeCount() < this->chChangeTime + 1){
+						//1秒間は切り替え前のパケット来る可能性を考慮して無視する
+						UnLock();
+						return NO_ERR;
+					}
 					//簡易パケット解析
 					if( packet.transport_scrambling_control != 0 ){
 						//スクランブルパケットなので解析できない
@@ -219,7 +224,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 					if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
 						if( onid != this->lastONID || tsid != this->lastTSID ){
 							OutputDebugString(L"★Ch Change Complete\r\n");
-						_OutputDebugString(L"★Ch 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", onid, tsid, this->lastONID, this->lastTSID);
+						_OutputDebugString(L"★Ch 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
 							this->chChangeFlag = FALSE;
 							this->chChangeErr = FALSE;
 							this->lastONID = onid;
@@ -233,8 +238,15 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 							this->decodeUtil.SetEmm(this->emmEnableFlag);
 							ResetErrCount();
 							chChgComp = TRUE;
+
+							map<WORD, CPMTUtil*>::iterator itrPmt;
+							for( itrPmt = this->pmtUtilMap.begin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
+								SAFE_DELETE(itrPmt->second);
+							}
+							this->pmtUtilMap.clear();
+
 						}else if( this->lastONID == onid && this->lastTSID == tsid &&
-							(GetTimeCount() > this->chChangeTime + 6)
+							(GetTimeCount() > this->chChangeTime + 7)
 							){
 							OutputDebugString(L"★Ch NoChange\r\n");
 								this->chChangeFlag = FALSE;
@@ -250,6 +262,12 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 								this->decodeUtil.SetEmm(this->emmEnableFlag);
 								ResetErrCount();
 								chChgComp = TRUE;
+
+								map<WORD, CPMTUtil*>::iterator itrPmt;
+								for( itrPmt = this->pmtUtilMap.begin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
+									SAFE_DELETE(itrPmt->second);
+								}
+								this->pmtUtilMap.clear();
 						}else if( GetTimeCount() > this->chChangeTime + 15 ){
 							if( this->lastONID == onid && this->lastTSID == tsid ){
 								this->chChangeFlag = FALSE;
@@ -265,6 +283,12 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 								this->decodeUtil.SetEmm(this->emmEnableFlag);
 								ResetErrCount();
 								chChgComp = TRUE;
+
+								map<WORD, CPMTUtil*>::iterator itrPmt;
+								for( itrPmt = this->pmtUtilMap.begin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
+									SAFE_DELETE(itrPmt->second);
+								}
+								this->pmtUtilMap.clear();
 							}else{
 //								OutputDebugString(L"★Ch Change Err\r\n");
 								//10秒以上たってるなら切り替わったとする
@@ -385,6 +409,36 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 				}
 			}
 		}
+		if( this->chChangeFlag == FALSE ){
+			WORD onid = 0xFFFF;
+			WORD tsid = 0xFFFF;
+			if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
+				if( onid != this->lastONID || tsid != this->lastTSID ){
+					OutputDebugString(L"★UnKnown Ch Change \r\n");
+					_OutputDebugString(L"★Ch 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
+					this->chChangeFlag = FALSE;
+					this->chChangeErr = FALSE;
+					this->lastONID = onid;
+					this->lastTSID = tsid;
+					this->epgUtil.ClearSectionStatus();
+					if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
+						OutputDebugString(L"★★Decode DLL load err\r\n");
+						Sleep(100);
+						this->decodeUtil.SetNetwork(onid, tsid);
+					}
+					this->decodeUtil.SetEmm(this->emmEnableFlag);
+					ResetErrCount();
+					chChgComp = TRUE;
+
+					map<WORD, CPMTUtil*>::iterator itrPmt;
+					for( itrPmt = this->pmtUtilMap.begin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
+						SAFE_DELETE(itrPmt->second);
+					}
+					this->pmtUtilMap.clear();
+
+				}
+			}
+		}
 	}catch(...){
 		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception1");
 		UnLock();
@@ -413,8 +467,9 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 		}
 	}catch(...){
 		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception2");
-		UnLock();
-		return ERR_FALSE;
+		//デコード失敗
+		decodeData = this->decodeBuff;
+		decodeSize = this->deocdeBuffWriteSize;
 	}
 	
 	//デコード済みのデータを解析させる
@@ -424,6 +479,8 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 		}
 	}catch(...){
 		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception3");
+		this->epgUtil.UnInitialize();
+		this->epgUtil.Initialize(FALSE);
 		UnLock();
 		return ERR_FALSE;
 	}
