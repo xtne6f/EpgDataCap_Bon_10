@@ -228,3 +228,18 @@ void _OutputDebugString(const TCHAR *format, ...)
 
 	va_end(params);
 }
+
+void GetLastErrMsg(DWORD err, wstring& msg)
+{
+	LPVOID lpMsgBuf;
+	FormatMessageW(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		err,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPWSTR)&lpMsgBuf,
+		0,
+		NULL );
+	msg = (LPWSTR)lpMsgBuf;
+	LocalFree( lpMsgBuf );
+}

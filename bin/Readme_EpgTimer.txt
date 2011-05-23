@@ -1448,3 +1448,27 @@ ID　　　：内部で使用するID
 　ことで可能です。（存在しない場合は設定を一度保存しなおしてください）
 　<TvTestOpenWait>：TVTest起動後のWaitをミリ秒単位（デフォルト 2000）
 　<TvTestChgBonWait>：BonDriver切換後のWaitをミリ秒単位（デフォルト 2000）
+
+■録画済み一覧のDropとScrambleある場合の背景色を変更■
+　DropかScrambleが0以外の場合に表示する背景色をRGBで変更する。
+　EpgTimer.exe.xmlの要素を変更することで可能です。
+（存在しない場合は設定を一度保存しなおしてください）
+　<RecEndErrColorR>：Drop用R（デフォルト 255）
+　<RecEndErrColorG>：Drop用G（デフォルト 0）
+　<RecEndErrColorB>：Drop用B（デフォルト 0）
+　<RecEndWarColorR>：Scramble用R（デフォルト 255）
+　<RecEndWarColorG>：Scramble用G（デフォルト 255）
+　<RecEndWarColorB>：Scramble用B（デフォルト 0）
+
+■番組表で表示するツールチップの背景色と文字色を変更■
+　番組表で表示するツールチップの背景色と文字色をRGBで変更する。
+　EpgTimer.exe.xmlの要素を変更することで可能です。
+（存在しない場合は設定を一度保存しなおしてください）
+　<EpgTipsBackColorR>：背景用R（デフォルト 211）
+　<EpgTipsBackColorG>：背景用G（デフォルト 211）
+　<EpgTipsBackColorB>：背景用B（デフォルト 211）
+　<EpgTipsForeColorR>：文字用R（デフォルト 0）
+　<EpgTipsForeColorG>：文字用G（デフォルト 0）
+　<EpgTipsForeColorB>：文字用B（デフォルト 0）
+
+

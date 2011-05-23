@@ -1047,5 +1047,68 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
+
+        private SolidColorBrush recEndErrBackColor = null;
+        public SolidColorBrush RecEndErrBackColor
+        {
+            get
+            {
+                if( recEndErrBackColor == null ){
+                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndErrColorR, Settings.Instance.RecEndErrColorG, Settings.Instance.RecEndErrColorB);
+                    recEndErrBackColor = new SolidColorBrush();
+                    recEndErrBackColor.Color = item;
+                    recEndErrBackColor.Freeze();
+                }
+                return recEndErrBackColor;
+            }
+        }
+
+        private SolidColorBrush recEndWarBackColor = null;
+        public SolidColorBrush RecEndWarBackColor
+        {
+            get
+            {
+                if (recEndWarBackColor == null)
+                {
+                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndWarColorR, Settings.Instance.RecEndWarColorG, Settings.Instance.RecEndWarColorB);
+                    recEndWarBackColor = new SolidColorBrush();
+                    recEndWarBackColor.Color = item;
+                    recEndWarBackColor.Freeze();
+                }
+                return recEndWarBackColor;
+            }
+        }
+
+        private SolidColorBrush epgTipsBackColor = null;
+        public SolidColorBrush EpgTipsBackColor
+        {
+            get
+            {
+                if (epgTipsBackColor == null)
+                {
+                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgTipsBackColorR, Settings.Instance.EpgTipsBackColorG, Settings.Instance.EpgTipsBackColorB);
+                    epgTipsBackColor = new SolidColorBrush();
+                    epgTipsBackColor.Color = item;
+                    epgTipsBackColor.Freeze();
+                }
+                return epgTipsBackColor;
+            }
+        }
+        private SolidColorBrush epgTipsForeColor = null;
+        public SolidColorBrush EpgTipsForeColor
+        {
+            get
+            {
+                if (epgTipsForeColor == null)
+                {
+                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgTipsForeColorR, Settings.Instance.EpgTipsForeColorG, Settings.Instance.EpgTipsForeColorB);
+                    epgTipsForeColor = new SolidColorBrush();
+                    epgTipsForeColor.Color = item;
+                    epgTipsForeColor.Freeze();
+                }
+                return epgTipsForeColor;
+            }
+        }
+
     }
 }

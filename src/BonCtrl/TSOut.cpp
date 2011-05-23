@@ -1132,7 +1132,19 @@ BOOL CTSOut::StartSave(
 	}
 
 	BOOL ret = itr->second->StartSave(fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub);
-
+	if( ret == FALSE ){
+		_OutputDebugString(L"認識ドライブ");
+		WCHAR drive[4] = L"A:\\";
+		for( int i=0; i<26; i++ ){
+			ULARGE_INTEGER stFree;
+			ULARGE_INTEGER stTotal;
+			ULARGE_INTEGER stTotalFree;
+			if( _GetDiskFreeSpaceEx( drive, &stFree, &stTotal, &stTotalFree ) == TRUE ){
+				_OutputDebugString(L"%s free : %I64 dbyte", drive, stFree.QuadPart);
+			}
+			drive[0]++;
+		}
+	}
 	UnLock();
 	return ret;
 }

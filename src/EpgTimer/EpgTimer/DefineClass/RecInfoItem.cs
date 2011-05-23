@@ -142,11 +142,11 @@ namespace EpgTimer
                 {
                     if (RecInfo.Scrambles > 0)
                     {
-                        color = Brushes.Yellow;
+                        color = CommonManager.Instance.RecEndWarBackColor;
                     }
                     if (RecInfo.Drops > 0)
                     {
-                        color = Brushes.Red;
+                        color = CommonManager.Instance.RecEndWarBackColor;
                     }
                 }
                 return color;

@@ -45,6 +45,6 @@ BOOL _GetDiskFreeSpaceEx(
   PULARGE_INTEGER lpTotalNumberOfFreeBytes // ディスク全体の空きバイト数
 );
 void _OutputDebugString(const TCHAR *pOutputString, ...);
-
+void GetLastErrMsg(DWORD err, wstring& msg);
 
 #endif

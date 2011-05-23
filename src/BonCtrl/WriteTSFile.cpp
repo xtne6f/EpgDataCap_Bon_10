@@ -108,6 +108,7 @@ BOOL CWriteTSFile::StartSave(
 
 	if( saveFolder->size() == 0 ){
 		UnLock();
+		_OutputDebugString(L"CWriteTSFile::StartSave Err saveFolder 0");
 		return FALSE;
 	}
 	
@@ -131,6 +132,7 @@ BOOL CWriteTSFile::StartSave(
 
 			item->writeUtil = new CWritePlugInUtil;
 			if(item->writeUtil->Initialize(plugInPath.c_str() ) == FALSE ){
+				_OutputDebugString(L"CWriteTSFile::StartSave Err 3");
 				SAFE_DELETE(item);
 			}else{
 				wstring folderPath = this->saveFolder[i].recFolder;
@@ -158,9 +160,27 @@ BOOL CWriteTSFile::StartSave(
 					item->recFileName = this->saveFolder[i].recFileName;
 				}
 				//開始
-				if( item->writeUtil->StartSave(recPath.c_str(), this->overWriteFlag, createSize) == FALSE ){
-					SAFE_DELETE(item);
-				}else{
+				BOOL startRes = item->writeUtil->StartSave(recPath.c_str(), this->overWriteFlag, createSize);
+				if( startRes == FALSE ){
+					_OutputDebugString(L"CWriteTSFile::StartSave Err 2");
+					//エラー時サブフォルダでリトライ
+					if( GetFreeFolder(createSize, folderPath) == TRUE ){
+						//空きなかったのでサブフォルダに録画
+						this->subRecFlag = TRUE;
+					}
+					ChkFolderPath(folderPath);
+					recPath = folderPath;
+					recPath += L"\\";
+					if( this->saveFolder[i].recFileName.size() == 0 ){
+						recPath += fileName;
+						item->recFileName = fileName;
+					}else{
+						recPath += this->saveFolder[i].recFileName;
+						item->recFileName = this->saveFolder[i].recFileName;
+					}
+					startRes = item->writeUtil->StartSave(recPath.c_str(), this->overWriteFlag, createSize);
+				}
+				if( startRes == TRUE ){
 					WCHAR saveFilePath[512] = L"";
 					DWORD saveFilePathSize = 512;
 					item->writeUtil->GetSaveFilePath(saveFilePath, &saveFilePathSize);
@@ -173,6 +193,8 @@ BOOL CWriteTSFile::StartSave(
 						this->mainSaveFilePath = saveFilePath;
 					}
 					firstFreeChek = FALSE;
+				}else{
+					SAFE_DELETE(item);
 				}
 			}
 		}
@@ -184,9 +206,11 @@ BOOL CWriteTSFile::StartSave(
 			SetThreadPriority( this->outThread, THREAD_PRIORITY_NORMAL );
 			ResumeThread(this->outThread);
 		}else{
+			_OutputDebugString(L"CWriteTSFile::StartSave Err fileList 0");
 			ret = FALSE;
 		}
 	}else{
+		_OutputDebugString(L"CWriteTSFile::StartSave Err 1");
 		ret = FALSE;
 	}
 

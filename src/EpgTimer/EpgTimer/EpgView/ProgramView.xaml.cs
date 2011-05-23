@@ -164,8 +164,8 @@ namespace EpgTimer.EpgView
                                 block.TextWrapping = TextWrapping.Wrap;
                                 block.Margin = new Thickness(2);
 
-                                block.Background = Brushes.LightGray;
-                                block.Foreground = Brushes.Black;
+                                block.Background = CommonManager.Instance.EpgTipsBackColor;
+                                block.Foreground = CommonManager.Instance.EpgTipsForeColor;
                                 border.Child = block;
                                 toolTip.Child = border;
                                 toolTip.IsOpen = true;

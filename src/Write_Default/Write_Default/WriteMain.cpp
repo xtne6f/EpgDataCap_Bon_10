@@ -30,18 +30,39 @@ BOOL CWriteMain::_StartSave(
 {
 	this->savePath = L"";
 
+	wstring errMsg = L"";
+	DWORD err = 0;
+
 	wstring recFilePath = fileName;
 	if( overWriteFlag == TRUE ){
+		_OutputDebugString(L"★_StartSave CreateFile:%s", recFilePath.c_str());
 		this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+		if( this->file == INVALID_HANDLE_VALUE ){
+			err = GetLastError();
+			GetLastErrMsg(err, errMsg);
+			_OutputDebugString(L"★_StartSave Err:0x%08X %s", err, errMsg.c_str());
+			if( GetNextFileName(fileName, recFilePath) == TRUE ){
+				_OutputDebugString(L"★_StartSave CreateFile:%s", recFilePath.c_str());
+				this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+			}
+		}
 	}else{
+		_OutputDebugString(L"★_StartSave CreateFile:%s", recFilePath.c_str());
 		this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL );
 		if( this->file == INVALID_HANDLE_VALUE ){
+			err = GetLastError();
+			GetLastErrMsg(err, errMsg);
+			_OutputDebugString(L"★_StartSave Err:0x%08X %s", err, errMsg.c_str());
 			if( GetNextFileName(fileName, recFilePath) == TRUE ){
+				_OutputDebugString(L"★_StartSave CreateFile:%s", recFilePath.c_str());
 				this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL );
 			}
 		}
 	}
 	if( this->file == INVALID_HANDLE_VALUE ){
+		err = GetLastError();
+		GetLastErrMsg(err, errMsg);
+		_OutputDebugString(L"★_StartSave Err:0x%08X %s", err, errMsg.c_str());
 		this->file = NULL;
 		return FALSE;
 	}
@@ -126,8 +147,15 @@ BOOL CWriteMain::_AddTSBuff(
 	)
 {
 	BOOL ret = FALSE;
+	wstring errMsg = L"";
+	DWORD err = 0;
 	if( this->file != NULL && data != NULL && size > 0 ){
 		ret = WriteFile(this->file, data, size, writeSize, NULL);
+		if( ret == FALSE ){
+			err = GetLastError();
+			GetLastErrMsg(err, errMsg);
+			_OutputDebugString(L"★WriteFile Err:0x%08X %s", err, errMsg.c_str());
+		}
 	}
 	return ret;
 }

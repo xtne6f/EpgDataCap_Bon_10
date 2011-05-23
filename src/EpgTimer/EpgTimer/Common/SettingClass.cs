@@ -190,6 +190,18 @@ namespace EpgTimer
         private bool ngAutoEpgLoadNW;
         private Int32 tvTestOpenWait;
         private Int32 tvTestChgBonWait;
+        private byte recEndErrColorR;
+        private byte recEndErrColorG;
+        private byte recEndErrColorB;
+        private byte recEndWarColorR;
+        private byte recEndWarColorG;
+        private byte recEndWarColorB;
+        private byte epgTipsBackColorR;
+        private byte epgTipsBackColorG;
+        private byte epgTipsBackColorB;
+        private byte epgTipsForeColorR;
+        private byte epgTipsForeColorG;
+        private byte epgTipsForeColorB;
 
         public bool UseCustomEpgView
         {
@@ -626,6 +638,66 @@ namespace EpgTimer
             get { return tvTestChgBonWait; }
             set { tvTestChgBonWait = value; }
         }
+        public byte RecEndErrColorR
+        {
+            get { return recEndErrColorR; }
+            set { recEndErrColorR = value; }
+        }
+        public byte RecEndErrColorG
+        {
+            get { return recEndErrColorG; }
+            set { recEndErrColorG = value; }
+        }
+        public byte RecEndErrColorB
+        {
+            get { return recEndErrColorB; }
+            set { recEndErrColorB = value; }
+        }
+        public byte RecEndWarColorR
+        {
+            get { return recEndWarColorR; }
+            set { recEndWarColorR = value; }
+        }
+        public byte RecEndWarColorG
+        {
+            get { return recEndWarColorG; }
+            set { recEndWarColorG = value; }
+        }
+        public byte RecEndWarColorB
+        {
+            get { return recEndWarColorB; }
+            set { recEndWarColorB = value; }
+        }
+        public byte EpgTipsBackColorR
+        {
+            get { return epgTipsBackColorR; }
+            set { epgTipsBackColorR = value; }
+        }
+        public byte EpgTipsBackColorG
+        {
+            get { return epgTipsBackColorG; }
+            set { epgTipsBackColorG = value; }
+        }
+        public byte EpgTipsBackColorB
+        {
+            get { return epgTipsBackColorB; }
+            set { epgTipsBackColorB = value; }
+        }
+        public byte EpgTipsForeColorR
+        {
+            get { return epgTipsForeColorR; }
+            set { epgTipsForeColorR = value; }
+        }
+        public byte EpgTipsForeColorG
+        {
+            get { return epgTipsForeColorG; }
+            set { epgTipsForeColorG = value; }
+        }
+        public byte EpgTipsForeColorB
+        {
+            get { return epgTipsForeColorB; }
+            set { epgTipsForeColorB = value; }
+        }
 
         public Settings()
         {
@@ -700,6 +772,18 @@ namespace EpgTimer
             ngAutoEpgLoadNW = false;
             tvTestOpenWait = 2000;
             tvTestChgBonWait = 2000;
+            recEndErrColorR = 0xFF;
+            recEndErrColorG = 0;
+            recEndErrColorB = 0;
+            recEndWarColorR = 0xFF;
+            recEndWarColorG = 0xFF;
+            recEndWarColorB = 0;
+            epgTipsBackColorR = 0xD3;
+            epgTipsBackColorG = 0xD3;
+            epgTipsBackColorB = 0xD3;
+            epgTipsForeColorR = 0;
+            epgTipsForeColorG = 0;
+            epgTipsForeColorB = 0;
         }
 
         [NonSerialized()]
@@ -722,7 +806,11 @@ namespace EpgTimer
         public static void LoadFromXmlFile()
         {
             string path = GetSettingPath();
-
+            if (path.IndexOf("EpgTimer.exe.xml") < 0)
+            {
+                path = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+                path += "\\EpgTimer.exe.xml";
+            }
             try
             {
                 FileStream fs = new FileStream(path,
@@ -786,7 +874,7 @@ namespace EpgTimer
                 }
             }
         }
-
+ 
         /// <summary>
         /// EpgTimerNW用の設定ファイルロード関数
         /// </summary>
@@ -859,6 +947,11 @@ namespace EpgTimer
         public static void SaveToXmlFile()
         {
             string path = GetSettingPath();
+            if (path.IndexOf("EpgTimer.exe.xml") < 0 && path.IndexOf("EpgTimerNW.exe.xml") < 0)
+            {
+                path = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+                path += "\\EpgTimer.exe.xml";
+            }
 
             try
             {
