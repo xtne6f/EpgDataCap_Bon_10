@@ -2,6 +2,7 @@
 #include "ParseRecInfoText.h"
 #include "TimeUtil.h"
 #include "StringUtil.h"
+#include "PathUtil.h"
 
 CParseRecInfoText::CParseRecInfoText(void)
 {
@@ -422,8 +423,18 @@ BOOL CParseRecInfoText::AddRecInfo(REC_FILE_INFO* item)
 		item->originalNetworkID,
 		item->transportStreamID);
 
+	wstring iniCommonPath = L"";
+	GetCommonIniPath(iniCommonPath);
+	WCHAR buff[512] = L"";
+	GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
+	wstring infoFolder = buff;
+	ChkFolderPath(infoFolder);
+
 	REC_FILE_INFO* pSetItem = new REC_FILE_INFO;
 	*pSetItem = *item;
+
+	wstring tsFileName = L"";
+	GetFileName(pSetItem->recFilePath, tsFileName);
 
 	wstring errFile = pSetItem->recFilePath;
 	errFile += L".err";
@@ -443,6 +454,27 @@ BOOL CParseRecInfoText::AddRecInfo(REC_FILE_INFO* item)
 			SAFE_DELETE_ARRAY(pszBuff);
 		}
 		CloseHandle(file);
+	}else{
+		if( infoFolder.size() > 0 ){
+			Format(errFile, L"%s\\%s.err", infoFolder.c_str(), tsFileName.c_str());
+			file = CreateFile( errFile.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+			if( file != INVALID_HANDLE_VALUE ){
+				DWORD dwFileSize = GetFileSize( file, NULL );
+				if( dwFileSize != 0 ){
+					char* pszBuff = new char[dwFileSize+1];
+					if( pszBuff != NULL ){
+						ZeroMemory(pszBuff,dwFileSize+1);
+						DWORD dwRead=0;
+						ReadFile( file, pszBuff, dwFileSize, &dwRead, NULL );
+
+						string strRead = pszBuff;
+						AtoW(strRead, pSetItem->errInfo);
+					}
+					SAFE_DELETE_ARRAY(pszBuff);
+				}
+				CloseHandle(file);
+			}
+		}
 	}
 
 	wstring pgFile = pSetItem->recFilePath;
@@ -463,6 +495,27 @@ BOOL CParseRecInfoText::AddRecInfo(REC_FILE_INFO* item)
 			SAFE_DELETE_ARRAY(pszBuff);
 		}
 		CloseHandle(file);
+	}else{
+		if( infoFolder.size() > 0 ){
+			Format(pgFile, L"%s\\%s.program.txt", infoFolder.c_str(), tsFileName.c_str());
+			file = CreateFile( pgFile.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+			if( file != INVALID_HANDLE_VALUE ){
+				DWORD dwFileSize = GetFileSize( file, NULL );
+				if( dwFileSize != 0 ){
+					char* pszBuff = new char[dwFileSize+1];
+					if( pszBuff != NULL ){
+						ZeroMemory(pszBuff,dwFileSize+1);
+						DWORD dwRead=0;
+						ReadFile( file, pszBuff, dwFileSize, &dwRead, NULL );
+
+						string strRead = pszBuff;
+						AtoW(strRead, pSetItem->programInfo);
+					}
+					SAFE_DELETE_ARRAY(pszBuff);
+				}
+				CloseHandle(file);
+			}
+		}
 	}
 
 	pSetItem->id = GetNextReserveID();
@@ -481,6 +534,7 @@ BOOL CParseRecInfoText::DelRecInfo(DWORD id)
 	multimap<wstring, REC_FILE_INFO*>::iterator itr;
 	for( itr = this->recInfoMap.begin(); itr != this->recInfoMap.end(); itr++ ){
 		if( itr->second->id == id ){
+			DelTS_InfoFile(itr->second->recFilePath);
 			SAFE_DELETE(itr->second);
 			this->recInfoMap.erase(itr);
 			break;
@@ -506,6 +560,7 @@ void CParseRecInfoText::AutoDelInfo(DWORD keepCount)
 		multimap<wstring, REC_FILE_INFO*>::iterator itr;
 		itr = this->recInfoMap.begin();
 		if( itr != this->recInfoMap.end() ){
+			DelTS_InfoFile(itr->second->recFilePath);
 			SAFE_DELETE(itr->second);
 			this->recInfoMap.erase(itr);
 		}
@@ -517,6 +572,49 @@ void CParseRecInfoText::AutoDelInfo(DWORD keepCount)
 		itr->second->id = this->nextID;
 		this->recIDMap.insert(pair<DWORD, REC_FILE_INFO*>(itr->second->id, itr->second));
 		this->nextID++;
+	}
+
+}
+
+void CParseRecInfoText::DelTS_InfoFile(wstring tsFilePath)
+{
+	if( tsFilePath.size() <= 0 ){
+		return;
+	}
+	wstring iniCommonPath = L"";
+	GetCommonIniPath(iniCommonPath);
+	if( GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, iniCommonPath.c_str()) != 1 ){
+		return ;
+	}
+	WCHAR buff[512] = L"";
+	GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
+	wstring infoFolder = buff;
+	ChkFolderPath(infoFolder);
+
+	wstring tsFileName = L"";
+	GetFileName(tsFilePath, tsFileName);
+
+	DeleteFile( tsFilePath.c_str() );
+	_OutputDebugString(L"★RecInfo Auto Delete : %s", tsFilePath.c_str());
+
+	wstring errFile = tsFilePath;
+	errFile += L".err";
+	DeleteFile( errFile.c_str() );
+	_OutputDebugString(L"★RecInfo Auto Delete : %s", errFile.c_str());
+	if( infoFolder.size() > 0 ){
+		Format(errFile, L"%s\\%s.err", infoFolder.c_str(), tsFileName.c_str());
+		DeleteFile( errFile.c_str() );
+		_OutputDebugString(L"★RecInfo Auto Delete : %s", errFile.c_str());
+	}
+
+	wstring pgFile = tsFilePath;
+	pgFile += L".program.txt";
+	DeleteFile( pgFile.c_str() );
+	_OutputDebugString(L"★RecInfo Auto Delete : %s", pgFile.c_str());
+	if( infoFolder.size() > 0 ){
+		Format(pgFile, L"%s\\%s.program.txt", infoFolder.c_str(), tsFileName.c_str());
+		DeleteFile( pgFile.c_str() );
+		_OutputDebugString(L"★RecInfo Auto Delete : %s", pgFile.c_str());
 	}
 
 }

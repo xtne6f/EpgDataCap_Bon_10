@@ -155,7 +155,7 @@ BOOL CParseManualAutoAddText::Parse1Line(string parseLine, MANUAL_AUTO_ADD_DATA*
 	Separate( parseLine, "\t", strBuff, parseLine);
 
 	//追従
-	item->recSetting.tuijyuuFlag = (BYTE)atoi(strBuff.c_str());
+	item->recSetting.tuijyuuFlag = 0;
 
 	Separate( parseLine, "\t", strBuff, parseLine);
 
@@ -165,7 +165,7 @@ BOOL CParseManualAutoAddText::Parse1Line(string parseLine, MANUAL_AUTO_ADD_DATA*
 	Separate( parseLine, "\t", strBuff, parseLine);
 
 	//ぴったり録画
-	item->recSetting.pittariFlag = (BYTE)atoi(strBuff.c_str());
+	item->recSetting.pittariFlag = 0;
 	
 	Separate( parseLine, "\t", strBuff, parseLine);
 
@@ -462,6 +462,8 @@ BOOL CParseManualAutoAddText::AddData(MANUAL_AUTO_ADD_DATA* item)
 
 	MANUAL_AUTO_ADD_DATA* setItem = new MANUAL_AUTO_ADD_DATA;
 	*setItem = *item;
+	setItem->recSetting.pittariFlag = 0;
+	setItem->recSetting.tuijyuuFlag = 0;
 
 	setItem->dataID = GetNextID();
 
@@ -482,6 +484,8 @@ BOOL CParseManualAutoAddText::ChgData(MANUAL_AUTO_ADD_DATA* item)
 		return FALSE;
 	}
 	*(itr->second) = *item;
+	itr->second->recSetting.pittariFlag = 0;
+	itr->second->recSetting.tuijyuuFlag = 0;
 
 
 	return TRUE;

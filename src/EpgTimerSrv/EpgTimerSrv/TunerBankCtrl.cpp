@@ -1288,8 +1288,24 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 									wstring recFilePath = L"";
 									if( this->sendCtrl.SendViewGetRecFilePath(itr->second->ctrlID[i], &recFilePath) == CMD_SUCCESS ){
 										//番組情報保存
-										recFilePath += L".program.txt";
-										SaveProgramInfo(recFilePath, &resVal, 0);
+										wstring iniCommonPath = L"";
+										GetCommonIniPath(iniCommonPath);
+
+										WCHAR buff[512] = L"";
+										GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
+										wstring infoFolder = buff;
+										ChkFolderPath(infoFolder);
+
+										if( infoFolder.size() > 0 ){
+											wstring tsFileName = L"";
+											GetFileName(recFilePath, tsFileName);
+											wstring pgFile = L"";
+											Format(pgFile, L"%s\\%s.program.txt", infoFolder.c_str(), tsFileName.c_str());
+											SaveProgramInfo(pgFile, &resVal, 0);
+										}else{
+											recFilePath += L".program.txt";
+											SaveProgramInfo(recFilePath, &resVal, 0);
+										}
 									}
 								}
 							}
@@ -1365,6 +1381,10 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 						}
 						if( errEnd == TRUE ){
 							endType = REC_END_STATUS_ERR_END2;
+							resVal.drop=0;
+							resVal.scramble=0;
+							resVal.subRecFlag=0;
+							resVal.recFilePath = L"";
 						}
 						AddEndReserve(itr->second, endType, resVal);
 					}
@@ -1439,6 +1459,11 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 	reserve->reserveInfo->GetData(&data);
 	BOOL ret = TRUE;
 
+	wstring iniPath = L"";
+	GetModuleIniPath(iniPath);
+
+	BOOL noChkYen = (BOOL)GetPrivateProfileInt(L"SET", L"NoChkYen", 0, iniPath.c_str());
+
 	if( data.recSetting.recMode == RECMODE_VIEW ){
 		this->sendCtrl.SendViewSetStandbyRec(2);
 		if( this->recView == TRUE ){
@@ -1450,7 +1475,7 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 	for( size_t i=0; i<reserve->ctrlID.size(); i++ ){
 		SET_CTRL_REC_PARAM param;
 		param.ctrlID = reserve->ctrlID[i];
-
+		//デフォルトファイル名
 		if( this->useRecNamePlugIn == TRUE ){
 			CReNamePlugInUtil plugIn;
 			if( plugIn.Initialize(this->recNamePlugInFilePath.c_str()) == TRUE ){
@@ -1520,7 +1545,7 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 					);
 			}
 		}
-
+		//同時出力用ファイル名
 		if( param.ctrlID == reserve->partialCtrlID && reserve->partialCtrlID != 0 ){
 			//部分受信同時録画用
 			if( data.recSetting.partialRecFolder.size() == 0 ){
@@ -1571,12 +1596,16 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 							}
 							if( epgInfo != NULL ){
 								if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
-									data.recSetting.partialRecFolder[j].recFileName = name;
+									wstring fileName = name;
+									CheckFileName(fileName, noChkYen);
+									data.recSetting.partialRecFolder[j].recFileName = fileName;
 								}
 								SAFE_DELETE(epgInfo);
 							}else{
 								if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-									data.recSetting.partialRecFolder[j].recFileName = name;
+									wstring fileName = name;
+									CheckFileName(fileName, noChkYen);
+									data.recSetting.partialRecFolder[j].recFileName = fileName;
 								}
 							}
 						}
@@ -1628,12 +1657,16 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 							}
 							if( epgInfo != NULL ){
 								if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
-									data.recSetting.recFolderList[j].recFileName = name;
+									wstring fileName = name;
+									CheckFileName(fileName, noChkYen);
+									data.recSetting.recFolderList[j].recFileName = fileName;
 								}
 								SAFE_DELETE(epgInfo);
 							}else{
 								if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-									data.recSetting.recFolderList[j].recFileName = name;
+									wstring fileName = name;
+									CheckFileName(fileName, noChkYen);
+									data.recSetting.recFolderList[j].recFileName = fileName;
 								}
 							}
 						}
@@ -1649,7 +1682,7 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 		param.pittariSID = data.serviceID;
 		param.pittariEventID = data.eventID;
 
-		CheckFileName(param.fileName);
+		CheckFileName(param.fileName, noChkYen);
 
 		DWORD durationSec = data.durationSecond;
 		if( data.recSetting.continueRecFlag == 1 ){

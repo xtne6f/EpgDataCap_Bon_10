@@ -146,7 +146,7 @@ namespace EpgTimer
                     }
                     if (RecInfo.Drops > 0)
                     {
-                        color = CommonManager.Instance.RecEndWarBackColor;
+                        color = CommonManager.Instance.RecEndErrBackColor;
                     }
                 }
                 return color;

@@ -98,6 +98,13 @@ namespace EpgTimer
             {
                 if (listView_recinfo.SelectedItems.Count > 0)
                 {
+                    if (IniFileHandler.GetPrivateProfileInt("SET", "RecInfoDelFile", 0, SettingPath.CommonIniPath) == 1)
+                    {
+                        if (MessageBox.Show("録画ファイルが存在する場合は一緒に削除されます。\r\nよろしいですか？", "ファイル削除", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                        {
+                            return;
+                        }
+                    }
                     List<UInt32> IDList = new List<uint>();
                     foreach (RecInfoItem info in listView_recinfo.SelectedItems)
                     {

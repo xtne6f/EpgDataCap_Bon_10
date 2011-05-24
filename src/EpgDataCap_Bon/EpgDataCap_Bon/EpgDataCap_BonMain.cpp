@@ -1018,9 +1018,25 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 				BOOL subRec = FALSE;
 				sys->bonCtrl.GetSaveFilePath(val.ctrlID, &saveFile, &subRec);
 				if( saveFile.size() > 0 && val.saveErrLog == 1 ){
-					wstring saveFileErr = saveFile;
-					saveFileErr += L".err";
-					sys->bonCtrl.SaveErrCount(val.ctrlID, saveFileErr);
+					wstring iniCommonPath = L"";
+					GetCommonIniPath(iniCommonPath);
+
+					WCHAR buff[512] = L"";
+					GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
+					wstring infoFolder = buff;
+					ChkFolderPath(infoFolder);
+
+					if( infoFolder.size() > 0 ){
+						wstring tsFileName = L"";
+						GetFileName(saveFile, tsFileName);
+						wstring saveFileErr = L"";
+						Format(saveFileErr, L"%s\\%s.err", infoFolder.c_str(), tsFileName.c_str());
+						sys->bonCtrl.SaveErrCount(val.ctrlID, saveFileErr);
+					}else{
+						wstring saveFileErr = saveFile;
+						saveFileErr += L".err";
+						sys->bonCtrl.SaveErrCount(val.ctrlID, saveFileErr);
+					}
 				}
 				SET_CTRL_REC_STOP_RES_PARAM resVal;
 				resVal.recFilePath = saveFile;

@@ -29,8 +29,8 @@ void GetFileFolder(wstring strPath, wstring& strFolder);
 
 BOOL IsExt(wstring filePath, wstring ext);
 
-void CheckFileName(wstring& fileName);
+void CheckFileName(wstring& fileName, BOOL noChkYen = FALSE);
 
-void CheckFileName(string& fileName);
+void CheckFileName(string& fileName, BOOL noChkYen = FALSE);
 
 #endif

@@ -209,9 +209,11 @@ BOOL IsExt(wstring filePath, wstring ext)
 	return TRUE;
 }
 
-void CheckFileName(wstring& fileName)
+void CheckFileName(wstring& fileName, BOOL noChkYen)
 {
-	Replace(fileName, L"\\",L"￥");
+	if( noChkYen == FALSE ){
+		Replace(fileName, L"\\",L"￥");
+	}
 	Replace(fileName, L"/",L"／");
 	Replace(fileName, L":",L"：");
 	Replace(fileName, L"*",L"＊");
@@ -222,9 +224,11 @@ void CheckFileName(wstring& fileName)
 	Replace(fileName, L"|",L"｜");
 }
 
-void CheckFileName(string& fileName)
+void CheckFileName(string& fileName, BOOL noChkYen)
 {
-	Replace(fileName, "\\","￥");
+	if( noChkYen == FALSE ){
+		Replace(fileName, "\\","￥");
+	}
 	Replace(fileName, "/","／");
 	Replace(fileName, ":","：");
 	Replace(fileName, "*","＊");

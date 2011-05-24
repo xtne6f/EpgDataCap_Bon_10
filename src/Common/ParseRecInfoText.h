@@ -67,6 +67,8 @@ protected:
 	BOOL Parse1Line(string parseLine, REC_FILE_INFO* item );
 	void AutoDelInfo(DWORD keepCount);
 	DWORD GetNextReserveID();
+
+	void DelTS_InfoFile(wstring tsFilePath);
 };
 
 #endif

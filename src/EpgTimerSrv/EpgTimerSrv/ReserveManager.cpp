@@ -1168,6 +1168,10 @@ BOOL CReserveManager::_AddReserveData(RESERVE_DATA* reserve, BOOL tweet)
 	BOOL ret = TRUE;
 
 	DWORD reserveID = 0;
+	if( reserve->eventID == 0xFFFF ){
+		reserve->recSetting.pittariFlag = 0;
+		reserve->recSetting.tuijyuuFlag = 0;
+	}
 	if( this->reserveText.AddReserve(reserve, &reserveID) == FALSE ){
 		return FALSE;
 	}
@@ -1251,6 +1255,11 @@ BOOL CReserveManager::_ChgReserveData(RESERVE_DATA* reserve, BOOL chgTime)
 	if( reserve == NULL ){
 		return FALSE;
 	}
+	if( reserve->eventID == 0xFFFF ){
+		reserve->recSetting.pittariFlag = 0;
+		reserve->recSetting.tuijyuuFlag = 0;
+	}
+
 	map<DWORD, CReserveInfo*>::iterator itrInfo;
 	itrInfo = this->reserveInfoMap.find(reserve->reserveID);
 	if( itrInfo == this->reserveInfoMap.end() ){

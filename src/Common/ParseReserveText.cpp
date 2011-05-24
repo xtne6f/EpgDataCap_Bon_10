@@ -288,6 +288,9 @@ BOOL CParseReserveText::Parse1Line(string parseLine, RESERVE_DATA* item )
 
 	//追従
 	item->recSetting.tuijyuuFlag = (BYTE)atoi(strBuff.c_str());
+	if( item->eventID == 0xFFFF ){
+		item->recSetting.tuijyuuFlag = 0;
+	}
 
 	Separate( parseLine, "\t", strBuff, parseLine);
 
@@ -303,6 +306,9 @@ BOOL CParseReserveText::Parse1Line(string parseLine, RESERVE_DATA* item )
 	
 	//将来用1　ぴったり録画
 	item->recSetting.pittariFlag = (BYTE)atoi(strBuff.c_str());
+	if( item->eventID == 0xFFFF ){
+		item->recSetting.pittariFlag = 0;
+	}
 	
 	Separate( parseLine, "\t", strBuff, parseLine);
 
