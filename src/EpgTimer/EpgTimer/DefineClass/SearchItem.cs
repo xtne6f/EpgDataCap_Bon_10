@@ -6,6 +6,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Controls;
+using System.Windows;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -140,5 +142,27 @@ namespace EpgTimer
                 return color;
             }
         }
+        public TextBlock ToolTipView
+        {
+            get
+            {
+                if (Settings.Instance.NoToolTip == true)
+                {
+                    return null;
+                }
+                String view = "";
+                if (eventInfo != null)
+                {
+                    view = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
+                }
+
+                TextBlock block = new TextBlock();
+                block.Text = view;
+                block.MaxWidth = 400;
+                block.TextWrapping = TextWrapping.Wrap;
+                return block;
+            }
+        }
+
     }
 }

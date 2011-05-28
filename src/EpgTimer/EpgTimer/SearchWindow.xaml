@@ -31,6 +31,8 @@
         <ListView Grid.Row="2" Name="listView_result" Margin="10" SelectionMode="Single" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click">
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
+                    <Setter Property="ToolTipService.ShowDuration" Value="20000" />
+                    <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
                     <Setter Property="Background" Value="{Binding BackColor}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_result_MouseDoubleClick"/>
                 </Style>

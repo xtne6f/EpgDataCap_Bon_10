@@ -646,7 +646,7 @@ namespace EpgTimer
                         {
                             if (reserveInfo.RecSetting.StartMargine < 0)
                             {
-                                startTime = reserveInfo.StartTime.AddSeconds(reserveInfo.RecSetting.StartMargine);
+                                startTime = reserveInfo.StartTime.AddSeconds(reserveInfo.RecSetting.StartMargine*-1);
                                 duration += reserveInfo.RecSetting.StartMargine;
                             }
                             if (reserveInfo.RecSetting.EndMargine < 0)
@@ -670,7 +670,7 @@ namespace EpgTimer
                             {
                                 if (addInfo.RecSetting.StartMargine < 0)
                                 {
-                                    startTimeAdd = addInfo.StartTime.AddSeconds(addInfo.RecSetting.StartMargine);
+                                    startTimeAdd = addInfo.StartTime.AddSeconds(addInfo.RecSetting.StartMargine*-1);
                                     durationAdd += addInfo.RecSetting.StartMargine;
                                 }
                                 if (addInfo.RecSetting.EndMargine < 0)
@@ -728,7 +728,7 @@ namespace EpgTimer
                     {
                         if (item.ReserveInfo.RecSetting.StartMargine < 0)
                         {
-                            startTime = item.ReserveInfo.StartTime.AddSeconds(item.ReserveInfo.RecSetting.StartMargine);
+                            startTime = item.ReserveInfo.StartTime.AddSeconds(item.ReserveInfo.RecSetting.StartMargine*-1);
                         }
                     }
 

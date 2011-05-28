@@ -1225,7 +1225,7 @@ namespace EpgTimer
                         {
                             if (info.RecSetting.StartMargine < 0)
                             {
-                                startTime = startTime.AddSeconds(info.RecSetting.StartMargine);
+                                startTime = startTime.AddSeconds(info.RecSetting.StartMargine*-1);
                                 duration += info.RecSetting.StartMargine;
                             }
                             if (info.RecSetting.EndMargine < 0)

@@ -242,44 +242,64 @@ BOOL CParseRecInfoText::Parse1Line(string parseLine, REC_FILE_INFO* item )
 		item->comment = L"";
 	}
 
-	wstring strInfoFile = item->recFilePath;
-	strInfoFile += L".program.txt";
-	HANDLE hFile = CreateFile( strInfoFile.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-	if( hFile != INVALID_HANDLE_VALUE ){
-		DWORD dwFileSize = GetFileSize( hFile, NULL );
-		if( dwFileSize != 0 ){
-			char* pszBuff = new char[dwFileSize+1];
-			if( pszBuff != NULL ){
-				ZeroMemory(pszBuff,dwFileSize+1);
-				DWORD dwRead=0;
-				ReadFile( hFile, pszBuff, dwFileSize, &dwRead, NULL );
+	if( item->recFilePath.size() > 0 ){
+		wstring iniCommonPath = L"";
+		GetCommonIniPath(iniCommonPath);
+		WCHAR buff[512] = L"";
+		GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
+		wstring infoFolder = buff;
+		ChkFolderPath(infoFolder);
 
-				string strRead = pszBuff;
-				AtoW(strRead, item->programInfo);
-			}
-			SAFE_DELETE_ARRAY(pszBuff);
+		wstring tsFileName = L"";
+		GetFileName(item->recFilePath, tsFileName);
+
+		wstring strInfoFile = item->recFilePath;
+		strInfoFile += L".program.txt";
+		HANDLE hFile = CreateFile( strInfoFile.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+		if( hFile != INVALID_HANDLE_VALUE && infoFolder.size() > 0){
+			Format(strInfoFile, L"%s\\%s.program.txt", infoFolder.c_str(), tsFileName.c_str());
+			hFile = CreateFile( strInfoFile.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 		}
-		CloseHandle(hFile);
-	}
+		if( hFile != INVALID_HANDLE_VALUE ){
+			DWORD dwFileSize = GetFileSize( hFile, NULL );
+			if( dwFileSize != 0 ){
+				char* pszBuff = new char[dwFileSize+1];
+				if( pszBuff != NULL ){
+					ZeroMemory(pszBuff,dwFileSize+1);
+					DWORD dwRead=0;
+					ReadFile( hFile, pszBuff, dwFileSize, &dwRead, NULL );
 
-	strInfoFile = item->recFilePath;
-	strInfoFile += L".err";
-	hFile = CreateFile( strInfoFile.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-	if( hFile != INVALID_HANDLE_VALUE ){
-		DWORD dwFileSize = GetFileSize( hFile, NULL );
-		if( dwFileSize != 0 ){
-			char* pszBuff = new char[dwFileSize+1];
-			if( pszBuff != NULL ){
-				ZeroMemory(pszBuff,dwFileSize+1);
-				DWORD dwRead=0;
-				ReadFile( hFile, pszBuff, dwFileSize, &dwRead, NULL );
-
-				string strRead = pszBuff;
-				AtoW(strRead, item->errInfo);
+					string strRead = pszBuff;
+					AtoW(strRead, item->programInfo);
+				}
+				SAFE_DELETE_ARRAY(pszBuff);
 			}
-			SAFE_DELETE_ARRAY(pszBuff);
+			CloseHandle(hFile);
 		}
-		CloseHandle(hFile);
+
+		strInfoFile = item->recFilePath;
+		strInfoFile += L".err";
+		hFile = CreateFile( strInfoFile.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+		if( hFile != INVALID_HANDLE_VALUE && infoFolder.size() > 0){
+			Format(strInfoFile, L"%s\\%s.err", infoFolder.c_str(), tsFileName.c_str());
+			hFile = CreateFile( strInfoFile.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+		}
+		if( hFile != INVALID_HANDLE_VALUE ){
+			DWORD dwFileSize = GetFileSize( hFile, NULL );
+			if( dwFileSize != 0 ){
+				char* pszBuff = new char[dwFileSize+1];
+				if( pszBuff != NULL ){
+					ZeroMemory(pszBuff,dwFileSize+1);
+					DWORD dwRead=0;
+					ReadFile( hFile, pszBuff, dwFileSize, &dwRead, NULL );
+
+					string strRead = pszBuff;
+					AtoW(strRead, item->errInfo);
+				}
+				SAFE_DELETE_ARRAY(pszBuff);
+			}
+			CloseHandle(hFile);
+		}
 	}
 
 	return TRUE;
