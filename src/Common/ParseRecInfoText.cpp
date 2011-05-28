@@ -256,7 +256,7 @@ BOOL CParseRecInfoText::Parse1Line(string parseLine, REC_FILE_INFO* item )
 		wstring strInfoFile = item->recFilePath;
 		strInfoFile += L".program.txt";
 		HANDLE hFile = CreateFile( strInfoFile.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-		if( hFile != INVALID_HANDLE_VALUE && infoFolder.size() > 0){
+		if( hFile == INVALID_HANDLE_VALUE && infoFolder.size() > 0){
 			Format(strInfoFile, L"%s\\%s.program.txt", infoFolder.c_str(), tsFileName.c_str());
 			hFile = CreateFile( strInfoFile.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 		}
@@ -280,7 +280,7 @@ BOOL CParseRecInfoText::Parse1Line(string parseLine, REC_FILE_INFO* item )
 		strInfoFile = item->recFilePath;
 		strInfoFile += L".err";
 		hFile = CreateFile( strInfoFile.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-		if( hFile != INVALID_HANDLE_VALUE && infoFolder.size() > 0){
+		if( hFile == INVALID_HANDLE_VALUE && infoFolder.size() > 0){
 			Format(strInfoFile, L"%s\\%s.err", infoFolder.c_str(), tsFileName.c_str());
 			hFile = CreateFile( strInfoFile.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 		}
