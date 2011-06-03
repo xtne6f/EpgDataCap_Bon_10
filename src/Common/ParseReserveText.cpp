@@ -33,7 +33,7 @@ BOOL CParseReserveText::ParseReserveText(LPCWSTR filePath)
 
 	this->loadFilePath = filePath;
 
-	HANDLE hFile = CreateFileW( filePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hFile = _CreateFile2( filePath, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		return FALSE;
 	}
@@ -564,7 +564,7 @@ BOOL CParseReserveText::SaveReserveText(LPCWSTR filePath)
 		save_filePath = this->loadFilePath;
 	}
 
-	HANDLE hFile = _CreateFile( save_filePath.c_str(), GENERIC_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hFile = _CreateFile2( save_filePath.c_str(), GENERIC_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		return FALSE;
 	}

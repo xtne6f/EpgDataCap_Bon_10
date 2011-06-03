@@ -2193,7 +2193,15 @@ DWORD GetVALUESize2(WORD ver, EPGDB_SEARCH_KEY_INFO* val )
 	size += GetVALUESize2(ver, val->notContetFlag);
 	size += GetVALUESize2(ver, val->notDateFlag);
 	size += GetVALUESize2(ver, val->freeCAFlag);
-
+	if( ver<=2 ){
+		goto CMD_END;
+	}
+	size += GetVALUESize2(ver, val->chkRecEnd);
+	size += GetVALUESize2(ver, val->chkRecDay);
+	if( ver>=3 ){
+		goto CMD_END;
+	}
+CMD_END:
 	return size;
 }
 
@@ -2264,8 +2272,18 @@ BOOL WriteVALUE2(WORD ver, EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSiz
 			return FALSE;
 		}
 		pos += size;
-
-		if( ver>=2 ){
+		if( ver<=2 ){
+			goto CMD_END;
+		}
+		if( WriteVALUE2(ver, val->chkRecEnd, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->chkRecDay, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ver>=3 ){
 			goto CMD_END;
 		}
 	}
@@ -2347,8 +2365,19 @@ BOOL ReadVALUE2(WORD ver, EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize
 			return FALSE;
 		}
 		pos += size;
+		if( ver<=2 ){
+			goto CMD_END;
+		}
+		if( ReadVALUE2(ver, &val->chkRecEnd, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->chkRecDay, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
 
-		if( ver>=2 ){
+		if( ver>=3 ){
 			goto CMD_END;
 		}
 	}

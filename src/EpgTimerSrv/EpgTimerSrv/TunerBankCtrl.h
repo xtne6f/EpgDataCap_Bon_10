@@ -14,6 +14,7 @@
 #include "TwitterManager.h"
 #include "NotifyManager.h"
 #include "EpgDBManager.h"
+#include "RecInfoDBManager.h"
 
 class CTunerBankCtrl
 {
@@ -23,6 +24,7 @@ public:
 
 	void SetTwitterCtrl(CTwitterManager* twitterManager);
 	void SetEpgDBManager(CEpgDBManager* epgDBManager);
+	void SetRecInfoDBManager(CRecInfoDBManager* recInfoManager);
 	void ReloadSetting();
 	void SetNotifyManager(CNotifyManager* manager);
 
@@ -110,6 +112,7 @@ protected:
 	wstring bonFileName;
 	CParseChText4 chUtil;
 	CEpgDBManager* epgDBManager;
+	CRecInfoDBManager* recInfoManager;
 
 	typedef struct _RESERVE_WORK{
 		CReserveInfo* reserveInfo;
@@ -140,7 +143,7 @@ protected:
 		WORD SID;
 
 		BYTE notStartHeadFlag;
-
+		EPGDB_EVENT_INFO* eventInfo;
 		//=オペレーターの処理
 		_RESERVE_WORK(void){
 			reserveInfo = NULL;
@@ -167,6 +170,10 @@ protected:
 			SID = 0xFFFF;
 
 			notStartHeadFlag = FALSE;
+			eventInfo = NULL;
+		};
+		~_RESERVE_WORK(void){
+			SAFE_DELETE(eventInfo);
 		};
 	}RESERVE_WORK;
 	map<DWORD, RESERVE_WORK*> reserveWork; //キーreserveID

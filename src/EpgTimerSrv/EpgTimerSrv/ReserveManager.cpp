@@ -266,6 +266,7 @@ void CReserveManager::SetEpgDBManager(CEpgDBManager* epgDBManager)
 	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
 		itrCtrl->second->SetEpgDBManager(epgDBManager);
+		itrCtrl->second->SetRecInfoDBManager(&this->recInfoManager);
 	}
 
 	UnLock();
@@ -881,6 +882,21 @@ UINT WINAPI CReserveManager::SendNotifyStatusThread(LPVOID param)
 	return 0;
 }
 */
+BOOL CReserveManager::ReloadRecInfoData()
+{
+	if( Lock(L"ReloadRecInfoData") == FALSE ) return FALSE;
+	BOOL ret = TRUE;
+
+	recInfoManager.LoadRecInfo();
+	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
+	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
+		itrCtrl->second->SetRecInfoDBManager(&this->recInfoManager);
+	}
+
+	UnLock();
+	return ret;
+}
+
 BOOL CReserveManager::ReloadReserveData()
 {
 	if( Lock(L"ReloadReserveData") == FALSE ) return FALSE;
@@ -2670,6 +2686,7 @@ void CReserveManager::CheckEndReserve()
 		recFilePath += REC_INFO_TEXT_NAME;
 
 		this->recInfoText.SaveRecInfoText(recFilePath.c_str());
+		this->recInfoManager.SaveRecInfo();
 
 		_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
 		_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
@@ -4916,4 +4933,39 @@ void CReserveManager::GetSrvCoopEpgList(vector<wstring>* fileList)
 	for( itrFile = chkMap.begin(); itrFile != chkMap.end(); itrFile++ ){
 		fileList->push_back(itrFile->second);
 	}
+}
+
+BOOL CReserveManager::IsFindRecEventInfo(EPGDB_EVENT_INFO* info, WORD chkDay)
+{
+	if( Lock(L"IsFindRecEventInfo") == FALSE ) return FALSE;
+	BOOL ret = TRUE;
+
+	ret = recInfoManager.IsFindTitleInfo(info, chkDay);
+
+	UnLock();
+	return ret;
+}
+
+void CReserveManager::ChgAutoAddNoRec(EPGDB_EVENT_INFO* info)
+{
+	if( Lock(L"ChgAutoAddNoRec") == FALSE ) return ;
+
+	map<DWORD, CReserveInfo*>::iterator itr;
+	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
+		RESERVE_DATA item;
+		itr->second->GetData(&item);
+		if( item.originalNetworkID == info->original_network_id &&
+			item.transportStreamID == info->transport_stream_id &&
+			item.serviceID == info->service_id &&
+			item.eventID == info->event_id
+			){
+				if( item.comment.find(L"EPG自動予約") != string::npos ){
+					item.recSetting.recMode = RECMODE_NO;
+					_ChgReserveData(&item, FALSE);
+				}
+		}
+	}
+
+	UnLock();
+	return ;
 }

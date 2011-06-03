@@ -682,7 +682,8 @@ namespace EpgTimer.Setting
                 Settings.Instance.SearchKeyNotDate = true;
             }
             Settings.Instance.SearchKeyFreeCA = defSearchKey.freeCAFlag;
-
+            Settings.Instance.SearchKeyChkRecEnd = defSearchKey.chkRecEnd;
+            Settings.Instance.SearchKeyChkRecDay = defSearchKey.chkRecDay;
 
             Settings.Instance.ViewButtonList.Clear();
             foreach (ViewMenuItem info in listBox_viewBtn.Items)

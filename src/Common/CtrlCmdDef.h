@@ -24,7 +24,8 @@
 #define CMD2_CTRL_EVENT_WAIT _T("CtrlCmdEvent_") //+ID
 
 //コマンドバージョン
-#define CMD_VER 2	//バージョン情報追加対応　録画設定への部分受信録画フォルダ指定追加
+//#define CMD_VER 2	//バージョン情報追加対応　録画設定への部分受信録画フォルダ指定追加
+#define CMD_VER 3	//検索条件に同一録画チェック追加
 
 //コマンド
 #define CMD2_EPG_SRV_ADDLOAD_RESERVE		1 //Program.txtの追加読み込み

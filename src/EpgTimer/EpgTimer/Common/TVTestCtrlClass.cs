@@ -349,6 +349,10 @@ namespace EpgTimer
                 }
             }
             processID = -1;
+            if (Settings.Instance.NwTvMode == true)
+            {
+                cmd.SendNwTVClose();
+            }
         }
 
         // 外部プロセスのウィンドウを起動する

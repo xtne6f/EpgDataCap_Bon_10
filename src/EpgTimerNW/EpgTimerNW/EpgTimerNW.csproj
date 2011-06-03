@@ -650,7 +650,11 @@
     </None>
     <AppDesigner Include="Properties\" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <SplashScreen Include="..\..\EpgTimer\EpgTimer\splash.png">
+      <Link>splash.png</Link>
+    </SplashScreen>
+  </ItemGroup>
   <ItemGroup>
     <None Include="Resources\EpgTimer_Bon_Vista_blue_rev2.ico" />
   </ItemGroup>

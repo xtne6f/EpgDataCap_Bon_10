@@ -25,6 +25,8 @@ namespace EpgTimer.Setting
     {
         private Dictionary<string, ColorSelectionItem> colorList = new Dictionary<string, ColorSelectionItem>();
         private List<Color> custColorList = new List<Color>();
+        private Color custTitleColor1;
+        private Color custTitleColor2;
 
         SolidColorBrush backColor0 = new SolidColorBrush();
         SolidColorBrush backColor1 = new SolidColorBrush();
@@ -44,6 +46,8 @@ namespace EpgTimer.Setting
         SolidColorBrush backColor15 = new SolidColorBrush();
         SolidColorBrush backColor16 = new SolidColorBrush();
         SolidColorBrush backColor17 = new SolidColorBrush();
+        SolidColorBrush titleColor1 = new SolidColorBrush();
+        SolidColorBrush titleColor2 = new SolidColorBrush();
 
         public SetEpgView()
         {
@@ -73,6 +77,8 @@ namespace EpgTimer.Setting
                 comboBox_reserveNo.DataContext = colorList.Values;
                 comboBox_reserveNoTuner.DataContext = colorList.Values;
                 comboBox_reserveWarning.DataContext = colorList.Values;
+                comboBox_colorTitle1.DataContext = colorList.Values;
+                comboBox_colorTitle2.DataContext = colorList.Values;
 
                 if (Settings.Instance.ContentColorList.Count == 0)
                 {
@@ -99,6 +105,9 @@ namespace EpgTimer.Setting
                 comboBox_reserveNoTuner.SelectedItem = colorList[Settings.Instance.ReserveRectColorNoTuner];
                 comboBox_reserveWarning.SelectedItem = colorList[Settings.Instance.ReserveRectColorWarning];
                 checkBox_reserveBackground.IsChecked = Settings.Instance.ReserveRectBackground;
+
+                comboBox_colorTitle1.SelectedItem = colorList[Settings.Instance.TitleColor1];
+                comboBox_colorTitle2.SelectedItem = colorList[Settings.Instance.TitleColor2];
 
                 foreach (FontFamily family in Fonts.SystemFontFamilies)
                 {
@@ -160,15 +169,30 @@ namespace EpgTimer.Setting
                     listBox_tab.SelectedIndex = 0;
                 }
 
+                byte r = 0;
+                byte g = 0;
+                byte b = 0;
                 foreach (UInt32 argb in Settings.Instance.ContentCustColorList)
                 {
-                    byte r = (byte)((argb&0x00FF0000)>>16);
-                    byte g = (byte)((argb&0x0000FF00)>>8);
-                    byte b = (byte)(argb&0x000000FF);
+                    r = (byte)((argb&0x00FF0000)>>16);
+                    g = (byte)((argb&0x0000FF00)>>8);
+                    b = (byte)(argb&0x000000FF);
 
                     Color item = Color.FromArgb(0xFF, r, g, b);
                     custColorList.Add(item);
                 }
+                r = (byte)((Settings.Instance.TitleCustColor1 & 0x00FF0000) >> 16);
+                g = (byte)((Settings.Instance.TitleCustColor1 & 0x0000FF00) >> 8);
+                b = (byte)(Settings.Instance.TitleCustColor1 & 0x000000FF);
+                custTitleColor1 = Color.FromArgb(0xFF, r, g, b);
+                r = (byte)((Settings.Instance.TitleCustColor2 & 0x00FF0000) >> 16);
+                g = (byte)((Settings.Instance.TitleCustColor2 & 0x0000FF00) >> 8);
+                b = (byte)(Settings.Instance.TitleCustColor2 & 0x000000FF);
+                custTitleColor2 = Color.FromArgb(0xFF, r, g, b);
+
+                titleColor1.Color = custTitleColor1;
+                titleColor2.Color = custTitleColor2;
+
                 backColor0.Color = custColorList[0x00];
                 backColor1.Color = custColorList[0x01];
                 backColor2.Color = custColorList[0x02];
@@ -206,6 +230,8 @@ namespace EpgTimer.Setting
                 button16.Background = backColor16;
                 button17.Background = backColor17;
 
+                button_colorTitle1.Background = titleColor1;
+                button_colorTitle2.Background = titleColor2;
             }
             catch (Exception ex)
             {
@@ -265,6 +291,8 @@ namespace EpgTimer.Setting
                 Settings.Instance.ReserveRectColorNo = ((ColorSelectionItem)(comboBox_reserveNo.SelectedItem)).ColorName;
                 Settings.Instance.ReserveRectColorNoTuner = ((ColorSelectionItem)(comboBox_reserveNoTuner.SelectedItem)).ColorName;
                 Settings.Instance.ReserveRectColorWarning = ((ColorSelectionItem)(comboBox_reserveWarning.SelectedItem)).ColorName;
+                Settings.Instance.TitleColor1 = ((ColorSelectionItem)(comboBox_colorTitle1.SelectedItem)).ColorName;
+                Settings.Instance.TitleColor2 = ((ColorSelectionItem)(comboBox_colorTitle2.SelectedItem)).ColorName;
                 if (checkBox_reserveBackground.IsChecked == true)
                 {
                     Settings.Instance.ReserveRectBackground = true;
@@ -309,11 +337,17 @@ namespace EpgTimer.Setting
                 }
 
                 Settings.Instance.ContentCustColorList.Clear();
+                UInt32 argb = 0;
                 foreach (Color info in custColorList)
                 {
-                    UInt32 argb = CommonManager.CreateARGBKey(0xFF, info.R, info.G, info.B);
+                    argb = CommonManager.CreateARGBKey(0xFF, info.R, info.G, info.B);
                     Settings.Instance.ContentCustColorList.Add(argb);
                 }
+
+                argb = CommonManager.CreateARGBKey(0xFF, custTitleColor1.R, custTitleColor1.G, custTitleColor1.B);
+                Settings.Instance.TitleCustColor1 = argb;
+                argb = CommonManager.CreateARGBKey(0xFF, custTitleColor2.R, custTitleColor2.G, custTitleColor2.B);
+                Settings.Instance.TitleCustColor2 = argb;
             }
             catch (Exception ex)
             {
@@ -658,6 +692,34 @@ namespace EpgTimer.Setting
                 backColor17.Color = custColorList[0x14];
             }
 
+        }
+
+        private void button_colorTitle1_Click(object sender, RoutedEventArgs e)
+        {
+            ColorSetWindow dlg = new ColorSetWindow();
+            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            Color item = custTitleColor1;
+            dlg.SetColor(item);
+            if (dlg.ShowDialog() == true)
+            {
+                dlg.GetColor(ref item);
+                custTitleColor1 = item;
+                titleColor1.Color = custTitleColor1;
+            }
+        }
+
+        private void button_colorTitle2_Click(object sender, RoutedEventArgs e)
+        {
+            ColorSetWindow dlg = new ColorSetWindow();
+            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            Color item = custTitleColor2;
+            dlg.SetColor(item);
+            if (dlg.ShowDialog() == true)
+            {
+                dlg.GetColor(ref item);
+                custTitleColor2 = item;
+                titleColor2.Color = custTitleColor2;
+            }
         }
 
 

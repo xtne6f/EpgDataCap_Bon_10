@@ -27,6 +27,28 @@
                             <ComboBox Height="24" HorizontalAlignment="Left" Margin="167,36,0,0" Name="comboBox_font" VerticalAlignment="Top" Width="203" />
                             <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="386,36,0,0" Name="label6" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="438,38,0,0" Name="textBox_fontSize" VerticalAlignment="Top" Width="39" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="539,8,0,0" Name="comboBox_colorTitle1" VerticalAlignment="Top" Width="98" ItemsSource="{Binding}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label Background="{Binding Path=Color}" Width="20" />
+                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="539,36,0,0" Name="comboBox_colorTitle2" VerticalAlignment="Top" Width="98">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label Background="{Binding Path=Color}" Width="20" />
+                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,8,0,0" Name="button_colorTitle1" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="58" Click="button_colorTitle1_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,35,0,0" Name="button_colorTitle2" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="58" Click="button_colorTitle2_Click" />
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="表示" Height="173" Margin="6,114,7,0" Name="groupBox2" VerticalAlignment="Top" >

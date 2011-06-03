@@ -16,6 +16,7 @@
 #include "TunerManager.h"
 #include "BatManager.h"
 #include "NWCoopManager.h"
+#include "RecInfoDBManager.h"
 
 class CReserveManager
 {
@@ -30,6 +31,11 @@ public:
 	void SetEpgDBManager(CEpgDBManager* epgDBManager);
 	void ChangeRegist();
 	void ReloadSetting();
+
+	//録画済み情報の読み込みを行う
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	BOOL ReloadRecInfoData();
 
 	//予約情報の読み込みを行う
 	//戻り値：
@@ -190,6 +196,9 @@ public:
 	//予約追加可能かチェックする
 	BOOL ChkAddReserve(RESERVE_DATA* chkData, WORD* status);
 
+	//6日以内の録画結果に同じ番組名あるかチェックする
+	BOOL IsFindRecEventInfo(EPGDB_EVENT_INFO* info, WORD chkDay);
+	void ChgAutoAddNoRec(EPGDB_EVENT_INFO* info);
 protected:
 	HANDLE lockEvent;
 
@@ -224,6 +233,7 @@ protected:
 	CBatManager batManager;
 	CTwitterManager twitterManager;
 	CNWCoopManager nwCoopManager;
+	CRecInfoDBManager recInfoManager;
 
 	typedef struct _BANK_WORK_INFO{
 		CReserveInfo* reserveInfo;

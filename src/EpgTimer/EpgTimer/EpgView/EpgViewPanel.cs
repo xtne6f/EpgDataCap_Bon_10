@@ -35,7 +35,7 @@ namespace EpgTimer.EpgView
             set;
         }
 
-        protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight)
+        protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, SolidColorBrush fontColor)
         {
             if (maxHeight < fontSize + 2)
             {
@@ -69,7 +69,7 @@ namespace EpgTimer.EpgView
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
 
-                            dc.DrawGlyphRun(Brushes.Black, glyphRun);
+                            dc.DrawGlyphRun(fontColor, glyphRun);
 
                             useHeight = totalHeight;
                             return false;
@@ -83,7 +83,7 @@ namespace EpgTimer.EpgView
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
 
-                            dc.DrawGlyphRun(Brushes.Black, glyphRun);
+                            dc.DrawGlyphRun(fontColor, glyphRun);
                             totalHeight += fontSize + 2;
                             glyphIndexes = new List<ushort>();
                             advanceWidths = new List<double>();
@@ -101,7 +101,7 @@ namespace EpgTimer.EpgView
                         glyphIndexes, origin, advanceWidths, null, null, null, null,
                         null, null);
 
-                    dc.DrawGlyphRun(Brushes.Black, glyphRun);
+                    dc.DrawGlyphRun(fontColor, glyphRun);
                 }
                 //高さ確認
                 if (totalHeight + fontSize > maxHeight)
@@ -227,7 +227,7 @@ namespace EpgTimer.EpgView
                             min = "未定 ";
                         }
                         double useHeight = 0;
-                        if (RenderText(min, dc, glyphTypefaceNormal, sizeNormal, info.Width - 4, info.Height - 4, info.LeftPos, info.TopPos, ref useHeight) == false)
+                        if (RenderText(min, dc, glyphTypefaceNormal, sizeNormal, info.Width - 4, info.Height - 4, info.LeftPos, info.TopPos, ref useHeight, CommonManager.Instance.CustTitle1Color) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
@@ -240,7 +240,7 @@ namespace EpgTimer.EpgView
                             //タイトル
                             if (info.EventInfo.ShortInfo.event_name.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.event_name, dc, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.event_name, dc, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle1Color) == false)
                                 {
                                     info.TitleDrawErr = true;
                                     continue;
@@ -254,7 +254,7 @@ namespace EpgTimer.EpgView
                             //説明
                             if (info.EventInfo.ShortInfo.text_char.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.text_char, dc, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.text_char, dc, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color) == false)
                                 {
                                     continue;
                                 }
@@ -266,7 +266,7 @@ namespace EpgTimer.EpgView
                             {
                                 if (info.EventInfo.ExtInfo.text_char.Length > 0)
                                 {
-                                    if (RenderText(info.EventInfo.ExtInfo.text_char, dc, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight) == false)
+                                    if (RenderText(info.EventInfo.ExtInfo.text_char, dc, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color) == false)
                                     {
                                         continue;
                                     }

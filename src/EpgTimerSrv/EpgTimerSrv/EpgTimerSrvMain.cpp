@@ -109,7 +109,7 @@ void CEpgTimerSrvMain::StartMain(
 	ReloadSetting();
 
 	this->reserveManager.ReloadReserveData();
-
+	this->reserveManager.ReloadRecInfoData();
 	wstring epgAutoAddFilePath;
 	GetSettingPath(epgAutoAddFilePath);
 	epgAutoAddFilePath += L"\\";
@@ -597,7 +597,7 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 	map<ULONGLONG, RESERVE_DATA*>::iterator itrAdd;
 
 	LONGLONG nowTime = GetNowI64Time();
-
+	BOOL chgRecEnd = FALSE;
 	map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itrKey;
 	for( itrKey = this->epgAutoAdd.dataIDMap.begin(); itrKey != this->epgAutoAdd.dataIDMap.end(); itrKey++ ){
 		vector<CEpgDBManager::SEARCH_RESULT_EVENT> resultList;
@@ -685,6 +685,11 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 						addItem->eventID = result->event_id;
 
 						addItem->recSetting = itrKey->second->recSetting;
+						if( itrKey->second->searchInfo.chkRecEnd == 1 ){
+							if( this->reserveManager.IsFindRecEventInfo(result, itrKey->second->searchInfo.chkRecDay) == TRUE ){
+								addItem->recSetting.recMode = RECMODE_NO;
+							}
+						}
 						if( resultList[i].findKey.size() > 0 ){
 							Format(addItem->comment, L"EPG自動予約(%s)", resultList[i].findKey.c_str());
 						}else{
@@ -698,10 +703,14 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 							itrAdd->second->recSetting.recMode = RECMODE_NO;
 						}
 					}
+			}else if( itrKey->second->searchInfo.chkRecEnd == 1 ){
+				if( this->reserveManager.IsFindRecEventInfo(result, itrKey->second->searchInfo.chkRecDay) == TRUE ){
+					this->reserveManager.ChgAutoAddNoRec(result);
+					chgRecEnd = TRUE;
+				}
 			}
 		}
 	}
-
 	vector<RESERVE_DATA> setList;
 	for( itrAdd = addMap.begin(); itrAdd != addMap.end(); itrAdd++ ){
 		setList.push_back(*(itrAdd->second));
@@ -711,7 +720,10 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 	if( setList.size() > 0 ){
 		this->reserveManager.AddReserveData(&setList, TRUE);
 		setList.clear();
+	}else if(chgRecEnd == TRUE){
+		this->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
 	}
+
 
 	return ret;
 }

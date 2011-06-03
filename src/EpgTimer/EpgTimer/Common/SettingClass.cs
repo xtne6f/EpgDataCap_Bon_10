@@ -122,6 +122,10 @@ namespace EpgTimer
         private string reserveRectColorNo;
         private string reserveRectColorNoTuner;
         private string reserveRectColorWarning;
+        private string titleColor1;
+        private string titleColor2;
+        private UInt32 titleCustColor1;
+        private UInt32 titleCustColor2;
         private bool reserveRectBackground;
         private bool epgToolTip;
         private bool epgTitleIndent;
@@ -163,6 +167,8 @@ namespace EpgTimer
         private List<DateItem> searchKeyDateItemList;
         private List<Int64> searchKeyServiceList;
         private byte searchKeyFreeCA;
+        private byte searchKeyChkRecEnd;
+        private UInt16 searchKeyChkRecDay;
         private List<RecPresetItem> recPresetList;
         private double recInfoColumnWidth0;
         private double recInfoColumnWidth1;
@@ -302,6 +308,26 @@ namespace EpgTimer
         {
             get { return reserveRectBackground; }
             set { reserveRectBackground = value; }
+        }
+        public string TitleColor1
+        {
+            get { return titleColor1; }
+            set { titleColor1 = value; }
+        }
+        public string TitleColor2
+        {
+            get { return titleColor2; }
+            set { titleColor2 = value; }
+        }
+        public UInt32 TitleCustColor1
+        {
+            get { return titleCustColor1; }
+            set { titleCustColor1 = value; }
+        }
+        public UInt32 TitleCustColor2
+        {
+            get { return titleCustColor2; }
+            set { titleCustColor2 = value; }
         }
         public bool EpgToolTip
         {
@@ -502,6 +528,16 @@ namespace EpgTimer
         {
             get { return searchKeyFreeCA; }
             set { searchKeyFreeCA = value; }
+        }
+        public byte SearchKeyChkRecEnd
+        {
+            get { return searchKeyChkRecEnd; }
+            set { searchKeyChkRecEnd = value; }
+        }
+        public UInt16 SearchKeyChkRecDay
+        {
+            get { return searchKeyChkRecDay; }
+            set { searchKeyChkRecDay = value; }
         }
         public List<RecPresetItem> RecPresetList
         {
@@ -719,6 +755,10 @@ namespace EpgTimer
             reserveRectColorNo = "Black";
             reserveRectColorNoTuner = "Red";
             reserveRectColorWarning = "Yellow";
+            titleColor1 = "Black";
+            titleColor2 = "Black";
+            titleCustColor1 = 0xFFFFFFFF;
+            titleCustColor2 = 0xFFFFFFFF;
             reserveRectBackground = false;
             epgToolTip = false;
             epgTitleIndent = true;
@@ -749,6 +789,8 @@ namespace EpgTimer
             searchKeyNotContent = false;
             searchKeyNotDate = false;
             searchKeyFreeCA = 0;
+            searchKeyChkRecEnd = 0;
+            searchKeyChkRecDay = 6;
             searchKeyContentList = new List<ContentKindInfo>();
             searchKeyDateItemList = new List<DateItem>();
             searchKeyServiceList = new List<Int64>();
@@ -1085,6 +1127,8 @@ namespace EpgTimer
                 defKey.serviceList.Add(info);
             }
             defKey.freeCAFlag = Settings.Instance.SearchKeyFreeCA;
+            defKey.chkRecEnd = Settings.Instance.SearchKeyChkRecEnd;
+            defKey.chkRecDay = Settings.Instance.SearchKeyChkRecDay;
         }
     }
 }

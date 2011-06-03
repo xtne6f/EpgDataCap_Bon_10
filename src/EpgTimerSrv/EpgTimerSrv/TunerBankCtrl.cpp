@@ -36,6 +36,7 @@ CTunerBankCtrl::CTunerBankCtrl(void)
 	this->twitterManager = NULL;
 	this->notifyManager = NULL;
 	this->epgDBManager = NULL;
+	this->recInfoManager = NULL;
 
 	ReloadSetting();
 }
@@ -110,6 +111,11 @@ void CTunerBankCtrl::SetTwitterCtrl(CTwitterManager* twitterManager)
 void CTunerBankCtrl::SetEpgDBManager(CEpgDBManager* epgDBManager)
 {
 	this->epgDBManager = epgDBManager;
+}
+
+void CTunerBankCtrl::SetRecInfoDBManager(CRecInfoDBManager* recInfoManager)
+{
+	this->recInfoManager = recInfoManager;
 }
 
 void CTunerBankCtrl::ReloadSetting()
@@ -1270,7 +1276,7 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 					AddEndReserve(itr->second, REC_END_STATUS_ERR_RECSTART, resVal);
 				}
 			}else{
-				if( this->saveProgramInfo == TRUE && itr->second->savedPgInfo == FALSE){
+				if( itr->second->savedPgInfo == FALSE){
 					GET_EPG_PF_INFO_PARAM val;
 					itr->second->reserveInfo->GetService(&val.ONID, &val.TSID, &val.SID);
 					val.pfNextFlag = 0;
@@ -1283,28 +1289,70 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 								){
 								//開始時間から30秒は過ぎているのでこの番組情報が録画中のもののはず
 								itr->second->savedPgInfo = TRUE;
-								//録画ファイルのパス取得
-								for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
-									wstring recFilePath = L"";
-									if( this->sendCtrl.SendViewGetRecFilePath(itr->second->ctrlID[i], &recFilePath) == CMD_SUCCESS ){
-										//番組情報保存
-										wstring iniCommonPath = L"";
-										GetCommonIniPath(iniCommonPath);
+								if(data.eventID != 0xFFFF ){
+									itr->second->eventInfo = new  EPGDB_EVENT_INFO;
 
-										WCHAR buff[512] = L"";
-										GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
-										wstring infoFolder = buff;
-										ChkFolderPath(infoFolder);
+									itr->second->eventInfo->original_network_id = resVal.original_network_id;
+									itr->second->eventInfo->transport_stream_id = resVal.transport_stream_id;
+									itr->second->eventInfo->service_id = resVal.service_id;
+									itr->second->eventInfo->event_id = resVal.event_id;
+									itr->second->eventInfo->StartTimeFlag = resVal.StartTimeFlag;
+									itr->second->eventInfo->start_time = resVal.start_time;
+									itr->second->eventInfo->DurationFlag = resVal.DurationFlag;
+									itr->second->eventInfo->durationSec = resVal.durationSec;
+									if( resVal.shortInfo != NULL ){
+										itr->second->eventInfo->shortInfo = new EPGDB_SHORT_EVENT_INFO;
+										*itr->second->eventInfo->shortInfo = *resVal.shortInfo;
+									}
+									if( resVal.extInfo != NULL ){
+										itr->second->eventInfo->extInfo = new EPGDB_EXTENDED_EVENT_INFO;
+										*itr->second->eventInfo->extInfo = *resVal.extInfo;
+									}
+									if( resVal.contentInfo != NULL ){
+										itr->second->eventInfo->contentInfo = new EPGDB_CONTEN_INFO;
+										*itr->second->eventInfo->contentInfo = *resVal.contentInfo;
+									}
+									if( resVal.componentInfo != NULL ){
+										itr->second->eventInfo->componentInfo = new EPGDB_COMPONENT_INFO;
+										*itr->second->eventInfo->componentInfo = *resVal.componentInfo;
+									}
+									if( resVal.audioInfo != NULL ){
+										itr->second->eventInfo->audioInfo = new EPGDB_AUDIO_COMPONENT_INFO;
+										*itr->second->eventInfo->audioInfo = *resVal.audioInfo;
+									}
+									if( resVal.eventGroupInfo != NULL ){
+										itr->second->eventInfo->eventGroupInfo = new EPGDB_EVENTGROUP_INFO;
+										*itr->second->eventInfo->eventGroupInfo = *resVal.eventGroupInfo;
+									}
+									if( resVal.eventRelayInfo != NULL ){
+										itr->second->eventInfo->eventRelayInfo = new EPGDB_EVENTGROUP_INFO;
+										*itr->second->eventInfo->eventRelayInfo = *resVal.eventRelayInfo;
+									}
+								}
+								if( this->saveProgramInfo == TRUE ){
+									//録画ファイルのパス取得
+									for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
+										wstring recFilePath = L"";
+										if( this->sendCtrl.SendViewGetRecFilePath(itr->second->ctrlID[i], &recFilePath) == CMD_SUCCESS ){
+											//番組情報保存
+											wstring iniCommonPath = L"";
+											GetCommonIniPath(iniCommonPath);
 
-										if( infoFolder.size() > 0 ){
-											wstring tsFileName = L"";
-											GetFileName(recFilePath, tsFileName);
-											wstring pgFile = L"";
-											Format(pgFile, L"%s\\%s.program.txt", infoFolder.c_str(), tsFileName.c_str());
-											SaveProgramInfo(pgFile, &resVal, 0);
-										}else{
-											recFilePath += L".program.txt";
-											SaveProgramInfo(recFilePath, &resVal, 0);
+											WCHAR buff[512] = L"";
+											GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
+											wstring infoFolder = buff;
+											ChkFolderPath(infoFolder);
+
+											if( infoFolder.size() > 0 ){
+												wstring tsFileName = L"";
+												GetFileName(recFilePath, tsFileName);
+												wstring pgFile = L"";
+												Format(pgFile, L"%s\\%s.program.txt", infoFolder.c_str(), tsFileName.c_str());
+												SaveProgramInfo(pgFile, &resVal, 0);
+											}else{
+												recFilePath += L".program.txt";
+												SaveProgramInfo(recFilePath, &resVal, 0);
+											}
 										}
 									}
 								}
@@ -1770,6 +1818,10 @@ BOOL CTunerBankCtrl::CloseTuner()
 
 void CTunerBankCtrl::AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTRL_REC_STOP_RES_PARAM resVal)
 {
+	wstring iniAppPath = L"";
+	GetModuleIniPath(iniAppPath);
+	int dropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 15, iniAppPath.c_str());
+
 	END_RESERVE_INFO* item = new END_RESERVE_INFO;
 	item->reserveInfo = reserve->reserveInfo;
 	item->tunerID = this->tunerID;
@@ -1778,6 +1830,12 @@ void CTunerBankCtrl::AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTR
 	item->recFilePath = resVal.recFilePath;
 	item->drop = resVal.drop;
 	item->scramble = resVal.scramble;
+
+	if( this->recInfoManager != NULL ){
+		if( endType == REC_END_STATUS_NORMAL && item->drop < dropChk && reserve->eventInfo != NULL ){
+			this->recInfoManager->AddInfo(reserve->eventInfo);
+		}
+	}
 
 	endList.push_back(item);
 }

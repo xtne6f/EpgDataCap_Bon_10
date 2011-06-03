@@ -87,6 +87,16 @@ namespace EpgTimer
             get;
             set;
         }
+        public SolidColorBrush CustTitle1Color
+        {
+            get;
+            set;
+        }
+        public SolidColorBrush CustTitle2Color
+        {
+            get;
+            set;
+        }
 
         private static CommonManager _instance;
         public static CommonManager Instance
@@ -1040,6 +1050,45 @@ namespace EpgTimer
                 else
                 {
                     CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorWarning]);
+                }
+
+                if (String.Compare(Settings.Instance.TitleColor1, "カスタム") == 0)
+                {
+                    UInt32 argb = Settings.Instance.TitleCustColor1;
+
+                    byte r = (byte)((argb & 0x00FF0000) >> 16);
+                    byte g = (byte)((argb & 0x0000FF00) >> 8);
+                    byte b = (byte)(argb & 0x000000FF);
+
+                    Color item = Color.FromArgb(0xFF, r, g, b);
+                    SolidColorBrush backColor = new SolidColorBrush();
+                    backColor.Color = item;
+                    backColor.Freeze();
+
+                    CustTitle1Color = backColor;
+                }
+                else
+                {
+                    CustTitle1Color = ColorDef.Instance.ColorTable[Settings.Instance.TitleColor1];
+                }
+                if (String.Compare(Settings.Instance.TitleColor2, "カスタム") == 0)
+                {
+                    UInt32 argb = Settings.Instance.TitleCustColor2;
+
+                    byte r = (byte)((argb & 0x00FF0000) >> 16);
+                    byte g = (byte)((argb & 0x0000FF00) >> 8);
+                    byte b = (byte)(argb & 0x000000FF);
+
+                    Color item = Color.FromArgb(0xFF, r, g, b);
+                    SolidColorBrush backColor = new SolidColorBrush();
+                    backColor.Color = item;
+                    backColor.Freeze();
+
+                    CustTitle2Color = backColor;
+                }
+                else
+                {
+                    CustTitle2Color = ColorDef.Instance.ColorTable[Settings.Instance.TitleColor2];
                 }
             }
             catch (Exception ex)

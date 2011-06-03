@@ -156,6 +156,16 @@ namespace EpgTimer
             {
                 key.freeCAFlag = 0;
             }
+
+            if (checkBox_chkRecEnd.IsChecked == true)
+            {
+                key.chkRecEnd = 1;
+            }
+            else
+            {
+                key.chkRecEnd = 0;
+            }
+            key.chkRecDay = Convert.ToUInt16(textBox_chkRecDay.Text.ToString());
         }
 
         private void UpdateView()
@@ -257,6 +267,16 @@ namespace EpgTimer
                 {
                     radioButton_free_1.IsChecked = true;
                 }
+
+                if (defKey.chkRecEnd == 1)
+                {
+                    checkBox_chkRecEnd.IsChecked = true;
+                }
+                else
+                {
+                    checkBox_chkRecEnd.IsChecked = false;
+                }
+                textBox_chkRecDay.Text = defKey.chkRecDay.ToString();
             }
             catch (Exception ex)
             {

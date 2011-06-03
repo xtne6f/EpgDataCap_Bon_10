@@ -845,6 +845,14 @@ namespace Def {
 		/// FreeCAモード
 		/// </summary>
 		property Byte freeCAFlag;
+		/// <summary>
+		/// 録画済かのチェックあり
+		/// </summary>
+		property Byte chkRecEnd;
+		/// <summary>
+		/// 録画済かのチェック対象期間
+		/// </summary>
+		property UInt16 chkRecDay;
 	public:
 		EpgSearchKeyInfo(void){
 			andKey = gcnew String("");
@@ -860,6 +868,8 @@ namespace Def {
 			notContetFlag = 0;
 			notDateFlag = 0;
 			freeCAFlag = 0;
+			chkRecEnd = 0;
+			chkRecDay = 6;
 		};
 	};
 
