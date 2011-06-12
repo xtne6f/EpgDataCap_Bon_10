@@ -1,5 +1,6 @@
 ﻿#include "StdAfx.h"
 #include "EpgTimerSrvMain.h"
+#include "HTMLManager.h"
 
 #include "../../Common/CommonDef.h"
 #include "../../Common/CtrlCmdDef.h"
@@ -25,6 +26,7 @@ CEpgTimerSrvMain::CEpgTimerSrvMain(void)
 
 	this->pipeServer = NULL;
 	this->tcpServer = NULL;
+	this->httpServer = NULL;
 
 	this->enableTCPSrv = FALSE;
 	this->tcpPort = 4510;
@@ -55,6 +57,10 @@ CEpgTimerSrvMain::~CEpgTimerSrvMain(void)
 		CloseHandle(this->stopEvent);
 	}
 
+	if( this->httpServer != NULL ){
+		this->httpServer->StopServer();
+		SAFE_DELETE(this->httpServer);
+	}
 	if( this->tcpServer != NULL ){
 		this->tcpServer->StopServer();
 		SAFE_DELETE(this->tcpServer);
@@ -238,6 +244,22 @@ void CEpgTimerSrvMain::ReloadSetting()
 			this->tcpServer->StartServer(this->tcpPort, CtrlCmdCallback, this, 0, GetCurrentProcessId());
 		}
 	}
+
+	this->enableHttpSrv = GetPrivateProfileInt(L"SET", L"EnableHttpSrv", 0, iniPath.c_str());
+	this->httpPort = GetPrivateProfileInt(L"SET", L"HttpPort", 5510, iniPath.c_str());
+
+	if( this->enableHttpSrv == FALSE){
+		if( this->httpServer != NULL ){
+			this->httpServer->StopServer();
+			SAFE_DELETE(this->httpServer);
+		}
+	}else{
+		if( this->httpServer == NULL ){
+			this->httpServer = new CHttpServer;
+			this->httpServer->StartServer(this->httpPort, HttpCallback, this, 0, GetCurrentProcessId());
+		}
+	}
+
 
 	this->wakeMargin = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath.c_str());
 	this->autoAddDays = GetPrivateProfileInt(L"SET", L"AutoAddDays", 8, iniPath.c_str());
@@ -2448,3 +2470,206 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 
 	return 0;
 }
+
+int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam, HTTP_STREAM* sendParam)
+{
+	CEpgTimerSrvMain* sys = (CEpgTimerSrvMain*)param;
+	CHTMLManager htmlManager;
+	if( sendParam != NULL ){
+		sendParam->httpHeader = "HTTP/1.0 404 Not Found\r\nConnection: close\r\n\r\n";
+	}
+	OutputDebugStringA(recvParam->httpHeader.c_str());
+	if( recvParam != NULL ){
+		string verb = "";
+		string httpHeader = recvParam->httpHeader;
+		Separate(httpHeader, " ", verb, httpHeader);
+
+		string url = "";
+		Separate(httpHeader, " ", url, httpHeader);
+		OutputDebugStringA(url.c_str());
+		if( CompareNoCase(verb, "GET") == 0 ){
+			if( url.compare("/") == 0 || url.compare("/index.html") == 0 ){
+				htmlManager.GetIndexPage(sendParam);
+			}
+			else if(url.find("/reserve.html") == 0 ){
+				string page = "";
+				Separate(url, "page=", url, page);
+				int pageIndex = atoi(page.c_str());
+				vector<RESERVE_DATA*> list;
+				if(sys->reserveManager.GetReserveDataAll(&list) == TRUE ){
+					htmlManager.GetReservePage(&list, pageIndex, sendParam);
+					for( size_t i=0; i<list.size(); i++ ){
+						SAFE_DELETE(list[i]);
+					}
+					list.clear();
+				}
+			}
+			else if(url.find("/reserveinfo.html") == 0 ){
+				string id = "";
+				string preset = "";
+				Separate(url, "id=", url, id);
+				int reserveID = atoi(id.c_str());
+				WORD presetID = 0xFFFF;
+				if( recvParam->dataSize > 0 ){
+					string param = "";
+					param.append((char*)recvParam->data, 0, recvParam->dataSize);
+					Separate(param, "preset=", param, preset);
+					presetID = atoi(preset.c_str());
+				}
+				RESERVE_DATA reserveData;
+				if(sys->reserveManager.GetReserveData(reserveID, &reserveData) == TRUE ){
+					wstring eventText = L"";
+					if( reserveData.eventID != 0xFFFF ){
+						EPGDB_EVENT_INFO* eventData;
+						if(sys->epgDB.SearchEpg(reserveData.originalNetworkID, reserveData.transportStreamID, reserveData.serviceID, reserveData.eventID, &eventData) == TRUE ){
+							_ConvertEpgInfoText2(eventData, eventText, reserveData.stationName);
+						}
+					}
+					vector<TUNER_RESERVE_INFO> tunerList;
+					sys->reserveManager.GetTunerReserveAll(&tunerList);
+					htmlManager.GetReserveInfoPage(&reserveData, eventText, presetID, &tunerList, sendParam);
+				}
+			}
+			else if(url.find("/recinfo.html") == 0 ){
+				string page = "";
+				Separate(url, "page=", url, page);
+				int pageIndex = atoi(page.c_str());
+				vector<REC_FILE_INFO> list;
+				if(sys->reserveManager.GetRecFileInfoAll(&list) == TRUE ){
+					htmlManager.GetRecInfoPage(&list, pageIndex, sendParam);
+				}
+			}
+			else if(url.find("/recinfodesc.html") == 0 ){
+				string id = "";
+				Separate(url, "id=", url, id);
+				int infoID = atoi(id.c_str());
+				vector<REC_FILE_INFO> list;
+				if(sys->reserveManager.GetRecFileInfoAll(&list) == TRUE ){
+					for( size_t i=0; i<list.size(); i++ ){
+						if( list[i].id == infoID ){
+							htmlManager.GetRecInfoDescPage(&list[i], sendParam);
+							break;
+						}
+					}
+				}
+			}
+			else if(url.find("/epg.html") == 0 ){
+				vector<RESERVE_DATA*> reserveList;
+				sys->reserveManager.GetReserveDataAll(&reserveList);
+				htmlManager.GetEpgPage(&sys->epgDB, &reserveList, url, sendParam);
+				for( size_t i=0; i<reserveList.size(); i++ ){
+					SAFE_DELETE(reserveList[i]);
+				}
+				reserveList.clear();
+			}
+			else if(url.find("/epginfo.html") == 0 ){
+				vector<RESERVE_DATA*> reserveList;
+				sys->reserveManager.GetReserveDataAll(&reserveList);
+				vector<TUNER_RESERVE_INFO> tunerList;
+				sys->reserveManager.GetTunerReserveAll(&tunerList);
+
+				string param = "";
+				Separate(url, "?", url, param);
+				htmlManager.GetEpgInfoPage(&sys->epgDB, &reserveList, &tunerList, param, sendParam);
+				for( size_t i=0; i<reserveList.size(); i++ ){
+					SAFE_DELETE(reserveList[i]);
+				}
+				reserveList.clear();
+			}
+		}else if( CompareNoCase(verb, "POST") == 0 ){
+			if(url.find("/reserveinfo.html") == 0 ){
+				string id = "";
+				string preset = "";
+				Separate(url, "id=", url, id);
+				int reserveID = atoi(id.c_str());
+				WORD presetID = 0xFFFF;
+				if( recvParam->dataSize > 0 ){
+					string param = "";
+					param.append((char*)recvParam->data, 0, recvParam->dataSize);
+					Separate(param, "preset=", param, preset);
+					presetID = atoi(preset.c_str());
+				}
+				RESERVE_DATA reserveData;
+				if(sys->reserveManager.GetReserveData(reserveID, &reserveData) == TRUE ){
+					wstring eventText = L"";
+					if( reserveData.eventID != 0xFFFF ){
+						EPGDB_EVENT_INFO* eventData;
+						if(sys->epgDB.SearchEpg(reserveData.originalNetworkID, reserveData.transportStreamID, reserveData.serviceID, reserveData.eventID, &eventData) == TRUE ){
+							_ConvertEpgInfoText2(eventData, eventText, reserveData.stationName);
+						}
+					}
+					vector<TUNER_RESERVE_INFO> tunerList;
+					sys->reserveManager.GetTunerReserveAll(&tunerList);
+					htmlManager.GetReserveInfoPage(&reserveData, eventText, presetID, &tunerList, sendParam);
+				}
+			}
+			else if(url.find("/reservechg.html") == 0 ){
+				string id = "";
+				string preset = "";
+				Separate(url, "id=", url, id);
+				int reserveID = atoi(id.c_str());
+				RESERVE_DATA reserveData;
+				if(sys->reserveManager.GetReserveData(reserveID, &reserveData) == TRUE ){
+					if(htmlManager.GetReserveParam(&reserveData, recvParam) == TRUE ){
+						vector<RESERVE_DATA> chgList;
+						chgList.push_back(reserveData);
+						sys->reserveManager.ChgReserveData(&chgList);
+						htmlManager.GetReserveChgPage(sendParam);
+					}else{
+						htmlManager.GetReserveChgPage(sendParam, TRUE);
+					}
+				}
+			}
+			else if(url.find("/reservedel.html") == 0 ){
+				string id = "";
+				string preset = "";
+				Separate(url, "id=", url, id);
+				int reserveID = atoi(id.c_str());
+				vector<DWORD> delList;
+				delList.push_back(reserveID);
+				sys->reserveManager.DelReserveData(&delList);
+				htmlManager.GetReserveDelPage(sendParam);
+			}
+			else if(url.find("/recinfodel.html") == 0 ){
+				string id = "";
+				string preset = "";
+				Separate(url, "id=", url, id);
+				int reserveID = atoi(id.c_str());
+				vector<DWORD> delList;
+				delList.push_back(reserveID);
+				sys->reserveManager.DelRecFileInfo(&delList);
+				htmlManager.GetRecInfoDelPage(sendParam);
+			}
+			else if(url.find("/epginfo.html") == 0 ){
+				vector<RESERVE_DATA*> reserveList;
+				sys->reserveManager.GetReserveDataAll(&reserveList);
+				vector<TUNER_RESERVE_INFO> tunerList;
+				sys->reserveManager.GetTunerReserveAll(&tunerList);
+				string param = "";
+				param.append((char*)recvParam->data, 0, recvParam->dataSize);
+				htmlManager.GetEpgInfoPage(&sys->epgDB, &reserveList, &tunerList, param, sendParam);
+				for( size_t i=0; i<reserveList.size(); i++ ){
+					SAFE_DELETE(reserveList[i]);
+				}
+				reserveList.clear();
+			}
+			else if(url.find("/reserveadd.html") == 0 ){
+				RESERVE_DATA reserveData;
+				string param = "";
+				param.append((char*)recvParam->data, 0, recvParam->dataSize);
+				if( htmlManager.GetAddReserveData(&sys->epgDB, &reserveData, param) == TRUE ){
+					vector<RESERVE_DATA> chgList;
+					chgList.push_back(reserveData);
+					if( sys->reserveManager.AddReserveData(&chgList) == TRUE ){
+						htmlManager.GetReserveAddPage(sendParam);
+					}else{
+						htmlManager.GetReserveAddPage(sendParam, TRUE);
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+

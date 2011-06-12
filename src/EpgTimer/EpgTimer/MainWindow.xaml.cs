@@ -882,6 +882,10 @@ namespace EpgTimer
                         if (Dispatcher.CheckAccess() == true)
                         {
                             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
+                            if (CommonManager.Instance.NWMode == false)
+                            {
+                                CommonManager.Instance.DB.ReloadEpgData();
+                            }
                             epgView.UpdateEpgData();
                         }
                         else
@@ -889,6 +893,10 @@ namespace EpgTimer
                             Dispatcher.BeginInvoke(new Action(() =>
                             {
                                 CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
+                                if (CommonManager.Instance.NWMode == false)
+                                {
+                                    CommonManager.Instance.DB.ReloadEpgData();
+                                }
                                 epgView.UpdateEpgData();
                             }));
                         }
@@ -1040,33 +1048,49 @@ namespace EpgTimer
                 case UpdateNotifyItem.EpgData:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
+                        if (CommonManager.Instance.NWMode == false)
+                        {
+                            CommonManager.Instance.DB.ReloadEpgData();
+                        }
                         epgView.UpdateEpgData();
                     }
                     break;
                 case UpdateNotifyItem.ReserveInfo:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        CommonManager.Instance.DB.ReloadReserveInfo();
                         reserveView.UpdateReserveData();
                         epgView.UpdateReserveData();
                         tunerReserveView.UpdateReserveData();
-
                     }
                     break;
                 case UpdateNotifyItem.RecInfo:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
+                        if (CommonManager.Instance.NWMode == false)
+                        {
+                            CommonManager.Instance.DB.ReloadrecFileInfo();
+                        }
                         recInfoView.UpdateInfo();
                     }
                     break;
                 case UpdateNotifyItem.AutoAddEpgInfo:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
+                        if (CommonManager.Instance.NWMode == false)
+                        {
+                            CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
+                        }
                         autoAddView.UpdateAutoAddInfo();
                     }
                     break;
                 case UpdateNotifyItem.AutoAddManualInfo:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
+                        if (CommonManager.Instance.NWMode == false)
+                        {
+                            CommonManager.Instance.DB.ReloadManualAutoAddInfo();
+                        }
                         autoAddView.UpdateAutoAddInfo();
                     }
                     break;

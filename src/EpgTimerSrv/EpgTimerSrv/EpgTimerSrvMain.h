@@ -10,6 +10,7 @@
 #include "../../Common/ParseManualAutoAddText.h"
 #include "../../Common/PipeServer.h"
 #include "../../Common/TCPServer.h"
+#include "../../Common/HttpServer.h"
 
 class CEpgTimerSrvMain
 {
@@ -51,7 +52,7 @@ protected:
 
 	CPipeServer* pipeServer;
 	CTCPServer* tcpServer;
-
+	CHttpServer* httpServer;
 
 	HANDLE stopEvent;
 
@@ -76,6 +77,8 @@ protected:
 	BYTE rebootDef;
 	BOOL ngFileStreaming;
 	BOOL ngEpgFileSrvCoop;
+	BOOL enableHttpSrv;
+	DWORD httpPort;
 
 	BOOL awayMode;
 
@@ -100,5 +103,6 @@ protected:
 
 	//外部制御コマンド関係
 	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int CALLBACK HttpCallback(void* param, HTTP_STREAM* recvParam, HTTP_STREAM* sendParam);
 };
 

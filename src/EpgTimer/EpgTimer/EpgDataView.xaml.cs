@@ -54,7 +54,7 @@ namespace EpgTimer
         {
             try
             {
-                if (this.IsVisible == true)
+                if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
                 {
                     if (ReDrawEpgData() == true)
                     {

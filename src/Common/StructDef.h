@@ -345,7 +345,20 @@ typedef struct _CMD_STREAM{
 	}
 } CMD_STREAM;
 
-
+typedef struct _HTTP_STREAM{
+	string httpHeader;	//送信時コマンド、受信時エラーコード
+	DWORD dataSize;	//dataのサイズ（BYTE単位）
+	BYTE* data;		//送受信するバイナリデータ
+	//=オペレーターの処理
+	_HTTP_STREAM(void){
+		httpHeader = "";
+		dataSize = 0;
+		data = NULL;
+	}
+	~_HTTP_STREAM(void){
+		SAFE_DELETE_ARRAY(data);
+	}
+} HTTP_STREAM;
 
 //EPG基本情報
 typedef struct _EPGDB_SHORT_EVENT_INFO{

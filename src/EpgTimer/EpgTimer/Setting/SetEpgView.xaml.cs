@@ -324,16 +324,31 @@ namespace EpgTimer.Setting
                 if (radioButton_1_cust.IsChecked == true)
                 {
                     Settings.Instance.UseCustomEpgView = true;
+                    IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustEpg", "1", SettingPath.TimerSrvIniPath);
                 }
                 else
                 {
                     Settings.Instance.UseCustomEpgView = false;
+                    IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustEpg", "0", SettingPath.TimerSrvIniPath);
                 }
 
                 Settings.Instance.CustomEpgTabList.Clear();
+                int custCount = listBox_tab.Items.Count;
+                IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustCount", custCount.ToString(), SettingPath.TimerSrvIniPath);
+                custCount = 0;
                 foreach (CustomEpgTabInfo info in listBox_tab.Items)
                 {
                     Settings.Instance.CustomEpgTabList.Add(info);
+
+                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "Name", info.TabName, SettingPath.TimerSrvIniPath);
+                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewServiceCount", info.ViewServiceList.Count.ToString(), SettingPath.TimerSrvIniPath);
+                    int serviceCount = 0;
+                    foreach (Int64 id in info.ViewServiceList)
+                    {
+                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewService" + serviceCount.ToString(), id.ToString(), SettingPath.TimerSrvIniPath);
+                        serviceCount++;
+                    }
+                    custCount++;
                 }
 
                 Settings.Instance.ContentCustColorList.Clear();

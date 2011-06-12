@@ -1527,3 +1527,33 @@ ID　　　：内部で使用するID
 　EpgTimerSrv.iniのSETにRecInfo2DropChkを追加することで数を変更可能です。
 　デフォルトは15となっています。
 
+■ブラウザから表示できるようにする■
+　使用前に一度EpgTimerの設定を開いてOKで閉じてください。動作に必要な情
+　報が保存されます。
+　フルブラウザ未搭載の携帯などでは番組表の表示が崩れる可能性があります。
+　予約一覧、録画済み一覧、番組表の利用が可能です。
+　録画設定の一部はプリセットを使用することで変更可能となっています。
+　（ファイルパス関係）あらかじめプリセットを用意しておいてください。
+　EpgTimerSrv.iniのSETにEnableHttpSrvとHttpPortを追加することで有効にす
+　る事が可能です。
+　EnableHttpSrv　0:無効、1:有効（デフォルト 0）
+　HttpPort　使用ポートを指定（デフォルト 5510）
+
+　http://127.0.0.1:5510/ のようにアクセスしてください。
+
+　EpgTimerSrv.iniのHTTPに追加することで番組表の表示で有効になるもの
+　HttpEpgPageColumn　1ページに表示するサービスの数（デフォルト 6）
+　HttpEpg1minPx　1分あたりのピクセル数（デフォルト 2）
+　BackColor0　ニュース／報道の背景（デフォルト FFFFFF）
+　BackColor1　スポーツの背景（デフォルト FFFFFF）
+　BackColor2　情報／ワイドショー（デフォルト FFFFFF）
+　BackColor3　ドラマ（デフォルト FFFFFF）
+　BackColor4　音楽（デフォルト FFFFFF）
+　BackColor5　バラエティ（デフォルト FFFFFF）
+　BackColor6　映画（デフォルト FFFFFF）
+　BackColor7　アニメ／特撮（デフォルト FFFFFF）
+　BackColor8　ドキュメンタリー／教養（デフォルト FFFFFF）
+　BackColor9　劇場／公演（デフォルト FFFFFF）
+　BackColor10　趣味／教育（デフォルト FFFFFF）
+　BackColor11　福祉（デフォルト FFFFFF）
+　BackColor15　その他（デフォルト FFFFFF）

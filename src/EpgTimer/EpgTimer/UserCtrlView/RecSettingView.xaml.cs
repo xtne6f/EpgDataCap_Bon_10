@@ -118,6 +118,7 @@ namespace EpgTimer
         public void SavePreset()
         {
             Settings.Instance.RecPresetList.Clear();
+            string saveID = "";
             for (int i = 0; i < comboBox_preSet.Items.Count; i++)
             {
                 RecPresetItem preItem = comboBox_preSet.Items[i] as RecPresetItem;
@@ -136,6 +137,8 @@ namespace EpgTimer
                     defName += preItem.ID.ToString();
                     defFolderName += preItem.ID.ToString();
                     defFolder1SegName += preItem.ID.ToString();
+                    saveID += preItem.ID.ToString();
+                    saveID += ",";
                 }
 
                 IniFileHandler.WritePrivateProfileString(defName, "SetName", preItem.DisplayName, SettingPath.TimerSrvIniPath);
@@ -172,6 +175,7 @@ namespace EpgTimer
 
                 Settings.Instance.RecPresetList.Add(preItem);
             }
+            IniFileHandler.WritePrivateProfileString("SET", "PresetID", saveID, SettingPath.TimerSrvIniPath);
             Settings.SaveToXmlFile();
         }
 

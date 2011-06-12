@@ -178,6 +178,7 @@
     <ClInclude Include="..\..\Common\EpgDataCap3Util.h" />
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
     <ClInclude Include="..\..\Common\ErrDef.h" />
+    <ClInclude Include="..\..\Common\HttpServer.h" />
     <ClInclude Include="..\..\Common\NWStructDef.h" />
     <ClInclude Include="..\..\Common\ParseChText4.h" />
     <ClInclude Include="..\..\Common\ParseChText5.h" />
@@ -209,6 +210,7 @@
     <ClInclude Include="EpgTimerSrvMain.h" />
     <ClInclude Include="FileStreamingManager.h" />
     <ClInclude Include="FileStreamingUtil.h" />
+    <ClInclude Include="HTMLManager.h" />
     <ClInclude Include="NotifyManager.h" />
     <ClInclude Include="NWCoopManager.h" />
     <ClInclude Include="RecInfoDBManager.h" />
@@ -234,6 +236,7 @@
     <ClCompile Include="..\..\Common\CtrlCmdUtil2.cpp" />
     <ClCompile Include="..\..\Common\EpgDataCap3Util.cpp" />
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp" />
+    <ClCompile Include="..\..\Common\HttpServer.cpp" />
     <ClCompile Include="..\..\Common\ParseChText4.cpp" />
     <ClCompile Include="..\..\Common\ParseChText5.cpp" />
     <ClCompile Include="..\..\Common\ParseEpgAutoAddText.cpp" />
@@ -261,6 +264,7 @@
     <ClCompile Include="EpgTimerSrvMain.cpp" />
     <ClCompile Include="FileStreamingManager.cpp" />
     <ClCompile Include="FileStreamingUtil.cpp" />
+    <ClCompile Include="HTMLManager.cpp" />
     <ClCompile Include="NotifyManager.cpp" />
     <ClCompile Include="NWCoopManager.cpp" />
     <ClCompile Include="RecInfoDBManager.cpp" />

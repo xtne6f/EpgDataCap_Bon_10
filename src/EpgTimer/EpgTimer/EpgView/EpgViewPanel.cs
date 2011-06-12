@@ -16,7 +16,8 @@ namespace EpgTimer.EpgView
     {
         public static readonly DependencyProperty BackgroundProperty =
             Panel.BackgroundProperty.AddOwner(typeof(EpgViewPanel));
-
+        private List<ProgramViewItem> items;
+        private List<TextDrawItem> textDrawList = new List<TextDrawItem>();
         public Brush Background
         {
             set { SetValue(BackgroundProperty, value); }
@@ -25,8 +26,15 @@ namespace EpgTimer.EpgView
 
         public List<ProgramViewItem> Items
         {
-            get;
-            set;
+            get
+            {
+                return items;
+            }
+            set
+            {
+                items = value;
+                CreateDrawTextList();
+            }
         }
 
         public bool IsTitleIndent
@@ -35,90 +43,10 @@ namespace EpgTimer.EpgView
             set;
         }
 
-        protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, SolidColorBrush fontColor)
+        protected void CreateDrawTextList()
         {
-            if (maxHeight < fontSize + 2)
-            {
-                useHeight = 0;
-                return false;
-            }
-            double totalHeight = 0;
+            textDrawList.Clear();
 
-            string[] lineText = text.Replace("\r", "").Split('\n');
-            foreach (string line in lineText)
-            {
-                totalHeight += Math.Floor(2 + fontSize);
-                List<ushort> glyphIndexes = new List<ushort>();
-                List<double> advanceWidths = new List<double>();
-                double totalWidth = 0;
-                for (int n = 0; n < line.Length; n++)
-                {
-                    ushort glyphIndex = glyphType.CharacterToGlyphMap[line[n]];
-                    double width = glyphType.AdvanceWidths[glyphIndex] * fontSize;
-                    if (totalWidth + width > maxWidth)
-                    {
-                        if (totalHeight + fontSize > maxHeight)
-                        {
-                            //次の行無理
-                            glyphIndex = glyphType.CharacterToGlyphMap['…'];
-                            glyphIndexes[glyphIndexes.Count - 1] = glyphIndex;
-                            advanceWidths[advanceWidths.Count - 1] = width;
-
-                            Point origin = new Point(x + 2, y + totalHeight);
-                            GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
-                                glyphIndexes, origin, advanceWidths, null, null, null, null,
-                                null, null);
-
-                            dc.DrawGlyphRun(fontColor, glyphRun);
-
-                            useHeight = totalHeight;
-                            return false;
-                        }
-                        else
-                        {
-                            //次の行いけるので今までの分出力
-                            //次の行いける
-                            Point origin = new Point(x + 2, y + totalHeight);
-                            GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
-                                glyphIndexes, origin, advanceWidths, null, null, null, null,
-                                null, null);
-
-                            dc.DrawGlyphRun(fontColor, glyphRun);
-                            totalHeight += fontSize + 2;
-                            glyphIndexes = new List<ushort>();
-                            advanceWidths = new List<double>();
-                            totalWidth = 0;
-                        }
-                    }
-                    glyphIndexes.Add(glyphIndex);
-                    advanceWidths.Add(width);
-                    totalWidth += width;
-                }
-                if (glyphIndexes.Count > 0)
-                {
-                    Point origin = new Point(x + 2, y + totalHeight);
-                    GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
-                        glyphIndexes, origin, advanceWidths, null, null, null, null,
-                        null, null);
-
-                    dc.DrawGlyphRun(fontColor, glyphRun);
-                }
-                //高さ確認
-                if (totalHeight + fontSize > maxHeight)
-                {
-                    //これ以上は無理
-                    useHeight = totalHeight;
-                    return false;
-                }
-
-            }
-            useHeight = Math.Floor(totalHeight);
-            return true;
-        }
-
-        protected override void OnRender(DrawingContext dc)
-        {
-            dc.DrawRectangle(Background, null, new Rect(RenderSize));
             this.VisualTextRenderingMode = TextRenderingMode.ClearType;
             this.VisualTextHintingMode = TextHintingMode.Fixed;
             this.UseLayoutRounding = true;
@@ -203,10 +131,8 @@ namespace EpgTimer.EpgView
                 double sizeTitle = Settings.Instance.FontSizeTitle;
                 foreach (ProgramViewItem info in Items)
                 {
-                    dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, info.TopPos, info.Width, info.Height));
                     if (info.Height > 2)
                     {
-                        dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos + 1, info.TopPos + 1, info.Width - 2, info.Height - 2));
                         if (info.Height < 4 + sizeTitle + 2)
                         {
                             //高さ足りない
@@ -227,7 +153,7 @@ namespace EpgTimer.EpgView
                             min = "未定 ";
                         }
                         double useHeight = 0;
-                        if (RenderText(min, dc, glyphTypefaceNormal, sizeNormal, info.Width - 4, info.Height - 4, info.LeftPos, info.TopPos, ref useHeight, CommonManager.Instance.CustTitle1Color) == false)
+                        if (RenderText(min, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 4, info.Height - 4, info.LeftPos, info.TopPos, ref useHeight, CommonManager.Instance.CustTitle1Color) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
@@ -240,7 +166,7 @@ namespace EpgTimer.EpgView
                             //タイトル
                             if (info.EventInfo.ShortInfo.event_name.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.event_name, dc, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle1Color) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle1Color) == false)
                                 {
                                     info.TitleDrawErr = true;
                                     continue;
@@ -254,7 +180,7 @@ namespace EpgTimer.EpgView
                             //説明
                             if (info.EventInfo.ShortInfo.text_char.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.text_char, dc, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color) == false)
                                 {
                                     continue;
                                 }
@@ -266,7 +192,7 @@ namespace EpgTimer.EpgView
                             {
                                 if (info.EventInfo.ExtInfo.text_char.Length > 0)
                                 {
-                                    if (RenderText(info.EventInfo.ExtInfo.text_char, dc, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color) == false)
+                                    if (RenderText(info.EventInfo.ExtInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color) == false)
                                     {
                                         continue;
                                     }
@@ -282,5 +208,131 @@ namespace EpgTimer.EpgView
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
+
+        protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, GlyphTypeface glyphType, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, SolidColorBrush fontColor)
+        {
+            if (maxHeight < fontSize + 2)
+            {
+                useHeight = 0;
+                return false;
+            }
+            double totalHeight = 0;
+
+            string[] lineText = text.Replace("\r", "").Split('\n');
+            foreach (string line in lineText)
+            {
+                totalHeight += Math.Floor(2 + fontSize);
+                List<ushort> glyphIndexes = new List<ushort>();
+                List<double> advanceWidths = new List<double>();
+                double totalWidth = 0;
+                for (int n = 0; n < line.Length; n++)
+                {
+                    ushort glyphIndex = glyphType.CharacterToGlyphMap[line[n]];
+                    double width = glyphType.AdvanceWidths[glyphIndex] * fontSize;
+                    if (totalWidth + width > maxWidth)
+                    {
+                        if (totalHeight + fontSize > maxHeight)
+                        {
+                            //次の行無理
+                            glyphIndex = glyphType.CharacterToGlyphMap['…'];
+                            glyphIndexes[glyphIndexes.Count - 1] = glyphIndex;
+                            advanceWidths[advanceWidths.Count - 1] = width;
+
+                            Point origin = new Point(x + 2, y + totalHeight);
+                            TextDrawItem item = new TextDrawItem();
+                            item.FontColor = fontColor;
+                            item.Text = new GlyphRun(glyphType, 0, false, fontSize,
+                                glyphIndexes, origin, advanceWidths, null, null, null, null,
+                                null, null);
+                            textDrawList.Add(item);
+
+                            useHeight = totalHeight;
+                            return false;
+                        }
+                        else
+                        {
+                            //次の行いけるので今までの分出力
+                            //次の行いける
+                            Point origin = new Point(x + 2, y + totalHeight);
+                            TextDrawItem item = new TextDrawItem();
+                            item.FontColor = fontColor;
+                            item.Text = new GlyphRun(glyphType, 0, false, fontSize,
+                                glyphIndexes, origin, advanceWidths, null, null, null, null,
+                                null, null);
+                            textDrawList.Add(item);
+
+                            totalHeight += fontSize + 2;
+                            glyphIndexes = new List<ushort>();
+                            advanceWidths = new List<double>();
+                            totalWidth = 0;
+                        }
+                    }
+                    glyphIndexes.Add(glyphIndex);
+                    advanceWidths.Add(width);
+                    totalWidth += width;
+                }
+                if (glyphIndexes.Count > 0)
+                {
+                    Point origin = new Point(x + 2, y + totalHeight);
+                    TextDrawItem item = new TextDrawItem();
+                    item.FontColor = fontColor;
+                    item.Text = new GlyphRun(glyphType, 0, false, fontSize,
+                        glyphIndexes, origin, advanceWidths, null, null, null, null,
+                        null, null);
+                    textDrawList.Add(item);
+
+                }
+                //高さ確認
+                if (totalHeight + fontSize > maxHeight)
+                {
+                    //これ以上は無理
+                    useHeight = totalHeight;
+                    return false;
+                }
+
+            }
+            useHeight = Math.Floor(totalHeight);
+            return true;
+        }
+
+        protected override void OnRender(DrawingContext dc)
+        {
+            dc.DrawRectangle(Background, null, new Rect(RenderSize));
+            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
+            this.VisualTextHintingMode = TextHintingMode.Fixed;
+            this.UseLayoutRounding = true;
+            if (Items == null)
+            {
+                return;
+            }
+            
+            try
+            {
+                double sizeNormal = Settings.Instance.FontSize;
+                double sizeTitle = Settings.Instance.FontSizeTitle;
+                foreach (ProgramViewItem info in Items)
+                {
+                    dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, info.TopPos, info.Width, info.Height));
+                    if (info.Height > 2)
+                    {
+                        dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos + 1, info.TopPos + 1, info.Width - 2, info.Height - 2));
+                    }
+                }
+                foreach (TextDrawItem info in textDrawList)
+                {
+                    dc.DrawGlyphRun(info.FontColor, info.Text);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+    }
+
+    class TextDrawItem
+    {
+        public SolidColorBrush FontColor;
+        public GlyphRun Text;
     }
 }

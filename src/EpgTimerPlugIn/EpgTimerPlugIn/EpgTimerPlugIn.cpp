@@ -181,6 +181,9 @@ int CALLBACK CEpgTimerPlugIn::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam,
 				if( sys->m_pApp->SetDriverName(val.c_str()) == TRUE ){
 					resParam->param = CMD_SUCCESS;
 				}
+				if( CompareNoCase(val, L"BonDriver_UDP.dll") == 0 || CompareNoCase(val, L"BonDriver_TCP.dll") == 0 ){
+					sys->m_pApp->SetChannel(0, 0);
+				}
 			}
 		}
 		break;
@@ -212,6 +215,7 @@ int CALLBACK CEpgTimerPlugIn::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam,
 					while(1){
 						if( sys->m_pApp->GetChannelInfo(space, ch, &chInfo) == false ){
 							if( ch == 0 ){
+								OutputDebugString(L"TvTest:NotFind ChInfo");
 								break;
 							}else{
 								space++;
@@ -223,6 +227,9 @@ int CALLBACK CEpgTimerPlugIn::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam,
 							{
 								if( sys->m_pApp->SetChannel(space, ch, val.SID) == true ){
 									resParam->param = CMD_SUCCESS;
+									OutputDebugString(L"TvTest:m_pApp->SetChannel true");
+								}else{
+									OutputDebugString(L"TvTest:m_pApp->SetChannel false");
 								}
 								break;
 							}

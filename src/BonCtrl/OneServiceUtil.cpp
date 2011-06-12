@@ -203,7 +203,7 @@ BOOL COneServiceUtil::AddTSBuff(
 	)
 {
 	BOOL ret = TRUE;
-	if( this->SID == 0xFFFF ){
+	if( this->SID == 0xFFFF || this->sendTcp != NULL || this->sendUdp != NULL){
 		//全サービス扱い
 		ret = WriteData(data, size);
 		for( DWORD i=0; i<size; i+=188 ){

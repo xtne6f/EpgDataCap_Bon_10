@@ -503,7 +503,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 void CTSOut::CheckNeedPID()
 {
 	this->needPIDMap.clear();
-
+	this->serviceOnlyFlag = TRUE;
 	//PAT作成用のPMTリスト
 	map<WORD, CCreatePATPacket::PROGRAM_PID_INFO> PIDMap;
 	//NITのPID追加しておく
@@ -517,6 +517,7 @@ void CTSOut::CheckNeedPID()
 	for( itrService = serviceUtilMap.begin(); itrService != serviceUtilMap.end(); itrService++ ){
 		if( itrService->second->GetSID() == 0xFFFF ){
 			//全サービス対象
+			this->serviceOnlyFlag = FALSE;
 			map<WORD, CPMTUtil*>::iterator itrPmt;
 			for( itrPmt = pmtUtilMap.begin(); itrPmt != pmtUtilMap.end(); itrPmt++ ){
 				//PAT作成用のPMTリスト作成
@@ -544,13 +545,14 @@ void CTSOut::CheckNeedPID()
 
 
 					//PAT作成用のPMTリスト作成
-					CCreatePATPacket::PROGRAM_PID_INFO item;
-					item.PMTPID = itrPmt->first;
-					item.SID = itrPmt->second->program_number;
-					PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item.PMTPID,item));
+					CCreatePATPacket::PROGRAM_PID_INFO item2;
+					item2.PMTPID = itrPmt->first;
+					item2.SID = itrPmt->second->program_number;
+					PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item2.PMTPID,item2));
 
 					//PMT記載のPIDを登録
 					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->first, 0));
+					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->second->PCR_PID, 0));
 					map<WORD,WORD>::iterator itrPID;
 					for( itrPID = itrPmt->second->PIDList.begin(); itrPID != itrPmt->second->PIDList.end(); itrPID++ ){
 						this->needPIDMap.insert(pair<WORD,WORD>(itrPID->first, itrPID->second));
