@@ -90,8 +90,8 @@ BOOL CSendUDP::StartUpload( vector<NW_SEND_INFO>* List )
 			WtoA((*List)[i].ipString, strA);
 			Item.addr.sin_addr.S_un.S_addr = inet_addr(strA.c_str());
 
-			DWORD dwHost = inet_addr("127.0.0.1");
-			setsockopt(Item.sock, IPPROTO_IP,IP_MULTICAST_IF,(char *)&dwHost, sizeof(DWORD));
+			//DWORD dwHost = inet_addr("127.0.0.1");
+			//setsockopt(Item.sock, IPPROTO_IP,IP_MULTICAST_IF,(char *)&dwHost, sizeof(DWORD));
 		}else{
 			BOOL b=1;
 			Item.addr.sin_family = AF_INET;

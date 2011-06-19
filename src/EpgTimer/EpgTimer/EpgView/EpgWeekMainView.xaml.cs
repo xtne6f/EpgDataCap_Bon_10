@@ -1027,7 +1027,7 @@ namespace EpgTimer
         public void UpdateEpgData()
         {
             updateEpgData = true;
-            if (this.IsVisible == true)
+            if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
             {
                 ClearInfo();
                 if (ReloadEpgData() == true)
@@ -1268,12 +1268,11 @@ namespace EpgTimer
                         //必要時間リストと時間と番組の関連づけ
                         while (chkStartTime <= EndTime)
                         {
-                            if (timeList.ContainsKey(chkStartTime) == false)
+                            if (timeList.ContainsKey(chkStartTime) != false)
                             {
-                                timeList.Add(chkStartTime, new TimePosInfo(chkStartTime, 0));
+                                TimePosInfo timeInfo = timeList[chkStartTime] as TimePosInfo;
+                                timeInfo.ReserveList.Add(viewItem);
                             }
-                            TimePosInfo timeInfo = timeList[chkStartTime] as TimePosInfo;
-                            timeInfo.ReserveList.Add(viewItem);
                             chkStartTime = chkStartTime.AddHours(1);
                         }
                         reserveList.Add(viewItem);

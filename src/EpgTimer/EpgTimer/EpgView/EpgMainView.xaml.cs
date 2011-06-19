@@ -1146,8 +1146,9 @@ namespace EpgTimer
                             }), null);
                             return false; 
                         }
-
+                        
                         ReloadProgramViewItem();
+                        
                     }
                     MoveNowTime();
                 }
@@ -1206,7 +1207,7 @@ namespace EpgTimer
         public void UpdateEpgData()
         {
             updateEpgData = true;
-            if (this.IsVisible == true)
+            if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
             {
                 ClearInfo();
                 if (ReloadEpgData() == true)
@@ -1309,12 +1310,11 @@ namespace EpgTimer
                                 DateTime chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
                                 while (chkStartTime <= EndTime)
                                 {
-                                    if (timeList.ContainsKey(chkStartTime) == false)
+                                    if (timeList.ContainsKey(chkStartTime) != false)
                                     {
-                                        timeList.Add(chkStartTime, new TimePosInfo(chkStartTime, 0));
+                                        TimePosInfo timeInfo = timeList[chkStartTime] as TimePosInfo;
+                                        timeInfo.ReserveList.Add(viewItem);
                                     }
-                                    TimePosInfo timeInfo = timeList[chkStartTime] as TimePosInfo;
-                                    timeInfo.ReserveList.Add(viewItem);
                                     chkStartTime = chkStartTime.AddHours(1);
                                 }
 
