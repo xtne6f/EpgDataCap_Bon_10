@@ -3689,16 +3689,37 @@ BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 			}
 		}
 		//イベントリレーあり
+		wstring title;
+		if( info->shortInfo != NULL ){
+			title = info->shortInfo->event_name;
+		}
+		_OutputDebugString(L"EventRelayCheck");
+		_OutputDebugString(L"OriginalEvent : ONID 0x%08x TSID 0x%08x SID 0x%08x EventID 0x%08x %s", 
+			info->original_network_id,
+			info->transport_stream_id,
+			info->service_id,
+			info->event_id,
+			title.c_str()
+			);
 		for( size_t i=0; info->eventRelayInfo->eventDataList.size(); i++ ){
 			LONGLONG chKey = _Create64Key(
 				info->eventRelayInfo->eventDataList[i].original_network_id,
 				info->eventRelayInfo->eventDataList[i].transport_stream_id,
 				info->eventRelayInfo->eventDataList[i].service_id);
 
+			_OutputDebugString(L"RelayEvent : ONID 0x%08x TSID 0x%08x SID 0x%08x EventID 0x%08x", 
+				info->eventRelayInfo->eventDataList[i].original_network_id,
+				info->eventRelayInfo->eventDataList[i].transport_stream_id,
+				info->eventRelayInfo->eventDataList[i].service_id,
+				info->eventRelayInfo->eventDataList[i].event_id
+				);
 			map<LONGLONG, CH_DATA5>::iterator itrCh;
 			itrCh = this->chUtil.chList.find(chKey);
 			if( itrCh != this->chUtil.chList.end() ){
 				//使用できるチャンネル発見
+				_OutputDebugString(L"Service find : %s", 
+					itrCh->second.serviceName.c_str()
+					);
 
 				//同一イベント予約済みかチェック
 				BOOL find = FALSE;
@@ -3770,6 +3791,8 @@ BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 					OutputDebugString(L"★イベントリレー追加");
 				}
 				break;
+			}else{
+					OutputDebugString(L"Service Not find");
 			}
 		}
 	}

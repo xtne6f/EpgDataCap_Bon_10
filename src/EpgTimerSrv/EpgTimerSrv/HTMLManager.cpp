@@ -1034,6 +1034,10 @@ BOOL CHTMLManager::CreateDefEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>*
 	GetModuleIniPath(iniPath);
 	int pageColumn = GetPrivateProfileInt(L"HTTP", L"HttpEpgPageColumn", 6, iniPath.c_str());
 	int minPx = GetPrivateProfileInt(L"HTTP", L"HttpEpg1minPx", 2, iniPath.c_str());
+	int timeColumn = GetPrivateProfileInt(L"HTTP", L"HttpEpgTimeColumn", 3, iniPath.c_str());
+	if( timeColumn <= 0 ){
+		timeColumn = 3;
+	}
 	map<int,string> colorList;
 	for( int i=0; i<20; i++ ){
 		wstring key;
@@ -1114,11 +1118,13 @@ BOOL CHTMLManager::CreateDefEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>*
 	}
 
 	//日時のチェック
+	vector<LONGLONG> viewServiceList;
 	LONGLONG startTime = 0;
 	LONGLONG endTime = 0;
 	for( size_t i=0; i<useServiceList.size(); i++ ){
 		vector<EPGDB_EVENT_INFO*> eventList;
 		LONGLONG key = _Create64Key(useServiceList[i].ONID, useServiceList[i].TSID, useServiceList[i].SID); 
+		viewServiceList.push_back(key);
 		epgDB->EnumEventInfo(key, &eventList);
 		for(size_t j=0; j<eventList.size(); j++){
 			LONGLONG stime = ConvertI64Time(eventList[j]->start_time);
@@ -1160,7 +1166,7 @@ BOOL CHTMLManager::CreateDefEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>*
 	}
 	htmlText+=dateLinkHtml;
 	htmlText+="<BR><BR>\r\n";
-
+#if 0
 	//番組表本体
 	htmlText+="<TABLE cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\r\n";
 	htmlText+="<TR><TD height=\"20px\" width=\"30px\" nowrap></TD>\r\n";
@@ -1280,6 +1286,115 @@ BOOL CHTMLManager::CreateDefEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>*
 
 	htmlText+="</TR>\r\n";
 	htmlText+="</TABLE><BR>\r\n";
+#else
+	map<LONGLONG, TIME_TABLE> timeMap;
+	//番組
+	SYSTEMTIME chkTime;
+	ConvertSystemTime( startTime, &chkTime );
+	chkTime.wHour = 4;
+	chkTime.wMinute = 0;
+	chkTime.wSecond = 0;
+	chkTime.wMilliseconds = 0;
+	LONGLONG chkStartTime = ConvertI64Time(chkTime) + (date*24*60*60*I64_1SEC);
+	LONGLONG chkEndTime = chkStartTime + 24*60*60*I64_1SEC;
+	for( size_t i=0; i<useServiceList.size(); i++ ){
+		//必要な物抽出
+		vector<EPGDB_EVENT_INFO*> eventList;
+		LONGLONG key = _Create64Key(useServiceList[i].ONID, useServiceList[i].TSID, useServiceList[i].SID); 
+		epgDB->EnumEventInfo(key, &eventList);
+		map<LONGLONG, EPGDB_EVENT_INFO*> sortMap;
+		for(size_t j=0; j<eventList.size(); j++){
+			LONGLONG chk = ConvertI64Time(eventList[j]->start_time);
+			if( chkStartTime <= chk && chk < chkEndTime ){
+				sortMap.insert(pair<LONGLONG, EPGDB_EVENT_INFO*>(chk, eventList[j]));
+			}
+		}
+
+		vector<EPGDB_EVENT_INFO*> tableEvent;
+		WORD tableHour = 0;
+		map<LONGLONG, EPGDB_EVENT_INFO*>::iterator itrSort;
+		for( itrSort = sortMap.begin(); itrSort != sortMap.end(); itrSort++ ){
+			SYSTEMTIME keyTime = itrSort->second->start_time;
+			keyTime.wMinute = 0;
+			keyTime.wSecond = 0;
+			keyTime.wMilliseconds = 0;
+			LONGLONG key64Time = ConvertI64Time(keyTime);
+			SYSTEMTIME keyEndTime;
+			GetSumTime(itrSort->second->start_time, itrSort->second->durationSec, &keyEndTime);
+			keyEndTime.wMinute = 0;
+			keyEndTime.wSecond = 0;
+			keyEndTime.wMilliseconds = 0;
+			LONGLONG key64EndTime = ConvertI64Time(keyEndTime);
+			if( chkEndTime < key64EndTime ){
+				key64EndTime = chkEndTime;
+			}
+			for( LONGLONG jt= key64Time; jt<=key64EndTime;jt+=60*60*I64_1SEC){
+				if( timeMap.find(jt) == timeMap.end() && jt != chkEndTime){
+					TIME_TABLE item;
+					ConvertSystemTime(jt, &item.timeInfo);
+					for( size_t j=0; j<useServiceList.size(); j++ ){
+						EVENT_TABLE inItem;
+						item.eventTableList.push_back(inItem);
+					}
+					timeMap.insert(pair<LONGLONG, TIME_TABLE>(jt, item));
+				}
+			}
+			if( itrSort->second->start_time.wMinute == 0 || tableHour != itrSort->second->start_time.wHour){
+				//新テーブル
+				if( tableEvent.size() > 0 ){
+					//現在のイベントテーブル化
+					LONGLONG startHour = 0;
+					EVENT_TABLE eventItem;
+					CreateHourTable(&tableEvent, &reserveMap, &colorList, chkEndTime, minPx, &startHour, &eventItem);
+					map<LONGLONG, TIME_TABLE>::iterator itrHour;
+					itrHour = timeMap.find(startHour);
+					if( itrHour != timeMap.end() ){
+						itrHour->second.eventTableList[i] = eventItem;
+						for(int j=1; j<eventItem.rowspan; j++ ){
+							itrHour++;
+							if( itrHour != timeMap.end() ){
+								itrHour->second.eventTableList[i].tableHtml = "";
+							}
+						}
+					}
+				}
+				tableEvent.clear();
+
+				tableEvent.push_back(itrSort->second);
+
+				SYSTEMTIME endTimeTable;
+				GetSumTime(itrSort->second->start_time, itrSort->second->durationSec, &endTimeTable);
+				tableHour = endTimeTable.wHour;
+			}else{
+				//そのまま
+				tableEvent.push_back(itrSort->second);
+				SYSTEMTIME endTimeTable;
+				GetSumTime(itrSort->second->start_time, itrSort->second->durationSec, &endTimeTable);
+				tableHour = endTimeTable.wHour;
+			}
+		}
+		if( tableEvent.size() > 0 ){
+			//現在のイベントテーブル化
+			LONGLONG startHour = 0;
+			EVENT_TABLE eventItem;
+			CreateHourTable(&tableEvent, &reserveMap, &colorList, chkEndTime, minPx, &startHour, &eventItem);
+			map<LONGLONG, TIME_TABLE>::iterator itrHour;
+			itrHour = timeMap.find(startHour);
+			if( itrHour != timeMap.end() ){
+				itrHour->second.eventTableList[i] = eventItem;
+				for(int j=1; j<eventItem.rowspan; j++ ){
+					itrHour++;
+					if( itrHour != timeMap.end() ){
+						itrHour->second.eventTableList[i].tableHtml = "";
+					}
+				}
+			}
+		}
+	}
+	buff = "";
+	CreateEpgMainTable(epgDB, &viewServiceList, &timeMap, minPx, timeColumn, buff);
+	htmlText+=buff;
+#endif
 
 	htmlText+=dateLinkHtml;
 	htmlText+="<BR><BR>\r\n";
@@ -1312,6 +1427,11 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 	
 	int pageColumn = GetPrivateProfileInt(L"HTTP", L"HttpEpgPageColumn", 6, iniPath.c_str());
 	int minPx = GetPrivateProfileInt(L"HTTP", L"HttpEpg1minPx", 2, iniPath.c_str());
+	int timeColumn = GetPrivateProfileInt(L"HTTP", L"HttpEpgTimeColumn", 3, iniPath.c_str());
+	if( timeColumn <= 0 ){
+		timeColumn = 3;
+	}
+
 	map<int,string> colorList;
 	for( int i=0; i<20; i++ ){
 		wstring key;
@@ -1324,6 +1444,11 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 	}
 
 	vector<LONGLONG> viewServiceList;
+	vector<LONGLONG> useServiceList;
+	map<WORD,WORD> contentMap;
+	int viewMode = 0;
+	int needTimeOnlyBasic = 0;
+	int needTimeOnlyWeek = 0;
 	int viewCount = 0;
 	//タブ情報
 	string tabPageLink;
@@ -1335,6 +1460,14 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 	for( int i=0; i<tabNum; i++ ){
 		wstring key;
 		Format(key, L"HTTP_CUST%d", i);
+		if( GetPrivateProfileInt(key.c_str(), L"SearchMode", 0, iniPath.c_str()) == 1){
+			//検索モード非対応
+			if( i== tab ){
+				htmlText+="<A HREF=\"index.html\">メニュー</A>\r\n";
+				return TRUE;
+			}
+			continue;
+		}
 		WCHAR wBuff[512]=L"";
 		GetPrivateProfileString(key.c_str(), L"Name", L"", wBuff, 511, iniPath.c_str());
 		string name;
@@ -1343,40 +1476,87 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 			i, date, name.c_str());
 		tabPageLink += buff;
 
-		//表示サービス
 		if( i== tab ){
+			viewMode = GetPrivateProfileInt(key.c_str(), L"ViewMode", 0, iniPath.c_str());
+			needTimeOnlyBasic = GetPrivateProfileInt(key.c_str(), L"NeedTimeOnlyBasic", 0, iniPath.c_str());
+			needTimeOnlyWeek = GetPrivateProfileInt(key.c_str(), L"NeedTimeOnlyWeek", 0, iniPath.c_str());
+			//表示サービス
 			viewCount = GetPrivateProfileInt(key.c_str(), L"ViewServiceCount", 0, iniPath.c_str());
 			for( int j=0; j<viewCount; j++ ){
-				if( page*pageColumn<=j && j <(page+1)*pageColumn ){
-					wstring key2;
-					Format(key2, L"ViewService%d", j);
-					WCHAR wBuff[512]=L"";
-					GetPrivateProfileString(key.c_str(), key2.c_str(), L"", wBuff, 511, iniPath.c_str());
-					__int64 i64Ch=_wtoi64(wBuff);
+				wstring key2;
+				Format(key2, L"ViewService%d", j);
+				WCHAR wBuff[512]=L"";
+				GetPrivateProfileString(key.c_str(), key2.c_str(), L"", wBuff, 511, iniPath.c_str());
+				__int64 i64Ch=_wtoi64(wBuff);
 
-					viewServiceList.push_back(i64Ch);
+				viewServiceList.push_back(i64Ch);
+				if( viewMode == 1 ){
+					if( page == j ){
+						useServiceList.push_back(i64Ch);
+					}
+				}else{
+					if( page*pageColumn<=j && j <(page+1)*pageColumn ){
+						useServiceList.push_back(i64Ch);
+					}
 				}
+			}
+			//ジャンル絞込み
+			int contentCount = GetPrivateProfileInt(key.c_str(), L"ContentCount", 0, iniPath.c_str());
+			for( int j=0; j<contentCount; j++ ){
+				wstring key2;
+				Format(key2, L"Content%d", j);
+				WCHAR wBuff[512]=L"";
+				WORD contentID = (WORD)GetPrivateProfileInt(key.c_str(), key2.c_str(), 0, iniPath.c_str());
+				contentMap.insert(pair<WORD,WORD>(contentID,contentID));
 			}
 		}
 	}
 	tabPageLink += "<BR><BR>\r\n";
 	htmlText+=tabPageLink;
 
-
 	//ページリンクの作成
-	int pageNum = viewCount/pageColumn;
-	if( viewCount%pageColumn > 0 ){
-		pageNum++;
-	}
 	string pageLinkHtml = "";
-	for( int i=0; i<pageNum; i++ ){
-		string ref = "";
-		if( i==page ){
-			Format(ref, "%d \r\n", i);
-		}else{
-			Format(ref, "<A HREF=\"epg.html?tab=%d&page=%d&date=%d\">%d</A> \r\n", tab, i, date, i);
+	if( viewMode == 1 ){
+		//1週間表示
+		pageLinkHtml = "<form method=\"GET\" action=\"epg.html\">\r\n";
+		pageLinkHtml+="サービス:\r\n<select name=\"page\">\r\n";
+		for(size_t i=0; i<viewServiceList.size(); i++ ){
+			string service;
+			wstring serviceName;
+			WORD onid = (WORD)(viewServiceList[i]>>32);
+			WORD tsid = (WORD)((viewServiceList[i]>>16)&0x000000000000FFFF);
+			WORD sid = (WORD)(viewServiceList[i]&0x000000000000FFFF);
+			epgDB->SearchServiceName(onid, tsid, sid, serviceName);
+			WtoA(serviceName, service);
+			if( page == i ){
+				Format(buff, "<option value=\"%d\" selected>%s\r\n", i, service.c_str());
+				pageLinkHtml+=buff;
+			}else{
+				Format(buff, "<option value=\"%d\">%s\r\n", i, service.c_str());
+				pageLinkHtml+=buff;
+			}
 		}
-		pageLinkHtml+=ref;
+		Format(buff, "<input type=hidden name=\"tab\" value=\"%d\">\r\n", tab);
+		pageLinkHtml+=buff;
+		Format(buff, "<input type=hidden name=\"date\" value=\"0\">\r\n");
+		pageLinkHtml+=buff;
+
+		pageLinkHtml+="</select>\r\n<input type=submit value=\"変更\">\r\n</form>\r\n";
+	}else{
+		//標準モード
+		int pageNum = viewCount/pageColumn;
+		if( viewCount%pageColumn > 0 ){
+			pageNum++;
+		}
+		for( int i=0; i<pageNum; i++ ){
+			string ref = "";
+			if( i==page ){
+				Format(ref, "%d \r\n", i);
+			}else{
+				Format(ref, "<A HREF=\"epg.html?tab=%d&page=%d&date=%d\">%d</A> \r\n", tab, i, date, i);
+			}
+			pageLinkHtml+=ref;
+		}
 	}
 	htmlText+=pageLinkHtml;
 	htmlText+="<BR><BR>\r\n";
@@ -1385,7 +1565,7 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 		htmlText+="<A HREF=\"index.html\">メニュー</A>\r\n";
 		return TRUE;
 	}
-
+	
 	//日時のチェック
 	LONGLONG startTime = 0;
 	LONGLONG endTime = 0;
@@ -1393,6 +1573,25 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 		vector<EPGDB_EVENT_INFO*> eventList;
 		epgDB->EnumEventInfo(viewServiceList[i], &eventList);
 		for(size_t j=0; j<eventList.size(); j++){
+			if( contentMap.size() > 0 ){
+				if( eventList[j]->contentInfo == NULL ){
+					continue;
+				}
+				BOOL find=FALSE;
+				for( size_t k=0; k<eventList[j]->contentInfo->nibbleList.size(); k++){
+					WORD key1=((WORD)(eventList[j]->contentInfo->nibbleList[k].content_nibble_level_1))<<8 | 0xFF;
+					WORD key2=((WORD)(eventList[j]->contentInfo->nibbleList[k].content_nibble_level_1))<<8 | eventList[j]->contentInfo->nibbleList[k].content_nibble_level_2;
+					map<WORD,WORD>::iterator itrCon;
+					if( contentMap.find(key1) != contentMap.end() || 
+						contentMap.find(key2) != contentMap.end() ){
+							find = TRUE;
+							break;
+					}
+				}
+				if( find == FALSE ){
+					continue;
+				}
+			}
 			LONGLONG stime = ConvertI64Time(eventList[j]->start_time);
 			LONGLONG etime = GetSumTime(eventList[j]->start_time, eventList[j]->durationSec);
 			if( startTime == 0 ){
@@ -1415,24 +1614,27 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 	endTime -= 4*60*60*I64_1SEC;
 	int dateCount=0;
 	string dateLinkHtml = "";
-	for(__int64 i=startTime; i<=endTime; i+=24*60*60*I64_1SEC){
-		SYSTEMTIME dayTime;
-		ConvertSystemTime( i, &dayTime );
-		wstring week;
-		GetDayOfWeekString(dayTime, week);
-		string weekA;
-		WtoA(week, weekA);
-		if( dateCount == date ){
-			Format(buff, "%d/%d%s \r\n", dayTime.wMonth, dayTime.wDay, weekA.c_str());
-		}else{
-			Format(buff, "<A HREF=\"epg.html?tab=%d&page=%d&date=%d\">%d/%d%s</A> \r\n", tab, page, dateCount, dayTime.wMonth, dayTime.wDay, weekA.c_str());
+	if( viewMode != 1 ){
+		for(__int64 i=startTime; i<=endTime; i+=24*60*60*I64_1SEC){
+			SYSTEMTIME dayTime;
+			ConvertSystemTime( i, &dayTime );
+			wstring week;
+			GetDayOfWeekString(dayTime, week);
+			string weekA;
+			WtoA(week, weekA);
+			if( dateCount == date ){
+				Format(buff, "%d/%d%s \r\n", dayTime.wMonth, dayTime.wDay, weekA.c_str());
+			}else{
+				Format(buff, "<A HREF=\"epg.html?tab=%d&page=%d&date=%d\">%d/%d%s</A> \r\n", tab, page, dateCount, dayTime.wMonth, dayTime.wDay, weekA.c_str());
+			}
+			dateLinkHtml+=buff;
+			dateCount++;
 		}
-		dateLinkHtml+=buff;
-		dateCount++;
+		htmlText+=dateLinkHtml;
+		htmlText+="<BR><BR>\r\n";
 	}
-	htmlText+=dateLinkHtml;
-	htmlText+="<BR><BR>\r\n";
 
+#if 0
 	//番組表本体
 	htmlText+="<TABLE cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\r\n";
 	htmlText+="<TR><TD height=\"20px\" width=\"30px\" nowrap></TD>\r\n";
@@ -1556,7 +1758,343 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 
 	htmlText+="</TR>\r\n";
 	htmlText+="</TABLE><BR>\r\n";
+#else
 
+	if(viewMode == 1 ){
+		map<LONGLONG, TIME_TABLE> timeMap;
+
+		//番組
+		SYSTEMTIME chkTime;
+		ConvertSystemTime( startTime, &chkTime );
+		chkTime.wHour = 4;
+		chkTime.wMinute = 0;
+		chkTime.wSecond = 0;
+		chkTime.wMilliseconds = 0;
+		LONGLONG chkStartTime = ConvertI64Time(chkTime) + (date*24*60*60*I64_1SEC);
+		LONGLONG chkEndTime = chkStartTime + 24*60*60*I64_1SEC;
+
+		vector<string> dateList;
+		for(__int64 i=chkStartTime; i<=endTime; i+=24*60*60*I64_1SEC){
+			SYSTEMTIME dayTime;
+			ConvertSystemTime( i, &dayTime );
+			wstring week;
+			GetDayOfWeekString(dayTime, week);
+			string weekA;
+			WtoA(week, weekA);
+			Format(buff, "%d/%d%s", dayTime.wMonth, dayTime.wDay, weekA.c_str());
+
+			dateList.push_back(buff);
+		}
+
+		if( needTimeOnlyWeek == 0){
+			//空きでも時間必要
+			for( LONGLONG jt= chkStartTime; jt<=chkEndTime;jt+=60*60*I64_1SEC){
+				if( jt != chkEndTime){
+					TIME_TABLE item;
+					ConvertSystemTime(jt, &item.timeInfo);
+					for( size_t j=0; j<dateList.size(); j++ ){
+						EVENT_TABLE inItem;
+						item.eventTableList.push_back(inItem);
+					}
+					timeMap.insert(pair<LONGLONG, TIME_TABLE>(jt, item));
+				}
+			}
+		}
+
+		if( useServiceList.size() > 0 ){
+			//必要な物抽出
+			vector<EPGDB_EVENT_INFO*> eventList;
+			epgDB->EnumEventInfo(useServiceList[0], &eventList);
+			map<LONGLONG, EPGDB_EVENT_INFO*> sortMap;
+			for(size_t j=0; j<eventList.size(); j++){
+				if( contentMap.size() > 0 ){
+					if( eventList[j]->contentInfo == NULL ){
+						continue;
+					}
+					BOOL find=FALSE;
+					for( size_t k=0; k<eventList[j]->contentInfo->nibbleList.size(); k++){
+						WORD key1=((WORD)(eventList[j]->contentInfo->nibbleList[k].content_nibble_level_1))<<8 | 0xFF;
+						WORD key2=((WORD)(eventList[j]->contentInfo->nibbleList[k].content_nibble_level_1))<<8 | eventList[j]->contentInfo->nibbleList[k].content_nibble_level_2;
+						map<WORD,WORD>::iterator itrCon;
+						if( contentMap.find(key1) != contentMap.end() || 
+							contentMap.find(key2) != contentMap.end() ){
+								find = TRUE;
+								break;
+						}
+					}
+					if( find == FALSE ){
+						continue;
+					}
+				}
+
+				LONGLONG chk = ConvertI64Time(eventList[j]->start_time);
+				sortMap.insert(pair<LONGLONG, EPGDB_EVENT_INFO*>(chk, eventList[j]));
+			}
+
+			int columPos = 0;
+			WORD tableHour = 0;
+			__int64 columStartTime = chkStartTime;
+			__int64 columEndTime = chkStartTime + 24*60*60*I64_1SEC;
+			vector<EPGDB_EVENT_INFO*> tableEvent;
+			map<LONGLONG, EPGDB_EVENT_INFO*>::iterator itrSort;
+			for( itrSort = sortMap.begin(); itrSort != sortMap.end(); itrSort++ ){
+				__int64 posChk = ConvertI64Time(itrSort->second->start_time);
+				if( columEndTime <= posChk ){
+					if( tableEvent.size() > 0 ){
+						//現在のイベントテーブル化
+						LONGLONG startHour = 0;
+						EVENT_TABLE eventItem;
+						CreateHourTable(&tableEvent, &reserveMap, &colorList, columEndTime, minPx, &startHour, &eventItem);
+						startHour -= ((__int64)columPos)*24*60*60*I64_1SEC;
+						map<LONGLONG, TIME_TABLE>::iterator itrHour;
+						itrHour = timeMap.find(startHour);
+						if( itrHour != timeMap.end() ){
+							itrHour->second.eventTableList[columPos] = eventItem;
+							for(int j=1; j<eventItem.rowspan; j++ ){
+								itrHour++;
+								if( itrHour != timeMap.end() ){
+									itrHour->second.eventTableList[columPos].tableHtml = "";
+								}
+							}
+						}
+					}
+				}
+				while( columEndTime <= posChk ){
+					columPos++;
+					columStartTime += 24*60*60*I64_1SEC;
+					columEndTime += 24*60*60*I64_1SEC;
+				}
+				
+				SYSTEMTIME keyTime = itrSort->second->start_time;
+				keyTime.wMinute = 0;
+				keyTime.wSecond = 0;
+				keyTime.wMilliseconds = 0;
+				LONGLONG key64Time = ConvertI64Time(keyTime);
+				key64Time -= columPos*24*60*60*I64_1SEC;
+				SYSTEMTIME keyEndTime;
+				GetSumTime(itrSort->second->start_time, itrSort->second->durationSec, &keyEndTime);
+				keyEndTime.wMinute = 0;
+				keyEndTime.wSecond = 0;
+				keyEndTime.wMilliseconds = 0;
+				LONGLONG key64EndTime = ConvertI64Time(keyEndTime);
+				key64EndTime -= columPos*24*60*60*I64_1SEC;
+				if( chkEndTime < key64EndTime ){
+					key64EndTime = chkEndTime;
+				}
+
+				for( LONGLONG jt= key64Time; jt<=key64EndTime;jt+=60*60*I64_1SEC){
+					if( timeMap.find(jt) == timeMap.end() && jt != chkEndTime){
+						TIME_TABLE item;
+						ConvertSystemTime(jt, &item.timeInfo);
+						for( size_t j=0; j<dateList.size(); j++ ){
+							EVENT_TABLE inItem;
+							item.eventTableList.push_back(inItem);
+						}
+						timeMap.insert(pair<LONGLONG, TIME_TABLE>(jt, item));
+					}
+				}
+				if( itrSort->second->start_time.wMinute == 0 || tableHour != itrSort->second->start_time.wHour){
+					//新テーブル
+					if( tableEvent.size() > 0 ){
+						//現在のイベントテーブル化
+						LONGLONG startHour = 0;
+						EVENT_TABLE eventItem;
+						CreateHourTable(&tableEvent, &reserveMap, &colorList, columEndTime, minPx, &startHour, &eventItem);
+						startHour -= ((__int64)columPos)*24*60*60*I64_1SEC;
+						map<LONGLONG, TIME_TABLE>::iterator itrHour;
+						itrHour = timeMap.find(startHour);
+						if( itrHour != timeMap.end() ){
+							itrHour->second.eventTableList[columPos] = eventItem;
+							for(int j=1; j<eventItem.rowspan; j++ ){
+								itrHour++;
+								if( itrHour != timeMap.end() ){
+									itrHour->second.eventTableList[columPos].tableHtml = "";
+								}
+							}
+						}
+					}
+					tableEvent.clear();
+
+					tableEvent.push_back(itrSort->second);
+
+					SYSTEMTIME endTimeTable;
+					GetSumTime(itrSort->second->start_time, itrSort->second->durationSec, &endTimeTable);
+					tableHour = endTimeTable.wHour;
+				}else{
+					//そのまま
+					tableEvent.push_back(itrSort->second);
+					SYSTEMTIME endTimeTable;
+					GetSumTime(itrSort->second->start_time, itrSort->second->durationSec, &endTimeTable);
+					tableHour = endTimeTable.wHour;
+				}
+				if( tableEvent.size() > 0 ){
+					//現在のイベントテーブル化
+					LONGLONG startHour = 0;
+					EVENT_TABLE eventItem;
+					CreateHourTable(&tableEvent, &reserveMap, &colorList, columEndTime, minPx, &startHour, &eventItem);
+					startHour -= ((__int64)columPos)*24*60*60*I64_1SEC;
+					map<LONGLONG, TIME_TABLE>::iterator itrHour;
+					itrHour = timeMap.find(startHour);
+					if( itrHour != timeMap.end() ){
+						itrHour->second.eventTableList[columPos] = eventItem;
+						for(int j=1; j<eventItem.rowspan; j++ ){
+							itrHour++;
+							if( itrHour != timeMap.end() ){
+								itrHour->second.eventTableList[columPos].tableHtml = "";
+							}
+						}
+					}
+				}
+			}
+		}
+		buff="";
+		CreateEpgWeekTable(&dateList, &timeMap, minPx, timeColumn, buff);
+		htmlText+=buff;
+	}else{
+		map<LONGLONG, TIME_TABLE> timeMap;
+		//番組
+		SYSTEMTIME chkTime;
+		ConvertSystemTime( startTime, &chkTime );
+		chkTime.wHour = 4;
+		chkTime.wMinute = 0;
+		chkTime.wSecond = 0;
+		chkTime.wMilliseconds = 0;
+		LONGLONG chkStartTime = ConvertI64Time(chkTime) + (date*24*60*60*I64_1SEC);
+		LONGLONG chkEndTime = chkStartTime + 24*60*60*I64_1SEC;
+
+		if( needTimeOnlyBasic == 0){
+			//空きでも時間必要
+			for( LONGLONG jt= chkStartTime; jt<=chkEndTime;jt+=60*60*I64_1SEC){
+				if( jt != chkEndTime){
+					TIME_TABLE item;
+					ConvertSystemTime(jt, &item.timeInfo);
+					for( size_t j=0; j<useServiceList.size(); j++ ){
+						EVENT_TABLE inItem;
+						item.eventTableList.push_back(inItem);
+					}
+					timeMap.insert(pair<LONGLONG, TIME_TABLE>(jt, item));
+				}
+			}
+		}
+
+		for( size_t i=0; i<useServiceList.size(); i++ ){
+			//必要な物抽出
+			vector<EPGDB_EVENT_INFO*> eventList;
+			epgDB->EnumEventInfo(useServiceList[i], &eventList);
+			map<LONGLONG, EPGDB_EVENT_INFO*> sortMap;
+			for(size_t j=0; j<eventList.size(); j++){
+				if( contentMap.size() > 0 ){
+					if( eventList[j]->contentInfo == NULL ){
+						continue;
+					}
+					BOOL find=FALSE;
+					for( size_t k=0; k<eventList[j]->contentInfo->nibbleList.size(); k++){
+						WORD key1=((WORD)(eventList[j]->contentInfo->nibbleList[k].content_nibble_level_1))<<8 | 0xFF;
+						WORD key2=((WORD)(eventList[j]->contentInfo->nibbleList[k].content_nibble_level_1))<<8 | eventList[j]->contentInfo->nibbleList[k].content_nibble_level_2;
+						map<WORD,WORD>::iterator itrCon;
+						if( contentMap.find(key1) != contentMap.end() || 
+							contentMap.find(key2) != contentMap.end() ){
+								find = TRUE;
+								break;
+						}
+					}
+					if( find == FALSE ){
+						continue;
+					}
+				}
+
+				LONGLONG chk = ConvertI64Time(eventList[j]->start_time);
+				if( chkStartTime <= chk && chk < chkEndTime ){
+					sortMap.insert(pair<LONGLONG, EPGDB_EVENT_INFO*>(chk, eventList[j]));
+				}
+			}
+
+			vector<EPGDB_EVENT_INFO*> tableEvent;
+			WORD tableHour = 0;
+			map<LONGLONG, EPGDB_EVENT_INFO*>::iterator itrSort;
+			for( itrSort = sortMap.begin(); itrSort != sortMap.end(); itrSort++ ){
+				SYSTEMTIME keyTime = itrSort->second->start_time;
+				keyTime.wMinute = 0;
+				keyTime.wSecond = 0;
+				keyTime.wMilliseconds = 0;
+				LONGLONG key64Time = ConvertI64Time(keyTime);
+				SYSTEMTIME keyEndTime;
+				GetSumTime(itrSort->second->start_time, itrSort->second->durationSec, &keyEndTime);
+				keyEndTime.wMinute = 0;
+				keyEndTime.wSecond = 0;
+				keyEndTime.wMilliseconds = 0;
+				LONGLONG key64EndTime = ConvertI64Time(keyEndTime);
+				if( chkEndTime < key64EndTime ){
+					key64EndTime = chkEndTime;
+				}
+				for( LONGLONG jt= key64Time; jt<=key64EndTime;jt+=60*60*I64_1SEC){
+					if( timeMap.find(jt) == timeMap.end() && jt != chkEndTime){
+						TIME_TABLE item;
+						ConvertSystemTime(jt, &item.timeInfo);
+						for( size_t j=0; j<useServiceList.size(); j++ ){
+							EVENT_TABLE inItem;
+							item.eventTableList.push_back(inItem);
+						}
+						timeMap.insert(pair<LONGLONG, TIME_TABLE>(jt, item));
+					}
+				}
+				if( itrSort->second->start_time.wMinute == 0 || tableHour != itrSort->second->start_time.wHour){
+					//新テーブル
+					if( tableEvent.size() > 0 ){
+						//現在のイベントテーブル化
+						LONGLONG startHour = 0;
+						EVENT_TABLE eventItem;
+						CreateHourTable(&tableEvent, &reserveMap, &colorList, chkEndTime, minPx, &startHour, &eventItem);
+						map<LONGLONG, TIME_TABLE>::iterator itrHour;
+						itrHour = timeMap.find(startHour);
+						if( itrHour != timeMap.end() ){
+							itrHour->second.eventTableList[i] = eventItem;
+							for(int j=1; j<eventItem.rowspan; j++ ){
+								itrHour++;
+								if( itrHour != timeMap.end() ){
+									itrHour->second.eventTableList[i].tableHtml = "";
+								}
+							}
+						}
+					}
+					tableEvent.clear();
+
+					tableEvent.push_back(itrSort->second);
+
+					SYSTEMTIME endTimeTable;
+					GetSumTime(itrSort->second->start_time, itrSort->second->durationSec, &endTimeTable);
+					tableHour = endTimeTable.wHour;
+				}else{
+					//そのまま
+					tableEvent.push_back(itrSort->second);
+					SYSTEMTIME endTimeTable;
+					GetSumTime(itrSort->second->start_time, itrSort->second->durationSec, &endTimeTable);
+					tableHour = endTimeTable.wHour;
+				}
+			}
+			if( tableEvent.size() > 0 ){
+				//現在のイベントテーブル化
+				LONGLONG startHour = 0;
+				EVENT_TABLE eventItem;
+				CreateHourTable(&tableEvent, &reserveMap, &colorList, chkEndTime, minPx, &startHour, &eventItem);
+				map<LONGLONG, TIME_TABLE>::iterator itrHour;
+				itrHour = timeMap.find(startHour);
+				if( itrHour != timeMap.end() ){
+					itrHour->second.eventTableList[i] = eventItem;
+					for(int j=1; j<eventItem.rowspan; j++ ){
+						itrHour++;
+						if( itrHour != timeMap.end() ){
+							itrHour->second.eventTableList[i].tableHtml = "";
+						}
+					}
+				}
+			}
+		}
+		buff = "";
+		CreateEpgMainTable(epgDB, &useServiceList, &timeMap, minPx, timeColumn, buff);
+		htmlText+=buff;
+	}
+#endif
 	htmlText+=dateLinkHtml;
 	htmlText+="<BR><BR>\r\n";
 	htmlText+=pageLinkHtml;
@@ -1954,3 +2492,258 @@ BOOL CHTMLManager::GetReserveAddPage(HTTP_STREAM* sendParam, BOOL err)
 	return TRUE;
 }
 
+BOOL CHTMLManager::CreateHourTable(vector<EPGDB_EVENT_INFO*>* eventList, map<LONGLONG, RESERVE_DATA*>* reserveMap, map<int,string>* colorList, LONGLONG pageEndTime, int minPx, LONGLONG* startHour, EVENT_TABLE* eventTable)
+{
+	if( eventList == NULL ){
+		return FALSE;
+	}
+	if( eventList->size() <= 0 ){
+		return FALSE;
+	}
+
+	SYSTEMTIME keyTime = (*eventList)[0]->start_time;
+	keyTime.wMinute = 0;
+	keyTime.wSecond = 0;
+	keyTime.wMilliseconds = 0;
+	*startHour = ConvertI64Time(keyTime);
+
+	WORD chkStartHour = keyTime.wHour;
+
+	EPGDB_EVENT_INFO* endInfo = (*eventList)[eventList->size() - 1];
+	LONGLONG endTime = GetSumTime(endInfo->start_time, endInfo->durationSec);
+	if( pageEndTime < endTime ){
+		endTime = pageEndTime;
+	}
+	SYSTEMTIME endTime2;
+	ConvertSystemTime(endTime, &endTime2);
+	eventTable->rowspan = (int)((endTime-*startHour)/(60*60*I64_1SEC))+1;
+	if( endTime2.wMinute == 0 && eventTable->rowspan > 1){
+		eventTable->rowspan--;
+	}
+
+	string buff = "";
+	string tableBody = "";
+	eventTable->tableHtml+="<TABLE cellpadding=\"0\" cellspacing=\"0\" border=\"1\">\r\n";
+
+	if( (*eventList)[0]->start_time.wMinute != 0 ){
+		//空白挿入
+		int duration = (*eventList)[0]->start_time.wMinute;
+		Format(buff,"<tr><td valign=\"top\" height=\"%dpx\" width=\"148px\" bgcolor=#FFFFFF><font size=\"2\"><DIV style=\"height:%dpx; overflow:auto;\"></DIV></font></td></tr>\r\n", duration*minPx, duration*minPx);
+		eventTable->tableHtml+=buff;
+	}
+	LONGLONG lastEnd = ConvertI64Time((*eventList)[0]->start_time);
+	for( size_t i=0; i<eventList->size(); i++ ){
+		EPGDB_EVENT_INFO* info = (*eventList)[i];
+
+		LONGLONG evStartTime = ConvertI64Time(info->start_time);
+		LONGLONG evEndTime = GetSumTime(info->start_time, info->durationSec);
+		if( pageEndTime < evEndTime ){
+			evEndTime = pageEndTime;
+		}
+		if( lastEnd < evStartTime ){
+			//空白挿入
+			int duration = (int)((evStartTime-lastEnd)/(60*I64_1SEC));
+			Format(buff,"<tr><td valign=\"top\" height=\"%dpx\" width=\"148px\" bgcolor=#FFFFFF><font size=\"2\"><DIV style=\"height:%dpx; overflow:auto;\"> </DIV></font></td></tr>\r\n", duration*minPx, duration*minPx);
+			eventTable->tableHtml+=buff;
+			lastEnd = evEndTime;
+		}
+		//イベント挿入
+		int height = (int)((evEndTime-evStartTime)/(60*I64_1SEC))*minPx;
+		if( height > 2 ){
+			height-=2;
+		}
+		string title;
+		string color = "FFFFFF";
+		if( info->shortInfo != NULL ){
+			WtoA(info->shortInfo->event_name, title);
+		}
+		if( info->contentInfo != NULL ){
+			if( info->contentInfo->nibbleList.size() > 0 ){
+				map<int,string>::iterator itrColor;
+				itrColor = colorList->find(info->contentInfo->nibbleList[0].content_nibble_level_1);
+				if( itrColor != colorList->end() ){
+					color = itrColor->second;
+				}
+			}
+		}
+		map<LONGLONG, RESERVE_DATA*>::iterator itrReserve;
+		LONGLONG key = _Create64Key2(
+			info->original_network_id,
+			info->transport_stream_id,
+			info->service_id,
+			info->event_id
+			);
+		itrReserve = reserveMap->find(key);
+		if( itrReserve != reserveMap->end() ){
+			Format(buff,"<tr><td valign=\"top\" height=\"%dpx\" width=\"148px\" bgcolor=#%s><font size=\"2\"><DIV style=\"height:%dpx; overflow:auto;\"><font color=#FF8000><B>予</B></font> %02d <a href=\"epginfo.html?onid=%d&tsid=%d&sid=%d&evid=%d&preset=65535\">%s</a></DIV></font></td></tr>\r\n",
+				height,
+				color.c_str(),
+				height,
+				info->start_time.wMinute,
+				info->original_network_id,
+				info->transport_stream_id,
+				info->service_id,
+				info->event_id,
+				title.c_str()
+				);
+		}else{
+			Format(buff,"<tr><td valign=\"top\" height=\"%dpx\" width=\"148px\" bgcolor=#%s><font size=\"2\"><DIV style=\"height:%dpx; overflow:auto;\">%02d <a href=\"epginfo.html?onid=%d&tsid=%d&sid=%d&evid=%d&preset=0\">%s</a></DIV></font></td></tr>\r\n",
+				height,
+				color.c_str(),
+				height,
+				info->start_time.wMinute,
+				info->original_network_id,
+				info->transport_stream_id,
+				info->service_id,
+				info->event_id,
+				title.c_str()
+				);
+		}
+
+		eventTable->tableHtml+=buff;
+		lastEnd = evEndTime;
+	}
+	eventTable->tableHtml+="</TABLE>\r\n";
+	return TRUE;
+}
+
+BOOL CHTMLManager::CreateEpgMainTable(CEpgDBManager* epgDB, vector<LONGLONG>* viewServiceList, map<LONGLONG, TIME_TABLE>* timeMap, int minPx, int timeColumn, string& htmlText)
+{
+	string buff;
+	//番組表本体
+	htmlText+="<TABLE cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\r\n";
+
+	//サービス
+	htmlText+="<TR>\r\n";
+	for( size_t i=0; i<viewServiceList->size(); i++ ){
+		if( (i%timeColumn) == 0 ){
+			htmlText+="<TD height=\"20px\" width=\"30px\" nowrap></TD>\r\n";
+		}
+		string service;
+		wstring serviceName;
+		WORD onid = (WORD)((*viewServiceList)[i]>>32);
+		WORD tsid = (WORD)(((*viewServiceList)[i]>>16)&0x000000000000FFFF);
+		WORD sid = (WORD)((*viewServiceList)[i]&0x000000000000FFFF);
+		epgDB->SearchServiceName(onid, tsid, sid, serviceName);
+		WtoA(serviceName, service);
+		Format(buff, "<TD height=\"20px\" width=\"150px\" nowrap><TABLE height=\"20px\" width=\"150px\" cellpadding=\"0\" cellspacing=\"0\" border=\"1\"><TR><TD>%s</TD></TR></TABLE></TD>\r\n", service.c_str());
+		htmlText+=buff;
+	}
+	htmlText+="</TR>\r\n";
+
+	map<LONGLONG, TIME_TABLE>::iterator itrTime;
+
+	//番組＋時間
+	for( itrTime = timeMap->begin(); itrTime != timeMap->end(); itrTime++ ){
+		htmlText+="<TR>\r\n";
+		for( size_t j=0; j<itrTime->second.eventTableList.size(); j++ ){
+			if( j%timeColumn == 0 ){
+				WORD hour = itrTime->second.timeInfo.wHour;
+				if( hour < 4 ){
+					hour+=24;
+				}
+				int height = minPx*60;
+
+				Format(buff, "<TD valign=\"top\" height=\"%dpx\" width=\"30px\" nowrap><TABLE height=\"100%%\" width=\"30px\" cellpadding=\"0\" cellspacing=\"0\" border=\"1\"><TR><TD>%d</TD></TR></TABLE></TD>\r\n", height, hour);
+				htmlText+=buff;
+			}
+			if( itrTime->second.eventTableList[j].tableHtml.size() > 0 ){
+				int height = minPx*60*(itrTime->second.eventTableList[j].rowspan);
+				int width = 150*(itrTime->second.eventTableList[j].colspan);
+				Format(buff, "<TD valign=\"top\" height=\"%dpx\" width=\"%dpx\" rowspan=\"%d\" colspan=\"%d\" nowrap>\r\n%s</TD>\r\n",
+					height, width,
+					itrTime->second.eventTableList[j].rowspan,
+					itrTime->second.eventTableList[j].colspan,
+					itrTime->second.eventTableList[j].tableHtml.c_str());
+				htmlText+=buff;
+			}
+		}
+		htmlText+="</TR>\r\n";
+	}
+
+	//サービス
+	htmlText+="<TR>\r\n";
+	for( size_t i=0; i<viewServiceList->size(); i++ ){
+		if( (i%timeColumn) == 0 ){
+			htmlText+="<TD height=\"20px\" width=\"30px\" nowrap></TD>\r\n";
+		}
+		string service;
+		wstring serviceName;
+		WORD onid = (WORD)((*viewServiceList)[i]>>32);
+		WORD tsid = (WORD)(((*viewServiceList)[i]>>16)&0x000000000000FFFF);
+		WORD sid = (WORD)((*viewServiceList)[i]&0x000000000000FFFF);
+		epgDB->SearchServiceName(onid, tsid, sid, serviceName);
+		WtoA(serviceName, service);
+		Format(buff, "<TD height=\"20px\" width=\"150px\" nowrap><TABLE height=\"20px\" width=\"150px\" cellpadding=\"0\" cellspacing=\"0\" border=\"1\"><TR><TD>%s</TD></TR></TABLE></TD>\r\n", service.c_str());
+		htmlText+=buff;
+	}
+	htmlText+="</TR>\r\n";
+
+	htmlText+="</TABLE><BR>\r\n";
+	return TRUE;
+}
+
+
+BOOL CHTMLManager::CreateEpgWeekTable(vector<string>* dateList, map<LONGLONG, TIME_TABLE>* timeMap, int minPx, int timeColumn, string& htmlText)
+{
+	string buff;
+	//番組表本体
+	htmlText+="<TABLE cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\r\n";
+
+	//日付
+	htmlText+="<TR>\r\n";
+	for( size_t i=0; i<dateList->size(); i++ ){
+		if( (i%timeColumn) == 0 ){
+			htmlText+="<TD height=\"20px\" width=\"30px\" nowrap></TD>\r\n";
+		}
+
+		Format(buff, "<TD height=\"20px\" width=\"150px\" nowrap><TABLE height=\"20px\" width=\"150px\" cellpadding=\"0\" cellspacing=\"0\" border=\"1\"><TR><TD>%s</TD></TR></TABLE></TD>\r\n", (*dateList)[i].c_str());
+		htmlText+=buff;
+	}
+	htmlText+="</TR>\r\n";
+
+	map<LONGLONG, TIME_TABLE>::iterator itrTime;
+
+	//番組＋時間
+	for( itrTime = timeMap->begin(); itrTime != timeMap->end(); itrTime++ ){
+		htmlText+="<TR>\r\n";
+		for( size_t j=0; j<itrTime->second.eventTableList.size(); j++ ){
+			if( j%timeColumn == 0 ){
+				WORD hour = itrTime->second.timeInfo.wHour;
+				if( hour < 4 ){
+					hour+=24;
+				}
+				int height = minPx*60;
+
+				Format(buff, "<TD valign=\"top\" height=\"%dpx\" width=\"30px\" nowrap><TABLE height=\"100%%\" width=\"30px\" cellpadding=\"0\" cellspacing=\"0\" border=\"1\"><TR><TD>%d</TD></TR></TABLE></TD>\r\n", height, hour);
+				htmlText+=buff;
+			}
+			if( itrTime->second.eventTableList[j].tableHtml.size() > 0 ){
+				int height = minPx*60*(itrTime->second.eventTableList[j].rowspan);
+				int width = 150*(itrTime->second.eventTableList[j].colspan);
+				Format(buff, "<TD valign=\"top\" height=\"%dpx\" width=\"%dpx\" rowspan=\"%d\" colspan=\"%d\" nowrap>\r\n%s</TD>\r\n",
+					height, width,
+					itrTime->second.eventTableList[j].rowspan,
+					itrTime->second.eventTableList[j].colspan,
+					itrTime->second.eventTableList[j].tableHtml.c_str());
+				htmlText+=buff;
+			}
+		}
+		htmlText+="</TR>\r\n";
+	}
+
+	//日付
+	htmlText+="<TR>\r\n";
+	for( size_t i=0; i<dateList->size(); i++ ){
+		if( (i%timeColumn) == 0 ){
+			htmlText+="<TD height=\"20px\" width=\"30px\" nowrap></TD>\r\n";
+		}
+
+		Format(buff, "<TD height=\"20px\" width=\"150px\" nowrap><TABLE height=\"20px\" width=\"150px\" cellpadding=\"0\" cellspacing=\"0\" border=\"1\"><TR><TD>%s</TD></TR></TABLE></TD>\r\n", (*dateList)[i].c_str());
+		htmlText+=buff;
+	}
+	htmlText+="</TR>\r\n";
+
+	htmlText+="</TABLE><BR>\r\n";
+	return TRUE;
+}

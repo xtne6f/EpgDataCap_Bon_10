@@ -828,6 +828,10 @@ BOOL CEpgTimerSrvMain::AutoAddReserveProgram()
 	if( setList.size() > 0 ){
 		this->reserveManager.AddReserveData(&setList);
 	}
+	for( size_t i=0; i<reserveList.size(); i++ ){
+		SAFE_DELETE(reserveList[i]);
+	}
+	reserveList.clear();
 
 	return ret;
 }

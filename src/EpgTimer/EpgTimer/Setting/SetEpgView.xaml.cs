@@ -348,6 +348,40 @@ namespace EpgTimer.Setting
                         IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewService" + serviceCount.ToString(), id.ToString(), SettingPath.TimerSrvIniPath);
                         serviceCount++;
                     }
+
+                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ContentCount", info.ViewContentKindList.Count.ToString(), SettingPath.TimerSrvIniPath);
+                    int contentCount = 0;
+                    foreach (UInt16 id in info.ViewContentKindList)
+                    {
+                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "Content" + contentCount.ToString(), id.ToString(), SettingPath.TimerSrvIniPath);
+                        contentCount++;
+                    }
+                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewMode", info.ViewMode.ToString(), SettingPath.TimerSrvIniPath);
+                    if (info.NeedTimeOnlyBasic == true)
+                    {
+                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyBasic", "1", SettingPath.TimerSrvIniPath);
+                    }
+                    else
+                    {
+                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyBasic", "0", SettingPath.TimerSrvIniPath);
+                    }
+                    if (info.NeedTimeOnlyWeek == true)
+                    {
+                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyWeek", "1", SettingPath.TimerSrvIniPath);
+                    }
+                    else
+                    {
+                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyWeek", "0", SettingPath.TimerSrvIniPath);
+                    }
+                    if (info.SearchMode == true)
+                    {
+                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "SearchMode", "1", SettingPath.TimerSrvIniPath);
+                    }
+                    else
+                    {
+                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "SearchMode", "0", SettingPath.TimerSrvIniPath);
+                    }
+                    
                     custCount++;
                 }
 

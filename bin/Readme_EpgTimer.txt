@@ -1544,6 +1544,7 @@ ID　　　：内部で使用するID
 　EpgTimerSrv.iniのHTTPに追加することで番組表の表示で有効になるもの
 　HttpEpgPageColumn　1ページに表示するサービスの数（デフォルト 6）
 　HttpEpg1minPx　1分あたりのピクセル数（デフォルト 2）
+　HttpEpgTimeColumn　時間軸を表示する間隔（デフォルト 3）
 　BackColor0　ニュース／報道の背景（デフォルト FFFFFF）
 　BackColor1　スポーツの背景（デフォルト FFFFFF）
 　BackColor2　情報／ワイドショー（デフォルト FFFFFF）

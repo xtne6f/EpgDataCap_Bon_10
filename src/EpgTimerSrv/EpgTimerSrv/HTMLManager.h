@@ -25,6 +25,33 @@ public:
 	BOOL GetAddReserveData(CEpgDBManager* epgDB, RESERVE_DATA* reserveData, string param);
 	BOOL GetReserveAddPage(HTTP_STREAM* sendParam, BOOL err = FALSE);
 protected:
+	typedef struct _EVENT_ITEM{
+		int colspan;
+		int rowspan;
+		string tableHtml;
+		_EVENT_ITEM(void){
+			colspan = 1;
+			rowspan = 1;
+			tableHtml = " ";
+		}
+		_EVENT_ITEM & operator= (const _EVENT_ITEM & o) {
+			colspan=o.colspan;
+			rowspan = o.rowspan;
+			tableHtml = o.tableHtml;
+			return *this;
+		};
+	}EVENT_TABLE;
+	typedef struct _TIME_ITEM{
+		SYSTEMTIME timeInfo;
+		vector<EVENT_TABLE> eventTableList;
+		_TIME_ITEM & operator= (const _TIME_ITEM & o) {
+			timeInfo=o.timeInfo;
+			eventTableList = o.eventTableList;
+			return *this;
+		};
+	}TIME_TABLE;
+
+protected:
 	void LoadRecSetData(WORD preset, REC_SETTING_DATA* recSetData);
 	void CreateRecSetForm(REC_SETTING_DATA* recSetData, vector<TUNER_RESERVE_INFO>* tunerList, string& htmlText);
 
@@ -32,5 +59,8 @@ protected:
 	BOOL CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* reserveList, int tab, int page, int date, string& htmlText);
 	BOOL GetEpgErrPage(HTTP_STREAM* sendParam);
 
+	BOOL CreateEpgMainTable(CEpgDBManager* epgDB, vector<LONGLONG>* viewServiceList, map<LONGLONG, TIME_TABLE>* timeMap, int minPx, int timeColumn, string& htmlText);
+	BOOL CreateEpgWeekTable(vector<string>* dateList, map<LONGLONG, TIME_TABLE>* timeMap, int minPx, int timeColumn, string& htmlText);
+	BOOL CreateHourTable(vector<EPGDB_EVENT_INFO*>* eventList, map<LONGLONG, RESERVE_DATA*>* reserveMap, map<int,string>* colorList, LONGLONG pageEndTime, int minPx, LONGLONG* startHour, EVENT_TABLE* eventTable);
 };
 
