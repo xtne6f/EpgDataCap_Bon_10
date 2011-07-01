@@ -471,6 +471,10 @@ namespace EpgTimer
                         mutex.Close();
                     }
                 }
+                if (taskTray != null)
+                {
+                    taskTray.Dispose();
+                }
             }
         }
 
@@ -1053,6 +1057,7 @@ namespace EpgTimer
                             CommonManager.Instance.DB.ReloadEpgData();
                         }
                         epgView.UpdateEpgData();
+                        GC.Collect();
                     }
                     break;
                 case UpdateNotifyItem.ReserveInfo:

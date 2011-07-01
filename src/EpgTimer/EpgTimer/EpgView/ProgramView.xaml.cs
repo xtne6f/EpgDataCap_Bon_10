@@ -197,6 +197,8 @@ namespace EpgTimer.EpgView
                 canvas.Children.Remove(info);
             }
             reserveBorder.Clear();
+            reserveBorder = null;
+            reserveBorder = new List<Rectangle>();
 
             epgViewPanel.ReleaseMouseCapture();
             isDrag = false;

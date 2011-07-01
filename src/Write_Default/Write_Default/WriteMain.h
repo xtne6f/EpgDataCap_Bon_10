@@ -60,6 +60,9 @@ protected:
 	HANDLE file;
 	wstring savePath;
 
+	BYTE* writeBuff;
+	DWORD writeBuffSize;
+	DWORD writeBuffPos;
 protected:
 	BOOL GetNextFileName(wstring filePath, wstring& newPath);
 };

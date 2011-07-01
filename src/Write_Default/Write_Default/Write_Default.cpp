@@ -5,13 +5,15 @@
 
 #include "Write_PlugIn.h"
 #include "WriteMain.h"
-
+#include "SettingDlg.h"
 #include <tchar.h>
 #include <map>
 using namespace std;
 
 extern map<DWORD, CWriteMain*> g_List;
 DWORD g_nextID = 1;
+
+extern HINSTANCE g_instance;
 
 #define PLUGIN_NAME L"デフォルト 188バイトTS出力 PlugIn"
 
@@ -91,7 +93,22 @@ void WINAPI Setting(
 	HWND parentWnd
 	)
 {
-	MessageBox(parentWnd, PLUGIN_NAME, L"Write PlugIn", MB_OK);
+	WCHAR dllPath[512] = L"";
+	GetModuleFileName(g_instance, dllPath, 512);
+
+	wstring iniPath = dllPath;
+	iniPath += L".ini";
+
+	WCHAR buff[1024] = L"";
+	GetPrivateProfileString(L"SET", L"Size", L"770048", buff, 1024, iniPath.c_str());
+
+	CSettingDlg dlg;
+	dlg.size = buff;
+	if( dlg.CreateSettingDialog(g_instance, parentWnd) == IDOK ){
+		WritePrivateProfileString(L"SET", L"Macro", dlg.size.c_str(), iniPath.c_str());
+	}
+
+//	MessageBox(parentWnd, PLUGIN_NAME, L"Write PlugIn", MB_OK);
 }
 
 //複数保存対応のためインスタンスを新規に作成する

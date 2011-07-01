@@ -82,6 +82,15 @@ namespace EpgTimer
             programList.Clear();
             reserveList.Clear();
 
+            timeList = null;
+            timeList = new SortedList();
+            serviceList = null;
+            serviceList = new Dictionary<ulong, EpgServiceInfo>();
+            programList = null;
+            programList = new List<ProgramViewItem>();
+            reserveList = null;
+            reserveList = new List<ReserveViewItem>();
+
             return true;
         }
 
@@ -1242,9 +1251,13 @@ namespace EpgTimer
         private void ReloadReserveViewItem()
         {
             reserveList.Clear();
+            reserveList = null;
+            reserveList = new List<ReserveViewItem>();
             foreach (TimePosInfo time in timeList.Values)
             {
                 time.ReserveList.Clear();
+                time.ReserveList = null;
+                time.ReserveList = new List<ReserveViewItem>();
             }
             try
             {
@@ -1341,6 +1354,10 @@ namespace EpgTimer
                 epgProgramView.ClearInfo();
                 timeList.Clear();
                 programList.Clear();
+                timeList = null;
+                timeList = new SortedList();
+                programList = null;
+                programList = new List<ProgramViewItem>();
                 nowViewTimer.Stop();
 
                 DateTime currentStart = new DateTime();

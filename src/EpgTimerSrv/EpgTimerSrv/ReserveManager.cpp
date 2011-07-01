@@ -553,6 +553,9 @@ void CReserveManager::ReloadSetting()
 
 	this->errEndBatRun = GetPrivateProfileInt(L"SET", L"ErrEndBatRun", 0, iniAppPath.c_str());
 
+	this->recEndTweetErr = GetPrivateProfileInt(L"SET", L"RecEndTweetErr", 0, iniAppPath.c_str());
+	this->recEndTweetDrop = GetPrivateProfileInt(L"SET", L"RecEndTweetDrop", 0, iniAppPath.c_str());
+
 	UnLock();
 }
 
@@ -2599,6 +2602,11 @@ void CReserveManager::CheckEndReserve()
 				itrEnd->second->reserveInfo->GetData(&data);
 				REC_FILE_INFO item;
 				item = data;
+				if( item.startTime.wYear == 0 ||item.startTime.wMonth == 0 || item.startTime.wDay == 0 ){
+					deleteList.push_back(itrEnd->second->reserveID);
+					SAFE_DELETE(itrEnd->second);
+					continue;
+				}
 				item.recFilePath = itrEnd->second->recFilePath;
 				item.drops = itrEnd->second->drop;
 				item.scrambles = itrEnd->second->scramble;
@@ -2640,7 +2648,22 @@ void CReserveManager::CheckEndReserve()
 					item.comment = L"録画中にキャンセルされた可能性があります";
 				}
 				this->recInfoText.AddRecInfo(&item);
-				_SendTweet(TW_REC_END, &item, NULL, NULL);
+				BOOL tweet = TRUE;
+				if( recEndTweetErr == TRUE ){
+					if(item.recStatus == REC_END_STATUS_NORMAL ){
+						tweet = FALSE;
+						if( item.drops > recEndTweetDrop ){
+							tweet = TRUE;
+						}
+					}
+				}else{
+					if( item.drops < recEndTweetDrop ){
+						tweet = FALSE;
+					}
+				}
+				if( tweet == TRUE ){
+					_SendTweet(TW_REC_END, &item, NULL, NULL);
+				}
 				_SendNotifyRecEnd(&item);
 
 				//バッチ処理追加

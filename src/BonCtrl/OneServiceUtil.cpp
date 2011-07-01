@@ -71,6 +71,8 @@ void COneServiceUtil::SetSID(
 	if( this->SID != SID ){
 		this->pmtPID = 0xFFFF;
 		this->emmPIDMap.clear();
+
+		this->dropCount.Clear();
 	}
 	this->SID = SID;
 }

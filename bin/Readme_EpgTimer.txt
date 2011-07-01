@@ -1558,3 +1558,12 @@ ID　　　：内部で使用するID
 　BackColor10　趣味／教育（デフォルト FFFFFF）
 　BackColor11　福祉（デフォルト FFFFFF）
 　BackColor15　その他（デフォルト FFFFFF）
+
+■録画終了のツイートをエラー時とドロップ数によって行う■
+　録画終了のツイートを行う場合に、エラー発生時と指定ドロップ数以上の時
+　に行うようにします。
+　EpgTimerSrv.iniのSETにRecEndTweetErrとRecEndTweetDropを追加することで
+　変更可能です。
+
+　RecEndTweetErr：0:常にツイート、1：正常終了以外でツイート（デフォルト：0）
+　RecEndTweetDrop：指定数以上のドロップでツイート（デフォルト：0）

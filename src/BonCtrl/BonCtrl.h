@@ -209,6 +209,11 @@ public:
 		WORD serviceID
 		);
 
+	BOOL GetServiceID(
+		DWORD id,
+		WORD* serviceID
+		);
+
 	//UDPで送信を行う
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）

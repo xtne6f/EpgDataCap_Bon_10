@@ -1,10 +1,27 @@
 ﻿#include "StdAfx.h"
 #include "WriteMain.h"
 
+extern HINSTANCE g_instance;
 
 CWriteMain::CWriteMain(void)
 {
 	this->file = NULL;
+	this->writeBuff = NULL;
+	this->writeBuffSize = 0;
+	this->writeBuffPos = 0;
+
+	WCHAR dllPath[512] = L"";
+	GetModuleFileName(g_instance, dllPath, 512);
+
+	wstring iniPath = dllPath;
+	iniPath += L".ini";
+
+	this->writeBuffSize = (DWORD)GetPrivateProfileIntW(L"SET", L"Size", 770048, iniPath.c_str());
+	SAFE_DELETE_ARRAY(this->writeBuff);
+	if( this->writeBuffSize > 0 ){
+		this->writeBuff = new BYTE[this->writeBuffSize];
+	}
+	this->writeBuffPos = 0;
 }
 
 
@@ -13,6 +30,10 @@ CWriteMain::~CWriteMain(void)
 	if( this->file != NULL ){
 		_StopSave();
 	}
+
+	SAFE_DELETE_ARRAY(this->writeBuff);
+	this->writeBuffSize = 0;
+	this->writeBuffPos = 0;
 }
 
 //ファイル保存を開始する
@@ -90,10 +111,23 @@ BOOL CWriteMain::_StopSave(
 	)
 {
 	if( this->file != NULL ){
+		if( this->writeBuffPos > 0 ){
+			DWORD writeSize = 0;
+			DWORD err = 0;
+			wstring errMsg = L"";
+			if( WriteFile(this->file, this->writeBuff, this->writeBuffPos, &writeSize, NULL) == FALSE ){
+				err = GetLastError();
+				GetLastErrMsg(err, errMsg);
+				_OutputDebugString(L"★_StopSave WriteFile Err:0x%08X %s", err, errMsg.c_str());
+			}else{
+				this->writeBuffPos = 0;
+			}
+		}
 		SetEndOfFile(this->file);
 		CloseHandle(this->file);
 		this->file = NULL;
 	}
+
 	return TRUE;
 }
 
@@ -150,11 +184,100 @@ BOOL CWriteMain::_AddTSBuff(
 	wstring errMsg = L"";
 	DWORD err = 0;
 	if( this->file != NULL && data != NULL && size > 0 ){
-		ret = WriteFile(this->file, data, size, writeSize, NULL);
-		if( ret == FALSE ){
-			err = GetLastError();
-			GetLastErrMsg(err, errMsg);
-			_OutputDebugString(L"★WriteFile Err:0x%08X %s", err, errMsg.c_str());
+		if( this->writeBuffSize > 0 && this->writeBuff != NULL){
+			if( size > this->writeBuffSize ){
+				//バッファサイズより大きいのでそのまま出力
+				if( this->writeBuffPos > 0 ){
+					//前回のバッファあるので先に出力
+					DWORD write = 0;
+					wstring errMsg = L"";
+					if( WriteFile(this->file, this->writeBuff, this->writeBuffPos, &write, NULL) == FALSE ){
+						//エラーが出た
+						err = GetLastError();
+						GetLastErrMsg(err, errMsg);
+						_OutputDebugString(L"★_StopSave WriteFile Err:0x%08X %s", err, errMsg.c_str());
+						*writeSize = 0;
+						//書き込めなかった部分をバッファの先頭へコピー
+						DWORD tempBuffSize = this->writeBuffPos-write;
+						if( tempBuffSize > 0 ){
+							BYTE* tempBuff = new BYTE[tempBuffSize];
+							memcpy( tempBuff, this->writeBuff+write, tempBuffSize);
+							this->writeBuffPos = tempBuffSize;
+							memcpy(this->writeBuff, tempBuff, tempBuffSize);
+							SAFE_DELETE_ARRAY(tempBuff);
+						}
+
+						SetEndOfFile(this->file);
+						CloseHandle(this->file);
+						this->file = NULL;
+
+						return FALSE;
+					}else{
+						this->writeBuffPos = 0;
+					}
+				}
+				//ファイル出力
+				if( WriteFile(this->file, data, size, writeSize, NULL) == FALSE ){
+					//エラーが出た
+					err = GetLastError();
+					GetLastErrMsg(err, errMsg);
+					_OutputDebugString(L"★WriteFile Err:0x%08X %s", err, errMsg.c_str());
+
+					SetEndOfFile(this->file);
+					CloseHandle(this->file);
+					this->file = NULL;
+
+					return FALSE;
+				}else{
+					ret = TRUE;
+				}
+			}else{
+				if(this->writeBuffSize < this->writeBuffPos + size){
+					//バッファ埋まるので出力
+					DWORD tempSize = this->writeBuffSize - this->writeBuffPos;
+					memcpy( this->writeBuff+this->writeBuffPos, data, tempSize );
+					DWORD tempWriteSize = 0;
+					if( WriteFile(this->file, this->writeBuff, this->writeBuffSize, &tempWriteSize, NULL) == FALSE ){
+						//エラー
+						err = GetLastError();
+						GetLastErrMsg(err, errMsg);
+						_OutputDebugString(L"★_StopSave WriteFile Err:0x%08X %s", err, errMsg.c_str());
+						*writeSize = 0;
+						//ファイルポインタ戻す
+						LONG lpos = (LONG)tempWriteSize;
+						SetFilePointer(this->file, -lpos, NULL, FILE_CURRENT);
+
+						SetEndOfFile(this->file);
+						CloseHandle(this->file);
+						this->file = NULL;
+
+						return FALSE;
+					}else{
+						//バッファにコピー
+						memcpy( this->writeBuff, data+tempSize, size-tempSize );
+						this->writeBuffPos = size-tempSize;
+						*writeSize = size;
+						ret = TRUE;
+					}
+				}else{
+					//バッファにコピー
+					memcpy( this->writeBuff+this->writeBuffPos, data, size );
+					this->writeBuffPos += size;
+					*writeSize = size;
+					ret = TRUE;
+				}
+			}
+		}else{
+			ret = WriteFile(this->file, data, size, writeSize, NULL);
+			if( ret == FALSE ){
+				err = GetLastError();
+				GetLastErrMsg(err, errMsg);
+				_OutputDebugString(L"★WriteFile Err:0x%08X %s", err, errMsg.c_str());
+
+				SetEndOfFile(this->file);
+				CloseHandle(this->file);
+				this->file = NULL;
+			}
 		}
 	}
 	return ret;

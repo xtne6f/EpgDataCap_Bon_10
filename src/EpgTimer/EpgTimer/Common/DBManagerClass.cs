@@ -78,6 +78,23 @@ namespace EpgTimer
             recNamePlugInList.Clear();
             manualAutoAddList.Clear();
             epgAutoAddList.Clear();
+
+            serviceEventList = null;
+            serviceEventList = new Dictionary<ulong, EpgServiceEventInfo>();
+            reserveList = null;
+            reserveList = new Dictionary<uint, ReserveData>();
+            tunerReserveList = null;
+            tunerReserveList = new Dictionary<uint, TunerReserveInfo>();
+            recFileInfo = null;
+            recFileInfo = new Dictionary<uint, RecFileInfo>();
+            writePlugInList = null;
+            writePlugInList = new Dictionary<int, string>();
+            recNamePlugInList = null;
+            recNamePlugInList = new Dictionary<int, string>();
+            manualAutoAddList = null;
+            manualAutoAddList = new Dictionary<uint, ManualAutoAddData>();
+            epgAutoAddList = null;
+            epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
         }
 
         /// <summary>
@@ -146,6 +163,8 @@ namespace EpgTimer
                         else
                         {
                             serviceEventList.Clear();
+                            serviceEventList = null;
+                            serviceEventList = new Dictionary<ulong, EpgServiceEventInfo>();
                             List<EpgServiceEventInfo> list = new List<EpgServiceEventInfo>();
                             ret = (ErrCode)cmd.SendEnumPgAll(ref list);
                             if (ret == ErrCode.CMD_SUCCESS)
@@ -161,6 +180,8 @@ namespace EpgTimer
                                 updateEpgData = false;
                                 oneTimeReloadEpg = false;
                             }
+                            list.Clear();
+                            list = null;
                         }
                     }
                 }
@@ -175,6 +196,8 @@ namespace EpgTimer
                         else
                         {
                             serviceEventList.Clear();
+                            serviceEventList = null;
+                            serviceEventList = new Dictionary<ulong,EpgServiceEventInfo>();
                             List<EpgServiceEventInfo> list = new List<EpgServiceEventInfo>();
                             ret = (ErrCode)cmd.SendEnumPgAll(ref list);
                             if (ret == ErrCode.CMD_SUCCESS)
@@ -189,6 +212,8 @@ namespace EpgTimer
                                 }
                                 updateEpgData = false;
                             }
+                            list.Clear();
+                            list = null;
                         }
                     }
                 }
@@ -218,7 +243,11 @@ namespace EpgTimer
                     else
                     {
                         reserveList.Clear();
+                        reserveList = null;
+                        reserveList = new Dictionary<uint, ReserveData>();
                         tunerReserveList.Clear();
+                        tunerReserveList = null;
+                        tunerReserveList = new Dictionary<uint, TunerReserveInfo>();
                         List<ReserveData> list = new List<ReserveData>();
                         List<TunerReserveInfo> list2 = new List<TunerReserveInfo>();
                         ret = (ErrCode)cmd.SendEnumReserve(ref list);
@@ -238,6 +267,10 @@ namespace EpgTimer
                                 updateReserveInfo = false;
                             }
                         }
+                        list.Clear();
+                        list2.Clear();
+                        list = null;
+                        list2 = null;
                     }
                 }
             }
@@ -266,6 +299,8 @@ namespace EpgTimer
                     else
                     {
                         recFileInfo.Clear();
+                        recFileInfo = null;
+                        recFileInfo = new Dictionary<uint, CtrlCmdCLI.Def.RecFileInfo>();
                         List<RecFileInfo> list = new List<RecFileInfo>();
                         ret = (ErrCode)cmd.SendEnumRecInfo(ref list);
                         if (ret == ErrCode.CMD_SUCCESS)
@@ -276,6 +311,8 @@ namespace EpgTimer
                             }
                             updateRecInfo = false;
                         }
+                        list.Clear();
+                        list = null;
                     }
                 }
             }
@@ -304,7 +341,11 @@ namespace EpgTimer
                     else
                     {
                         writePlugInList.Clear();
+                        writePlugInList = null;
+                        writePlugInList = new Dictionary<int, string>();
                         recNamePlugInList.Clear();
+                        recNamePlugInList = null;
+                        recNamePlugInList = new Dictionary<int, string>();
                         List<String> writeList = new List<string>();
                         List<String> recNameList = new List<string>();
                         ret = (ErrCode)cmd.SendEnumPlugIn(2, ref writeList);
@@ -324,6 +365,10 @@ namespace EpgTimer
                                 updatePlugInFile = false;
                             }
                         }
+                        writeList.Clear();
+                        recNameList.Clear();
+                        writeList = null;
+                        recNameList = null;
                     }
                 }
             }
@@ -352,6 +397,8 @@ namespace EpgTimer
                     else
                     {
                         epgAutoAddList.Clear();
+                        epgAutoAddList = null;
+                        epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
                         List<EpgAutoAddData> list = new List<EpgAutoAddData>();
                         ret = (ErrCode)cmd.SendEnumEpgAutoAdd(ref list);
                         if (ret == ErrCode.CMD_SUCCESS)
@@ -362,6 +409,8 @@ namespace EpgTimer
                             }
                             updateAutoAddEpgInfo = false;
                         }
+                        list.Clear();
+                        list = null;
                     }
                 }
             }
@@ -391,6 +440,8 @@ namespace EpgTimer
                     else
                     {
                         manualAutoAddList.Clear();
+                        manualAutoAddList = null;
+                        manualAutoAddList = new Dictionary<uint, ManualAutoAddData>();
                         List<ManualAutoAddData> list = new List<ManualAutoAddData>();
                         ret = (ErrCode)cmd.SendEnumManualAdd(ref list);
                         if (ret == ErrCode.CMD_SUCCESS)
@@ -401,6 +452,8 @@ namespace EpgTimer
                             }
                             updateAutoAddManualInfo = false;
                         }
+                        list.Clear();
+                        list = null;
                     }
                 }
             }
@@ -435,6 +488,8 @@ namespace EpgTimer
                     break;
                 }
             }
+            sortList.Clear();
+            sortList = null;
             return ret;
         }
     }

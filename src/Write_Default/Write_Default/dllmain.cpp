@@ -6,6 +6,7 @@
 using namespace std;
 
 map<DWORD, CWriteMain*> g_List;
+HINSTANCE g_instance = NULL;
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -28,6 +29,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		}
 		break;
 	}
+	g_instance = hModule;
 	return TRUE;
 }
 

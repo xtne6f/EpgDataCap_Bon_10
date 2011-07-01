@@ -972,6 +972,16 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 						sys->ctrlMap.erase(itr);
 					}
 					resParam->param = CMD_SUCCESS;
+
+					if( sys->ctrlMap.size() > 0 ){
+						WORD sid = 0xFFFF;
+						sys->bonCtrl.GetServiceID(sys->ctrlMap.begin()->first, &sid);
+						sys->bonCtrl.SetServiceID(sys->nwCtrlID, sid);
+						if( sid != 0xFFFF ){
+							sys->lastSID = sid;
+							PostMessage(sys->msgWnd, WM_CHG_CH, 0, 0);
+						}
+					}
 				}
 			}
 		}

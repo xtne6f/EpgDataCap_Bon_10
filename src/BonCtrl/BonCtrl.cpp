@@ -437,6 +437,15 @@ DWORD CBonCtrl::_SetCh(
 
 					StartBackgroundEpgCap();
 				}
+			}else{
+				if( chChgErr == TRUE ){
+					//エラーの時は再設定
+					this->tsOut.SetChChangeEvent();
+					_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
+					ret = this->bonUtil.SetCh(space, ch);
+
+					StartBackgroundEpgCap();
+				}
 			}
 		}
 	}else{
@@ -825,6 +834,18 @@ BOOL CBonCtrl::SetServiceID(
 {
 	if( Lock(L"SetServiceID") == FALSE ) return FALSE;
 	BOOL ret = this->tsOut.SetServiceID(id,serviceID);
+
+	UnLock();
+	return ret;
+}
+
+BOOL CBonCtrl::GetServiceID(
+	DWORD id,
+	WORD* serviceID
+	)
+{
+	if( Lock(L"SetServiceID") == FALSE ) return FALSE;
+	BOOL ret = this->tsOut.GetServiceID(id,serviceID);
 
 	UnLock();
 	return ret;
@@ -1646,8 +1667,7 @@ void CBonCtrl::SetBackGroundEpgCap(
 void CBonCtrl::StartBackgroundEpgCap()
 {
 	StopBackgroundEpgCap();
-
-	if( this->epgCapBackThread == NULL ){
+	if( this->epgCapBackThread == NULL && this->epgCapThread == NULL ){
 		if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
 			//受信スレッド起動
 			ResetEvent(this->epgCapBackStopEvent);

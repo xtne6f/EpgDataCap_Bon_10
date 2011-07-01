@@ -293,6 +293,8 @@ protected:
 	wstring proxySrv;
 	wstring proxyID;
 	wstring proxyPWD;
+	BOOL recEndTweetErr;
+	DWORD recEndTweetDrop;
 
 	vector<wstring> tvtestUseBon;
 

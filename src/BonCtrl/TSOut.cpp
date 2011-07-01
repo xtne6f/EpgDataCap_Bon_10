@@ -828,6 +828,8 @@ BOOL CTSOut::DeleteServiceCtrl(
 	SAFE_DELETE(itr->second);
 	serviceUtilMap.erase(itr);
 
+	CheckNeedPID();
+
 	UnLock();
 	return TRUE;
 }
@@ -854,6 +856,27 @@ BOOL CTSOut::SetServiceID(
 
 	itr->second->SetSID(serviceID);
 	CheckNeedPID();
+
+	UnLock();
+	return TRUE;
+}
+
+BOOL CTSOut::GetServiceID(
+	DWORD id,
+	WORD* serviceID
+	)
+{
+	if( Lock(L"GetServiceID") == FALSE ) return FALSE;
+
+	map<DWORD, COneServiceUtil*>::iterator itr;
+	itr = serviceUtilMap.find(id);
+	if( itr == serviceUtilMap.end() ){
+		UnLock();
+		return FALSE;
+	}
+	if( serviceID != NULL ){
+		*serviceID = itr->second->GetSID();
+	}
 
 	UnLock();
 	return TRUE;

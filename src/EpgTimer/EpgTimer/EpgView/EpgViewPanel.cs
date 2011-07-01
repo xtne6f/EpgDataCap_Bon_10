@@ -32,6 +32,7 @@ namespace EpgTimer.EpgView
             }
             set
             {
+                items = null;
                 items = value;
                 CreateDrawTextList();
             }
@@ -46,6 +47,8 @@ namespace EpgTimer.EpgView
         protected void CreateDrawTextList()
         {
             textDrawList.Clear();
+            textDrawList = null;
+            textDrawList = new List<TextDrawItem>();
 
             this.VisualTextRenderingMode = TextRenderingMode.ClearType;
             this.VisualTextHintingMode = TextHintingMode.Fixed;
@@ -59,7 +62,6 @@ namespace EpgTimer.EpgView
             Typeface typefaceTitle = null;
             GlyphTypeface glyphTypefaceNormal = null;
             GlyphTypeface glyphTypefaceTitle = null;
-
             try
             {
                 if (Settings.Instance.FontName.Length > 0)
@@ -262,6 +264,7 @@ namespace EpgTimer.EpgView
                             textDrawList.Add(item);
 
                             totalHeight += fontSize + 2;
+
                             glyphIndexes = new List<ushort>();
                             advanceWidths = new List<double>();
                             totalWidth = 0;
