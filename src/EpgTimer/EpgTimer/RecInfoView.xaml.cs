@@ -329,11 +329,29 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
-                RecInfoDescWindow dlg = new RecInfoDescWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetRecInfo(info.RecInfo);
-                dlg.ShowDialog();
+                if (Settings.Instance.PlayDClick == false)
+                {
+                    RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                    RecInfoDescWindow dlg = new RecInfoDescWindow();
+                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                    dlg.SetRecInfo(info.RecInfo);
+                    dlg.ShowDialog();
+                }
+                else
+                {
+                    RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                    if (info.RecInfo.RecFilePath.Length > 0)
+                    {
+                        try
+                        {
+                            CommonManager.Instance.FilePlay(info.RecInfo.RecFilePath);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.Message);
+                        }
+                    }
+                }
             }
         }
 
@@ -385,6 +403,18 @@ namespace EpgTimer
                 {
                     ReloadInfo = false;
                 }
+            }
+        }
+
+        private void button_recInfo_Click(object sender, RoutedEventArgs e)
+        {
+            if (listView_recinfo.SelectedItem != null)
+            {
+                RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                RecInfoDescWindow dlg = new RecInfoDescWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                dlg.SetRecInfo(info.RecInfo);
+                dlg.ShowDialog();
             }
         }
     }

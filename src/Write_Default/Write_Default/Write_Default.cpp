@@ -105,7 +105,7 @@ void WINAPI Setting(
 	CSettingDlg dlg;
 	dlg.size = buff;
 	if( dlg.CreateSettingDialog(g_instance, parentWnd) == IDOK ){
-		WritePrivateProfileString(L"SET", L"Macro", dlg.size.c_str(), iniPath.c_str());
+		WritePrivateProfileString(L"SET", L"Size", dlg.size.c_str(), iniPath.c_str());
 	}
 
 //	MessageBox(parentWnd, PLUGIN_NAME, L"Write PlugIn", MB_OK);

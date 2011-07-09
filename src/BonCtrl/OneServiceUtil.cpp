@@ -566,3 +566,10 @@ void COneServiceUtil::SetBonDriver(
 {
 	this->dropCount.SetBonDriver(bonDriver);
 }
+
+void COneServiceUtil::SetPIDName(
+	map<WORD, string>* pidName
+	)
+{
+	this->dropCount.SetPIDName(pidName);
+}

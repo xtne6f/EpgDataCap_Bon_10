@@ -216,9 +216,77 @@ void CDropCount::SaveLog(wstring filePath)
 
 		map<WORD, DROP_INFO>::iterator itr;
 		for( itr = this->infoMap.begin(); itr != this->infoMap.end(); itr++ ){
-			
-			Format(buff, "PID: 0x%04X  Total:%9I64d  Drop:%9I64d  Scramble: %9I64d\r\n",
-				itr->first, itr->second.total, itr->second.drop, itr->second.scramble );
+			string desc = "";
+			map<WORD, string>::iterator itrPID;
+			switch(itr->first){
+			case 0x0000:
+				desc = "PAT";
+				break;
+			case 0x0001:
+				desc = "CAT";
+				break;
+			case 0x0010:
+				desc = "NIT";
+				break;
+			case 0x0011:
+				desc = "SDT/BAT";
+				break;
+			case 0x0012:
+			case 0x0026:
+			case 0x0027:
+				desc = "EIT";
+				break;
+			case 0x0013:
+				desc = "RST";
+				break;
+			case 0x0014:
+				desc = "TDT/TOT";
+				break;
+			case 0x0017:
+				desc = "DCT";
+				break;
+			case 0x001E:
+				desc = "DIT";
+				break;
+			case 0x001F:
+				desc = "SIT";
+				break;
+			case 0x0020:
+				desc = "LIT";
+				break;
+			case 0x0021:
+				desc = "ERT";
+				break;
+			case 0x0022:
+				desc = "PCAT";
+				break;
+			case 0x0023:
+			case 0x0028:
+				desc = "SDTT";
+				break;
+			case 0x0024:
+				desc = "BIT";
+				break;
+			case 0x0025:
+				desc = "NBIT/LDT";
+				break;
+			case 0x0029:
+				desc = "CDT";
+				break;
+			case 0x1FFF:
+				desc = "NULL";
+				break;
+			default:
+				{
+					itrPID = pidName.find(itr->first);
+					if(itrPID != pidName.end() ){
+						desc = itrPID->second;
+					}
+				}
+				break;
+			}
+			Format(buff, "PID: 0x%04X  Total:%9I64d  Drop:%9I64d  Scramble: %9I64d  %s\r\n",
+				itr->first, itr->second.total, itr->second.drop, itr->second.scramble, desc.c_str() );
 			WriteFile(file, buff.c_str(), (DWORD)buff.size(), &write, NULL );
 		}
 
@@ -231,3 +299,18 @@ void CDropCount::SaveLog(wstring filePath)
 	}
 }
 
+void CDropCount::SetPIDName(
+	map<WORD, string>* pidName
+	)
+{
+	map<WORD, string>::iterator itrIn;
+	for(itrIn = pidName->begin(); itrIn != pidName->end(); itrIn++){
+		map<WORD, string>::iterator itrSet;
+		itrSet = this->pidName.find(itrIn->first);
+		if( itrSet != this->pidName.end() ){
+			itrSet->second = itrIn->second;
+		}else{
+			this->pidName.insert(pair<WORD, string>(itrIn->first, itrIn->second));
+		}
+	}
+}

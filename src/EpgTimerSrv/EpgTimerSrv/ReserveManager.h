@@ -336,8 +336,9 @@ protected:
 	void _ReloadBankMap();
 	void _ReloadBankMapAlgo0();
 	void _ReloadBankMapAlgo1();
+	void _ReloadBankMapAlgo2();
 	void CheckOverTimeReserve();
-	void CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* workInfo, BOOL backPriority, DWORD reserveCount, DWORD reserveNum);
+	void CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* workInfo, BOOL backPriority, DWORD reserveCount, DWORD reserveNum, BOOL noTuner = FALSE);
 	DWORD ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
 	DWORD ReChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
 	DWORD ChkInsertNGStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);

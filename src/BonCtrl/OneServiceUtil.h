@@ -189,7 +189,9 @@ public:
 	void SetBonDriver(
 		wstring bonDriver
 		);
-
+	void SetPIDName(
+		map<WORD, string>* pidName
+		);
 protected:
 	DWORD id;
 	WORD SID;

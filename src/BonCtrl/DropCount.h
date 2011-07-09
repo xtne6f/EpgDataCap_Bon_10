@@ -24,7 +24,9 @@ public:
 	void SetSignal(float level);
 	void SetBonDriver(wstring bonDriver);
 
-
+	void SetPIDName(
+		map<WORD, string>* pidName
+		);
 protected:
 	typedef struct _DROP_INFO{
 		WORD PID;
@@ -53,6 +55,7 @@ protected:
 	float signalLv;
 	wstring bonFile;
 
+	map<WORD, string> pidName;
 protected:
 	void CheckCounter(CTSPacketUtil* tsPacket, DROP_INFO* info);
 

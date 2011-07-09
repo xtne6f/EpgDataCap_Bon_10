@@ -185,6 +185,7 @@ namespace EpgTimer.Setting
                     checkBox_minWake.IsChecked = Settings.Instance.WakeMin;
                     checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
                     checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
+                    checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
 
                     checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
                     checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
@@ -584,6 +585,14 @@ namespace EpgTimer.Setting
             else
             {
                 Settings.Instance.NoBallonTips = false;
+            }
+            if (checkBox_playDClick.IsChecked == true)
+            {
+                Settings.Instance.PlayDClick = true;
+            }
+            else
+            {
+                Settings.Instance.PlayDClick = false;
             }
 
             if (checkBox_wakeReconnect.IsChecked == true)

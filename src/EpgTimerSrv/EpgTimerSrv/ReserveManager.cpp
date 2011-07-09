@@ -949,13 +949,25 @@ BOOL CReserveManager::ReloadReserveData()
 				item->SetData(itrData->second);
 
 				//サービスサポートしてないチューナー検索
-				vector<DWORD> idList;
-				if( this->tunerManager.GetNotSupportServiceTuner(
-					itrData->second->originalNetworkID,
-					itrData->second->transportStreamID,
-					itrData->second->serviceID,
-					&idList ) == TRUE ){
-						item->SetNGChTunerID(&idList);
+				if( itrData->second->recSetting.tunerID == 0 ){
+					vector<DWORD> idList;
+					if( this->tunerManager.GetNotSupportServiceTuner(
+						itrData->second->originalNetworkID,
+						itrData->second->transportStreamID,
+						itrData->second->serviceID,
+						&idList ) == TRUE ){
+							item->SetNGChTunerID(&idList);
+					}
+				}else{
+					//チューナー固定
+					vector<DWORD> idList;
+					if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
+						for( size_t i=0; i<idList.size(); i++ ){
+							if( idList[i] != itrData->second->recSetting.tunerID ){
+								item->AddNGTunerID(idList[i]);
+							}
+						}
+					}
 				}
 				
 				this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second->reserveID, item));
@@ -1026,13 +1038,25 @@ BOOL CReserveManager::AddLoadReserveData()
 				item->SetData(itrData->second);
 
 				//サービスサポートしてないチューナー検索
-				vector<DWORD> idList;
-				if( this->tunerManager.GetNotSupportServiceTuner(
-					itrData->second->originalNetworkID,
-					itrData->second->transportStreamID,
-					itrData->second->serviceID,
-					&idList ) == TRUE ){
-						item->SetNGChTunerID(&idList);
+				if( itrData->second->recSetting.tunerID == 0){
+					vector<DWORD> idList;
+					if( this->tunerManager.GetNotSupportServiceTuner(
+						itrData->second->originalNetworkID,
+						itrData->second->transportStreamID,
+						itrData->second->serviceID,
+						&idList ) == TRUE ){
+							item->SetNGChTunerID(&idList);
+					}
+				}else{
+					//チューナー固定
+					vector<DWORD> idList;
+					if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
+						for( size_t i=0; i<idList.size(); i++ ){
+							if( idList[i] != itrData->second->recSetting.tunerID ){
+								item->AddNGTunerID(idList[i]);
+							}
+						}
+					}
 				}
 
 				this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second->reserveID, item));
@@ -1201,14 +1225,26 @@ BOOL CReserveManager::_AddReserveData(RESERVE_DATA* reserve, BOOL tweet)
 			CReserveInfo* item = new CReserveInfo;
 			item->SetData(itrData->second);
 
-			//サービスサポートしてないチューナー検索
-			vector<DWORD> idList;
-			if( this->tunerManager.GetNotSupportServiceTuner(
-				itrData->second->originalNetworkID,
-				itrData->second->transportStreamID,
-				itrData->second->serviceID,
-				&idList ) == TRUE ){
-					item->SetNGChTunerID(&idList);
+			if( itrData->second->recSetting.tunerID == 0 ){
+				//サービスサポートしてないチューナー検索
+				vector<DWORD> idList;
+				if( this->tunerManager.GetNotSupportServiceTuner(
+					itrData->second->originalNetworkID,
+					itrData->second->transportStreamID,
+					itrData->second->serviceID,
+					&idList ) == TRUE ){
+						item->SetNGChTunerID(&idList);
+				}
+			}else{
+				//チューナー固定
+				vector<DWORD> idList;
+				if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
+					for( size_t i=0; i<idList.size(); i++ ){
+						if( idList[i] != itrData->second->recSetting.tunerID ){
+							item->AddNGTunerID(idList[i]);
+						}
+					}
+				}
 			}
 
 			this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second->reserveID, item));
@@ -1329,15 +1365,52 @@ BOOL CReserveManager::_ChgReserveData(RESERVE_DATA* reserve, BOOL chgTime)
 				setData.serviceID != reserve->serviceID ){
 					//チャンネル変わってる
 					itrInfo->second->ClearAddNGTuner();
-					//サービスサポートしてないチューナー検索
-					vector<DWORD> idList;
-					if( this->tunerManager.GetNotSupportServiceTuner(
-						reserve->originalNetworkID,
-						reserve->transportStreamID,
-						reserve->serviceID,
-						&idList ) == TRUE ){
-							itrInfo->second->SetNGChTunerID(&idList);
+					if( reserve->recSetting.tunerID == 0 ){
+						//サービスサポートしてないチューナー検索
+						vector<DWORD> idList;
+						if( this->tunerManager.GetNotSupportServiceTuner(
+							reserve->originalNetworkID,
+							reserve->transportStreamID,
+							reserve->serviceID,
+							&idList ) == TRUE ){
+								itrInfo->second->SetNGChTunerID(&idList);
+						}
+					}else{
+						//チューナー固定
+						vector<DWORD> idList;
+						if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
+							for( size_t i=0; i<idList.size(); i++ ){
+								if( idList[i] != reserve->recSetting.tunerID ){
+									itrInfo->second->AddNGTunerID(idList[i]);
+								}
+							}
+						}
 					}
+			}
+		}
+		if( setData.recSetting.tunerID != reserve->recSetting.tunerID ){
+			//使用チューナーリセット
+			itrInfo->second->ClearAddNGTuner();
+			if( reserve->recSetting.tunerID == 0 ){
+				//サービスサポートしてないチューナー検索
+				vector<DWORD> idList;
+				if( this->tunerManager.GetNotSupportServiceTuner(
+					reserve->originalNetworkID,
+					reserve->transportStreamID,
+					reserve->serviceID,
+					&idList ) == TRUE ){
+						itrInfo->second->SetNGChTunerID(&idList);
+				}
+			}else{
+				//チューナー固定
+				vector<DWORD> idList;
+				if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
+					for( size_t i=0; i<idList.size(); i++ ){
+						if( idList[i] != reserve->recSetting.tunerID ){
+							itrInfo->second->AddNGTunerID(idList[i]);
+						}
+					}
+				}
 			}
 		}
 		setData = *reserve;
@@ -1512,6 +1585,9 @@ void CReserveManager::_ReloadBankMap()
 		break;
 	case 1:
 		_ReloadBankMapAlgo1();
+		break;
+	case 2:
+		_ReloadBankMapAlgo2();
 		break;
 	default:
 		_ReloadBankMapAlgo0();
@@ -2003,6 +2079,226 @@ void CReserveManager::_ReloadBankMapAlgo1()
 	}
 }
 
+void CReserveManager::_ReloadBankMapAlgo2()
+{
+	map<DWORD, BANK_INFO*>::iterator itrBank;
+	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
+
+	//録画待機中のものをバンクに登録＆優先度と時間でソート
+	map<DWORD, CReserveInfo*>::iterator itrInfo;
+	multimap<LONGLONG, CReserveInfo*> sortTimeMap;
+	for( itrInfo = this->reserveInfoMap.begin(); itrInfo != this->reserveInfoMap.end(); itrInfo++ ){
+		BYTE recMode = 0;
+		itrInfo->second->GetRecMode(&recMode);
+		if( recMode != RECMODE_NO ){
+			SYSTEMTIME time;
+			itrInfo->second->GetStartTime(&time);
+			sortTimeMap.insert(pair<LONGLONG, CReserveInfo*>(ConvertI64Time(time), itrInfo->second));
+		}
+	}
+	multimap<wstring, BANK_WORK_INFO*> sortReserveMap;
+	multimap<LONGLONG, CReserveInfo*>::iterator itrSortInfo;
+	DWORD reserveNum = (DWORD)this->reserveInfoMap.size();
+	DWORD reserveCount = 0;
+	for( itrSortInfo = sortTimeMap.begin(); itrSortInfo != sortTimeMap.end(); itrSortInfo++ ){
+		itrSortInfo->second->SetOverlapMode(0);
+		BOOL recWaitFlag = FALSE;
+		DWORD tunerID = 0;
+		itrSortInfo->second->GetRecWaitMode(&recWaitFlag, &tunerID);
+		if( recWaitFlag == TRUE ){
+			//録画処理中なのでバンクに登録
+			itrBank = this->bankMap.find(tunerID);
+			if( itrBank != this->bankMap.end() ){
+				BANK_WORK_INFO* item = new BANK_WORK_INFO;
+				CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum, TRUE);
+				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(item->reserveID,item));
+			}
+		}else{
+			//まだ録画処理されていないのでソートに追加
+			BANK_WORK_INFO* item = new BANK_WORK_INFO;
+			CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum, TRUE);
+			sortReserveMap.insert(pair<wstring, BANK_WORK_INFO*>(item->sortKey, item));
+		}
+		reserveCount++;
+	}
+
+	Sleep(0);
+
+	//予約の割り振り
+	multimap<wstring, BANK_WORK_INFO*> tempNGMap1Pass;
+	multimap<wstring, BANK_WORK_INFO*> tempMap2Pass;
+	multimap<wstring, BANK_WORK_INFO*> tempNGMap2Pass;
+	multimap<wstring, BANK_WORK_INFO*>::iterator itrSort;
+	for( itrSort = sortReserveMap.begin(); itrSort !=  sortReserveMap.end(); itrSort++ ){
+		BOOL insert = FALSE;
+		//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
+		if( this->sameChPriorityFlag == TRUE ){
+			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
+				DWORD status = ChkInsertSameChStatus(itrBank->second, itrSort->second);
+				if( status == 1 ){
+					//問題なく追加可能
+					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
+					insert = TRUE;
+					break;
+				}
+			}
+		}
+		if( insert == FALSE ){
+			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
+				DWORD status = ChkInsertStatus(itrBank->second, itrSort->second);
+				if( status == 1 ){
+					//問題なく追加可能
+					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
+					insert = TRUE;
+					break;
+				}
+			}
+		}
+
+		if( insert == FALSE ){
+			//追加できなかった
+			tempNGMap1Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
+		}
+	}
+
+	//2Pass
+	for( itrSort = tempNGMap1Pass.begin(); itrSort !=  tempNGMap1Pass.end(); itrSort++ ){
+		BOOL insert = FALSE;
+		//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
+		if( this->sameChPriorityFlag == TRUE ){
+			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
+				DWORD status = ChkInsertSameChStatus(itrBank->second, itrSort->second);
+				if( status == 1 ){
+					//問題なく追加可能
+					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
+					insert = TRUE;
+					break;
+				}
+			}
+		}
+		if( insert == FALSE ){
+			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
+				DWORD status = ChkInsertStatus(itrBank->second, itrSort->second);
+				if( status == 1 ){
+					//問題なく追加可能
+					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
+					insert = TRUE;
+					break;
+				}else if( status == 2 ){
+					//追加可能だが終了時間と開始時間の重なった予約あり
+					//仮追加
+					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
+					itrSort->second->preTunerID = itrBank->first;
+					tempMap2Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
+					insert = TRUE;
+					break;
+				}
+			}
+		}
+		if( insert == FALSE ){
+			//追加できなかった
+			itrSort->second->reserveInfo->SetOverlapMode(2);
+			this->NGReserveMap.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID, itrSort->second));
+
+			tempNGMap2Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
+		}
+	}
+
+	Sleep(0);
+
+	//開始終了重なっている予約で、他のチューナーに回せるやつあるかチェック
+	for( itrSort = tempMap2Pass.begin(); itrSort !=  tempMap2Pass.end(); itrSort++ ){
+		BOOL insert = FALSE;
+		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
+			if( itrBank->second->tunerID == itrSort->second->preTunerID ){
+				if(ReChkInsertStatus(itrBank->second, itrSort->second) == 1 ){
+					//前の予約移動した？このままでもOK
+					break;
+				}else{
+					continue;
+				}
+			}
+			DWORD status = ChkInsertStatus(itrBank->second, itrSort->second);
+			if( status == 1 ){
+				//問題なく追加可能
+				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
+				insert = TRUE;
+				break;
+			}
+		}
+		if( insert == TRUE ){
+			//仮追加を削除
+			itrBank = this->bankMap.find(itrSort->second->preTunerID);
+			if( itrBank != this->bankMap.end() ){
+				map<DWORD, BANK_WORK_INFO*>::iterator itrDel;
+				itrDel = itrBank->second->reserveList.find(itrSort->second->reserveID);
+				if( itrDel != itrBank->second->reserveList.end() ){
+					itrBank->second->reserveList.erase(itrDel);
+				}
+			}
+		}
+	}
+
+	Sleep(0);
+
+	multimap<wstring, BANK_WORK_INFO*>::iterator itrSortNG;
+	//NGでチューナー入れ替えで録画できるものあるかチェック
+	itrSortNG = tempNGMap2Pass.begin();
+	while(itrSortNG != tempNGMap2Pass.end() ){
+		if( itrSortNG->second->useTunerID != 0 ){
+			//チューナー固定でNGになっているのは無視
+			itrSortNG++;
+			continue;
+		}
+		if( ChangeNGReserve(itrSortNG->second) == TRUE ){
+			//登録できたのでNGから削除
+			itrSortNG->second->reserveInfo->SetOverlapMode(0);
+			itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
+			if( itrNG != this->NGReserveMap.end() ){
+				this->NGReserveMap.erase(itrNG);
+			}
+			tempNGMap2Pass.erase(itrSortNG++);
+		}else{
+			itrSortNG++;
+		}
+	}
+
+	//NGで少しでも録画できるかチェック
+	for( itrSortNG = tempNGMap2Pass.begin(); itrSortNG != tempNGMap2Pass.end(); itrSortNG++){
+		if( itrSortNG->second->useTunerID != 0 ){
+			//チューナー固定でNGになっているのは無視
+			continue;
+		}
+		DWORD maxDuration = 0;
+		DWORD maxID = 0xFFFFFFFF;
+		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
+			DWORD duration = ChkInsertNGStatus(itrBank->second, itrSortNG->second);
+			if( maxDuration < duration && duration > 0){
+				maxDuration = duration;
+				maxID = itrBank->second->tunerID;
+			}
+		}
+		if( maxDuration > 0 && maxID != 0xFFFFFFFF ){
+			//少しでも録画できる場所あった
+			itrBank = this->bankMap.find(maxID);
+			if( itrBank != this->bankMap.end() ){
+				itrSortNG->second->reserveInfo->SetOverlapMode(1);
+				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSortNG->second->reserveID,itrSortNG->second));
+
+				//登録できたのでNGから削除
+				itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
+				if( itrNG != this->NGReserveMap.end() ){
+					this->NGReserveMap.erase(itrNG);
+				}
+				if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
+					//全部は録画できないもの
+					this->nwCoopManager.AddChkReserve(itrSortNG->second->reserveInfo);
+				}
+			}
+		}
+	}
+}
+
 BOOL CReserveManager::ChangeNGReserve(BANK_WORK_INFO* inItem)
 {
 	BOOL ret = FALSE;
@@ -2200,7 +2496,7 @@ void CReserveManager::CheckOverTimeReserve()
 	}
 }
 
-void CReserveManager::CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* workInfo, BOOL backPriority, DWORD reserveCount, DWORD reserveNum)
+void CReserveManager::CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* workInfo, BOOL backPriority, DWORD reserveCount, DWORD reserveNum, BOOL noTuner)
 {
 	workInfo->reserveInfo = reserveInfo;
 
@@ -2244,8 +2540,10 @@ void CReserveManager::CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* 
 	workInfo->SID = data.serviceID;
 
 	BYTE tunerManual = 1;
-	if( workInfo->useTunerID != 0 ){
-		tunerManual = 0;
+	if( noTuner == FALSE ){
+		if( workInfo->useTunerID != 0 ){
+			tunerManual = 0;
+		}
 	}
 
 	if( backPriority == TRUE ){
@@ -4824,14 +5122,26 @@ BOOL CReserveManager::ChkAddReserve(RESERVE_DATA* chkData, WORD* chkStatus)
 	CReserveInfo chkItem;
 	chkItem.SetData(chkData);
 
-	//サービスサポートしてないチューナー検索
-	vector<DWORD> idList;
-	if( this->tunerManager.GetNotSupportServiceTuner(
-		chkData->originalNetworkID,
-		chkData->transportStreamID,
-		chkData->serviceID,
-		&idList ) == TRUE ){
-			chkItem.SetNGChTunerID(&idList);
+	if( chkData->recSetting.tunerID == 0 ){
+		//サービスサポートしてないチューナー検索
+		vector<DWORD> idList;
+		if( this->tunerManager.GetNotSupportServiceTuner(
+			chkData->originalNetworkID,
+			chkData->transportStreamID,
+			chkData->serviceID,
+			&idList ) == TRUE ){
+				chkItem.SetNGChTunerID(&idList);
+		}
+	}else{
+		//チューナー固定
+		vector<DWORD> idList;
+		if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
+			for( size_t i=0; i<idList.size(); i++ ){
+				if( idList[i] != chkData->recSetting.tunerID ){
+					chkItem.AddNGTunerID(idList[i]);
+				}
+			}
+		}
 	}
 
 	BANK_WORK_INFO item;

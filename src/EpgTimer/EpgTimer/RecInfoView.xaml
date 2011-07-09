@@ -65,6 +65,7 @@
             </ListView.View>
             <ListView.ContextMenu>
                 <ContextMenu>
+                    <MenuItem Header="録画情報" Click="button_recInfo_Click" />
                     <MenuItem Header="削除" Click="button_del_Click" />
                     <MenuItem Header="再生" Click="button_play_Click" />
                     <MenuItem Header="自動予約登録" Click="autoadd_Click" />

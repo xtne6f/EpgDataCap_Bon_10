@@ -512,6 +512,56 @@ void CTSOut::CheckNeedPID()
 	item.SID = 0;
 	PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item.PMTPID,item));
 
+	map<WORD, string> pidName;
+	map<WORD, CPMTUtil*>::iterator itrPmt;
+	for( itrPmt = pmtUtilMap.begin(); itrPmt != pmtUtilMap.end(); itrPmt++ ){
+		string name = "";
+		Format(name, "PMT(ServiceID 0x%04X)", itrPmt->second->program_number);
+		pidName.insert(pair<WORD, string>(itrPmt->first, name));
+		map<WORD, WORD>::iterator itrPID;
+		for( itrPID = itrPmt->second->PIDList.begin(); itrPID != itrPmt->second->PIDList.end(); itrPID++ ){
+			switch(itrPID->second){
+			case 0x00:
+				name = "ECM";
+				break;
+			case 0x02:
+				name = "MPEG2 VIDEO";
+				break;
+			case 0x0F:
+				name = "MPEG2 AAC";
+				break;
+			case 0x1B:
+				name = "MPEG4 VIDEO";
+				break;
+			case 0x04:
+				name = "MPEG2 AUDIO";
+				break;
+			case 0x06:
+				name = "字幕";
+				break;
+			case 0x0D:
+				name = "データカルーセル";
+				break;
+			default:
+				Format(name, "stream_type 0x%0X", itrPID->second);
+				break;
+			}
+			pidName.insert(pair<WORD, string>(itrPID->first, name));
+		}
+		pidName.insert(pair<WORD, string>(itrPmt->second->PCR_PID, "PCR"));
+		
+	}
+
+	//EMMのPID
+	if( catUtil != NULL ){
+		map<WORD,WORD>::iterator itrPID;
+		for( itrPID = catUtil->PIDList.begin(); itrPID != catUtil->PIDList.end(); itrPID++ ){
+			this->needPIDMap.insert(pair<WORD,WORD>(itrPID->first, itrPID->second));
+			pidName.insert(pair<WORD, string>(itrPID->first, "EMM"));
+		}
+	}
+
+
 	//各サービスのPMTを探す
 	map<DWORD, COneServiceUtil*>::iterator itrService;
 	for( itrService = serviceUtilMap.begin(); itrService != serviceUtilMap.end(); itrService++ ){
@@ -534,7 +584,6 @@ void CTSOut::CheckNeedPID()
 				}
 			}
 		}else{
-			map<WORD, CPMTUtil*>::iterator itrPmt;
 			for( itrPmt = pmtUtilMap.begin(); itrPmt != pmtUtilMap.end(); itrPmt++ ){
 				if( itrService->second->GetSID() == itrPmt->second->program_number ){
 					//PMT発見
@@ -560,16 +609,10 @@ void CTSOut::CheckNeedPID()
 				}
 			}
 		}
+		itrService->second->SetPIDName(&pidName);
 	}
 	this->patUtil.SetParam(this->lastTSID, &PIDMap);
 
-	//EMMのPID
-	if( catUtil != NULL ){
-		map<WORD,WORD>::iterator itrPID;
-		for( itrPID = catUtil->PIDList.begin(); itrPID != catUtil->PIDList.end(); itrPID++ ){
-			this->needPIDMap.insert(pair<WORD,WORD>(itrPID->first, itrPID->second));
-		}
-	}
 }
 
 BOOL CTSOut::IsNeedPID(CTSPacketUtil* packet)

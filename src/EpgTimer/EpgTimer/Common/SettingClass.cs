@@ -115,6 +115,7 @@ namespace EpgTimer
         private bool fontBoldTitle;
         private bool noToolTip;
         private bool noBallonTips;
+        private bool playDClick;
         private double dragScroll;
         private List<string> contentColorList;
         private List<UInt32> contentCustColorList;
@@ -268,6 +269,11 @@ namespace EpgTimer
         {
             get { return noBallonTips; }
             set { noBallonTips = value; }
+        }
+        public bool PlayDClick
+        {
+            get { return playDClick; }
+            set { playDClick = value; }
         }
         public double DragScroll
         {
@@ -748,6 +754,7 @@ namespace EpgTimer
             fontSizeTitle = 12;
             fontBoldTitle = true;
             noToolTip = false;
+            playDClick = false;
             dragScroll = 1.5;
             contentColorList = new List<string>();
             contentCustColorList = new List<uint>();
