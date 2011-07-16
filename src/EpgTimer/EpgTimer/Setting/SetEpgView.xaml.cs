@@ -232,6 +232,16 @@ namespace EpgTimer.Setting
 
                 button_colorTitle1.Background = titleColor1;
                 button_colorTitle2.Background = titleColor2;
+
+                checkBox_singleOpen.IsChecked = Settings.Instance.EpgInfoSingleClick;
+                if (Settings.Instance.EpgInfoOpenMode == 0)
+                {
+                    checkBox_openInfo.IsChecked = false;
+                }
+                else
+                {
+                    checkBox_openInfo.IsChecked = true;
+                }
             }
             catch (Exception ex)
             {
@@ -397,6 +407,23 @@ namespace EpgTimer.Setting
                 Settings.Instance.TitleCustColor1 = argb;
                 argb = CommonManager.CreateARGBKey(0xFF, custTitleColor2.R, custTitleColor2.G, custTitleColor2.B);
                 Settings.Instance.TitleCustColor2 = argb;
+
+                if (checkBox_singleOpen.IsChecked == true)
+                {
+                    Settings.Instance.EpgInfoSingleClick = true;
+                }
+                else
+                {
+                    Settings.Instance.EpgInfoSingleClick = false;
+                }
+                if (checkBox_openInfo.IsChecked == true)
+                {
+                    Settings.Instance.EpgInfoOpenMode = 1;
+                }
+                else
+                {
+                    Settings.Instance.EpgInfoOpenMode = 0;
+                }
             }
             catch (Exception ex)
             {

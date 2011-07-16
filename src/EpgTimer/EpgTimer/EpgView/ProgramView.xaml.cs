@@ -35,6 +35,7 @@ namespace EpgTimer.EpgView
         private double lastDownHOffset;
         private double lastDownVOffset;
         private bool isDrag = false;
+        private bool isDragMoved = false;
 
         private DispatcherTimer toolTipTimer;
         private DispatcherTimer toolTipOffTimer; 
@@ -73,6 +74,17 @@ namespace EpgTimer.EpgView
         void toolTip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount == 2)
+            {
+                toolTipTimer.Stop();
+                toolTipOffTimer.Stop();
+                toolTip.IsOpen = false;
+
+                if (LeftDoubleClick != null)
+                {
+                    LeftDoubleClick(sender, lastPopupPos);
+                }
+            }
+            else if (e.ClickCount == 1 && Settings.Instance.EpgInfoSingleClick == true)
             {
                 toolTipTimer.Stop();
                 toolTipOffTimer.Stop();
@@ -300,6 +312,7 @@ namespace EpgTimer.EpgView
                 {
                     if (e.LeftButton == MouseButtonState.Pressed && isDrag == true)
                     {
+                        isDragMoved = true;
                         toolTipTimer.Stop();
                         toolTipOffTimer.Stop();
                         toolTip.IsOpen = false;
@@ -373,6 +386,7 @@ namespace EpgTimer.EpgView
                 lastDownVOffset = scrollViewer.VerticalOffset;
                 epgViewPanel.CaptureMouse();
                 isDrag = true;
+                isDragMoved = false;
 
                 if (e.ClickCount == 2)
                 {
@@ -395,6 +409,18 @@ namespace EpgTimer.EpgView
             {
                 epgViewPanel.ReleaseMouseCapture();
                 isDrag = false;
+                if (isDragMoved == false)
+                {
+                    if (Settings.Instance.EpgInfoSingleClick == true)
+                    {
+                        Point cursorPos = Mouse.GetPosition(epgViewPanel);
+                        if (LeftDoubleClick != null)
+                        {
+                            LeftDoubleClick(sender, cursorPos);
+                        }
+                    }
+                }
+                isDragMoved = false;
             }
             catch (Exception ex)
             {

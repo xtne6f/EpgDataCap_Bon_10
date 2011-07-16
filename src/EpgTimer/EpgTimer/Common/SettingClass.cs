@@ -209,6 +209,8 @@ namespace EpgTimer
         private byte epgTipsForeColorR;
         private byte epgTipsForeColorG;
         private byte epgTipsForeColorB;
+        private bool epgInfoSingleClick;
+        private byte epgInfoOpenMode;
 
         public bool UseCustomEpgView
         {
@@ -740,6 +742,16 @@ namespace EpgTimer
             get { return epgTipsForeColorB; }
             set { epgTipsForeColorB = value; }
         }
+        public bool EpgInfoSingleClick
+        {
+            get { return epgInfoSingleClick; }
+            set { epgInfoSingleClick = value; }
+        }
+        public byte EpgInfoOpenMode
+        {
+            get { return epgInfoOpenMode; }
+            set { epgInfoOpenMode = value; }
+        }
 
         public Settings()
         {
@@ -833,6 +845,8 @@ namespace EpgTimer
             epgTipsForeColorR = 0;
             epgTipsForeColorG = 0;
             epgTipsForeColorB = 0;
+            epgInfoSingleClick = false;
+            epgInfoOpenMode = 0;
         }
 
         [NonSerialized()]

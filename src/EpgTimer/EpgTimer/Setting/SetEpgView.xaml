@@ -51,7 +51,7 @@
                             <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,35,0,0" Name="button_colorTitle2" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="58" Click="button_colorTitle2_Click" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="表示" Height="173" Margin="6,114,7,0" Name="groupBox2" VerticalAlignment="Top" >
+                    <GroupBox Header="表示" Height="213" Margin="6,114,7,0" Name="groupBox2" VerticalAlignment="Top" >
                         <Grid>
                             <Label Content="マウススクロールサイズ" Height="28" HorizontalAlignment="Left" Margin="11,6,0,0" Name="label7" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="165,6,0,0" Name="textBox_mouse_scroll" VerticalAlignment="Top" Width="55" />
@@ -67,6 +67,8 @@
                             <Label Content="ツールチップを表示するまでの時間" Height="28" HorizontalAlignment="Left" Margin="34,114,0,0" Name="label34" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="242,116,0,0" Name="textBox_toolTipWait" VerticalAlignment="Top" Width="47" />
                             <Label Content="ミリ秒" Height="28" HorizontalAlignment="Left" Margin="295,114,0,0" Name="label35" VerticalAlignment="Top" />
+                            <CheckBox Content="シングルクリックで予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="11,148,0,0" Name="checkBox_singleOpen" VerticalAlignment="Top" />
+                            <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="357,148,0,0" Name="checkBox_openInfo" VerticalAlignment="Top" />
                         </Grid>
                     </GroupBox>
                 </Grid>

@@ -39,6 +39,8 @@ namespace EpgTimer
         private bool needUnRegist = true;
         private bool iniConnectNW = false;
 
+        private bool idleShowBalloon = false;
+
         public MainWindow()
         {
             Settings.LoadFromXmlFile();
@@ -1045,6 +1047,7 @@ namespace EpgTimer
 
         void NotifyStatus(NotifySrvInfo status)
         {
+            int IdleTimeSec = 10 * 60;
             System.Diagnostics.Trace.WriteLine((UpdateNotifyItem)status.notifyID);
 
             switch ((UpdateNotifyItem)status.notifyID)
@@ -1117,54 +1120,115 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.PreRecStart:
                     {
-                        taskTray.ShowBalloonTip("予約録画開始準備", status.param4, 10 * 1000);
+                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
+                        {
+                            taskTray.ShowBalloonTip("予約録画開始準備", status.param4, 10 * 1000);
+                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
+                            {
+                                idleShowBalloon = true;
+                            }
+                        }
                         CommonManager.Instance.NotifyLogList.Add(status);
                     }
                     break;
                 case UpdateNotifyItem.RecStart:
                     {
-                        taskTray.ShowBalloonTip("録画開始", status.param4, 10 * 1000);
+                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
+                        {
+                            taskTray.ShowBalloonTip("録画開始", status.param4, 10 * 1000);
+                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
+                            {
+                                idleShowBalloon = true;
+                            }
+                        }
                         CommonManager.Instance.NotifyLogList.Add(status);
                     }
                     break;
                 case UpdateNotifyItem.RecEnd:
                     {
-                        taskTray.ShowBalloonTip("録画終了", status.param4, 10 * 1000);
+                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
+                        {
+                            taskTray.ShowBalloonTip("録画終了", status.param4, 10 * 1000);
+                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
+                            {
+                                idleShowBalloon = true;
+                            }
+                        }
                         CommonManager.Instance.NotifyLogList.Add(status);
                     }
                     break;
                 case UpdateNotifyItem.RecTuijyu:
                     {
-                        taskTray.ShowBalloonTip("追従発生", status.param4, 10 * 1000);
+                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
+                        {
+                            taskTray.ShowBalloonTip("追従発生", status.param4, 10 * 1000);
+                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
+                            {
+                                idleShowBalloon = true;
+                            }
+                        }
                         CommonManager.Instance.NotifyLogList.Add(status);
                     }
                     break;
                 case UpdateNotifyItem.ChgTuijyu:
                     {
-                        taskTray.ShowBalloonTip("番組変更", status.param4, 10 * 1000);
+                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
+                        {
+                            taskTray.ShowBalloonTip("番組変更", status.param4, 10 * 1000);
+                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
+                            {
+                                idleShowBalloon = true;
+                            }
+                        }
                         CommonManager.Instance.NotifyLogList.Add(status);
                     }
                     break;
                 case UpdateNotifyItem.PreEpgCapStart:
                     {
-                        taskTray.ShowBalloonTip("EPG取得", status.param4, 10 * 1000);
+                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
+                        {
+                            taskTray.ShowBalloonTip("EPG取得", status.param4, 10 * 1000);
+                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
+                            {
+                                idleShowBalloon = true;
+                            }
+                        }
                         CommonManager.Instance.NotifyLogList.Add(status);
                     }
                     break;
                 case UpdateNotifyItem.EpgCapStart:
                     {
-                        taskTray.ShowBalloonTip("EPG取得", "開始", 10 * 1000);
+                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
+                        {
+                            taskTray.ShowBalloonTip("EPG取得", "開始", 10 * 1000);
+                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
+                            {
+                                idleShowBalloon = true;
+                            }
+                        }
                         CommonManager.Instance.NotifyLogList.Add(status);
                     }
                     break;
                 case UpdateNotifyItem.EpgCapEnd:
                     {
-                        taskTray.ShowBalloonTip("EPG取得", "終了", 10 * 1000);
+                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
+                        {
+                            taskTray.ShowBalloonTip("EPG取得", "終了", 10 * 1000);
+                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
+                            {
+                                idleShowBalloon = true;
+                            }
+                        }
                         CommonManager.Instance.NotifyLogList.Add(status);
                     }
                     break;
                 default:
                     break;
+            }
+
+            if (CommonUtil.GetIdleTimeSec() < IdleTimeSec)
+            {
+                idleShowBalloon = false;
             }
 
             CommonManager.Instance.DB.ReloadReserveInfo();

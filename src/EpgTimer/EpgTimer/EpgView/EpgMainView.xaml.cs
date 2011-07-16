@@ -926,6 +926,7 @@ namespace EpgTimer
             {
                 ChgReserveWindow dlg = new ChgReserveWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                dlg.SetOpenMode(Settings.Instance.EpgInfoOpenMode);
                 dlg.SetReserveInfo(reserveInfo);
                 if (dlg.ShowDialog() == true)
                 {
@@ -948,6 +949,7 @@ namespace EpgTimer
             {
                 AddReserveEpgWindow dlg = new AddReserveEpgWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                dlg.SetOpenMode(Settings.Instance.EpgInfoOpenMode);
                 dlg.SetEventInfo(eventInfo);
                 if (dlg.ShowDialog() == true)
                 {

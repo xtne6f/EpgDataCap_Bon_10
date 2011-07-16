@@ -31,6 +31,11 @@ namespace EpgTimer
             InitializeComponent();
         }
 
+        public void SetOpenMode(byte mode)
+        {
+            tabControl.SelectedIndex = mode;
+        }
+
         public void SetEventInfo(EpgEventInfo eventData)
         {
             try

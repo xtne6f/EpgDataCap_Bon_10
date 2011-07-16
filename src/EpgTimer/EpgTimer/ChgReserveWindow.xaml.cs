@@ -41,6 +41,11 @@ namespace EpgTimer
 
         }
 
+        public void SetOpenMode(byte mode)
+        {
+            tabControl.SelectedIndex = mode;
+        }
+
         public void AddReserveMode(bool addMode)
         {
             if (addMode == true)
@@ -118,7 +123,7 @@ namespace EpgTimer
                             }
                         }
                     }
-                    else
+                    if(eventInfo == null )
                     {
                         UInt64 pgId = CommonManager.Create64PgKey(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID, info.EventID);
                         eventInfo = new EpgEventInfo();

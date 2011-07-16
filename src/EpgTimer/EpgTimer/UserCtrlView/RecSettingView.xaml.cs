@@ -225,6 +225,12 @@ namespace EpgTimer
 
         public void GetRecSetting(ref RecSettingData setInfo)
         {
+            if (initLoad == false)
+            {
+                setInfo = recSetting;
+                return;
+            }
+
             setInfo.RecMode = ((RecModeInfo)comboBox_recMode.SelectedItem).Value;
             setInfo.Priority = ((PriorityInfo)comboBox_priority.SelectedItem).Value;
             setInfo.TuijyuuFlag = ((YesNoInfo)comboBox_tuijyu.SelectedItem).Value;
