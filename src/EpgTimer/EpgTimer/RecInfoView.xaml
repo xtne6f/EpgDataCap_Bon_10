@@ -9,6 +9,31 @@
         <Style TargetType="{x:Type TextBox}">
             <Setter Property="InputMethod.PreferredImeState" Value="Off" />
         </Style>
+        <Style TargetType="{x:Type CheckBox}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <BulletDecorator>
+                            <BulletDecorator.Bullet>
+                                <!--オフ状態のイメージ-->
+                                <Image Name="TickImage" Source="/Resources/key_no.png" Grid.Column="0" Stretch="None" />
+                            </BulletDecorator.Bullet>
+                            <ContentPresenter VerticalAlignment="Center" Grid.Column="1"/>
+                        </BulletDecorator>
+                        <ControlTemplate.Triggers>
+                            <!--オン状態のイメージ-->
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="TickImage" Property="Source" Value="/Resources/key.png" />
+                            </Trigger>
+                            <!--未確定状態のイメージ-->
+                            <Trigger Property="IsChecked" Value="{x:Null}">
+                                <Setter TargetName="TickImage" Property="Source" Value="/Resources/key.png" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -26,39 +51,51 @@
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_recinfo">
+                    <GridViewColumn>
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Tag="IsProtect">
+                                <Image Source="/Resources/key.png" Stretch="None" />
+                            </GridViewColumnHeader>
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding Path=IsProtect}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="日時" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="ネットワーク" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="ネットワーク" Tag="NetworkName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="サービス名" Tag="ServiceName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="番組名" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="番組名" Tag="EventName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Drops}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="Drop" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="Drop" Tag="Drops" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Scrambles}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="Scramble" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="Scramble" Tag="Scrambles" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Result}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="結果" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="結果" Tag="Result" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>

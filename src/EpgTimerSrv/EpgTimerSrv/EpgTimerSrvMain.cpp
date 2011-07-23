@@ -2245,7 +2245,67 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			}
 		}
 		break;
+	case CMD2_EPG_SRV_ENUM_RECINFO2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_ENUM_RECINFO2");
+			if( sys->Lock() == TRUE ){
+				vector<REC_FILE_INFO> list;
+				WORD ver = (WORD)CMD_VER;
+				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, NULL) == TRUE ){
+					if(sys->reserveManager.GetRecFileInfoAll(&list) == TRUE ){
+						DWORD writeSize = 0;
+						resParam->param = CMD_SUCCESS;
+						resParam->dataSize = GetVALUESize2(ver, &list)+GetVALUESize2(ver, ver);
+						resParam->data = new BYTE[resParam->dataSize];
+						if( WriteVALUE2(ver, ver, resParam->data, resParam->dataSize, &writeSize) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_RECINFO2\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}else
+						if( WriteVALUE2(ver, &list, resParam->data+writeSize, resParam->dataSize-writeSize, NULL) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_RECINFO2\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}
+					}
+				}
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_CHG_PROTECT_RECINFO2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_CHG_PROTECT_RECINFO2");
+			if( sys->Lock() == TRUE ){
+				WORD ver = (WORD)CMD_VER;
+				DWORD readSize = 0;
+				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, &readSize) == TRUE ){
 
+					vector<REC_FILE_INFO> list;
+					if( ReadVALUE2(ver, &list, cmdParam->data+readSize, cmdParam->dataSize-readSize, NULL ) == TRUE ){
+						sys->reserveManager.ChgProtectRecFileInfo(&list);
+
+						resParam->param = CMD_SUCCESS;
+
+						DWORD writeSize = 0;
+						resParam->param = CMD_SUCCESS;
+						resParam->dataSize = GetVALUESize2(ver, ver);
+						resParam->data = new BYTE[resParam->dataSize];
+						if( WriteVALUE2(ver, ver, resParam->data, resParam->dataSize, &writeSize) == FALSE ){
+							_OutputDebugString(L"err Write res CMD2_EPG_SRV_CHG_PROTECT_RECINFO2\r\n");
+							resParam->dataSize = 0;
+							resParam->param = CMD_ERR;
+						}
+					}
+				}
+				sys->UnLock();
+			}else{
+				resParam->param = CMD_ERR_BUSY;
+			}
+		}
+		break;
 	////////////////////////////////////////////////////////////
 	//旧バージョン互換コマンド
 	case CMD_EPG_SRV_GET_RESERVE_INFO:

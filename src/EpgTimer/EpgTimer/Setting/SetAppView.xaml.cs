@@ -200,7 +200,7 @@ namespace EpgTimer.Setting
                     checkBox_ngEpgCoop.IsChecked = true;
                 }
 
-                int count = IniFileHandler.GetPrivateProfileInt("COOP_SRV", "Count", 0, SettingPath.TimerSrvIniPath);
+                int count = IniFileHandler.GetPrivateProfileInt("COOP_SRV", "Num", 0, SettingPath.TimerSrvIniPath);
                 for (int i = 0; i < count; i++)
                 {
                     CoopServerInfo addItem = new CoopServerInfo();

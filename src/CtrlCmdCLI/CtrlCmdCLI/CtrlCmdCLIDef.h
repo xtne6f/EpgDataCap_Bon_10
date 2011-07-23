@@ -341,6 +341,11 @@ namespace Def {
 		/// </summary>
 		property String^ ErrInfo;
 
+		/// <summary>
+		/// プロテクトフラグ
+		/// </summary>
+		property bool ProtectFlag;
+
 	public:
 		RecFileInfo(void){
 			ID = 0;
@@ -358,6 +363,7 @@ namespace Def {
 			Comment = gcnew String("");
 			ProgramInfo = gcnew String("");
 			ErrInfo = gcnew String("");
+			ProtectFlag = false;
 		};
 	};
 

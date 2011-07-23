@@ -27,6 +27,29 @@ namespace EpgTimer
             get;
             set;
         }
+        public bool IsProtect
+        {
+            set
+            {
+                if (RecInfo != null)
+                {
+                    RecInfo.ProtectFlag = value;
+                    List<RecFileInfo> list = new List<RecFileInfo>();
+                    list.Add(RecInfo);
+                    CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+                    cmd.SendChgProtectRecInfo(list);
+                }
+            }
+            get
+            {
+                bool chk = false;
+                if (RecInfo != null)
+                {
+                    chk = RecInfo.ProtectFlag;
+                }
+                return chk;
+            }
+        }
         public String EventName
         {
             get

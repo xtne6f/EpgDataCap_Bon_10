@@ -12,8 +12,8 @@ public:
 	void SetCheckFolder(vector<wstring>* chkFolder);
 	void SetDeleteExt(vector<wstring>* delExt);
 
-	void CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstring defRecFolder);
-	void CheckFreeSpaceLive(RESERVE_DATA* reserve, wstring recFolder);
+	void CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstring defRecFolder, vector<wstring>* protectFile);
+	void CheckFreeSpaceLive(RESERVE_DATA* reserve, wstring recFolder, vector<wstring>* protectFile);
 	
 protected:
 	vector<wstring> chkFolder;

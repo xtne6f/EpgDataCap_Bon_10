@@ -27,8 +27,11 @@ namespace EpgTimer
     {
         private List<RecInfoItem> resultList = new List<RecInfoItem>();
 
-        private GridViewColumn _lastHeaderClicked = null;
+        private string _lastHeaderClicked = null;
         private ListSortDirection _lastDirection = ListSortDirection.Ascending;
+        private string _lastHeaderClicked2 = null;
+        private ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
+
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
         private bool ReloadInfo = true;
@@ -41,31 +44,31 @@ namespace EpgTimer
             {
                 if (Settings.Instance.RecInfoColumnWidth0 != 0)
                 {
-                    gridView_recinfo.Columns[0].Width = Settings.Instance.RecInfoColumnWidth0;
+                    gridView_recinfo.Columns[1].Width = Settings.Instance.RecInfoColumnWidth0;
                 }
                 if (Settings.Instance.RecInfoColumnWidth1 != 0)
                 {
-                    gridView_recinfo.Columns[1].Width = Settings.Instance.RecInfoColumnWidth1;
+                    gridView_recinfo.Columns[2].Width = Settings.Instance.RecInfoColumnWidth1;
                 }
                 if (Settings.Instance.RecInfoColumnWidth2 != 0)
                 {
-                    gridView_recinfo.Columns[2].Width = Settings.Instance.RecInfoColumnWidth2;
+                    gridView_recinfo.Columns[3].Width = Settings.Instance.RecInfoColumnWidth2;
                 }
                 if (Settings.Instance.RecInfoColumnWidth3 != 0)
                 {
-                    gridView_recinfo.Columns[3].Width = Settings.Instance.RecInfoColumnWidth3;
+                    gridView_recinfo.Columns[4].Width = Settings.Instance.RecInfoColumnWidth3;
                 }
                 if (Settings.Instance.RecInfoColumnWidth4 != 0)
                 {
-                    gridView_recinfo.Columns[4].Width = Settings.Instance.RecInfoColumnWidth4;
+                    gridView_recinfo.Columns[5].Width = Settings.Instance.RecInfoColumnWidth4;
                 }
                 if (Settings.Instance.RecInfoColumnWidth5 != 0)
                 {
-                    gridView_recinfo.Columns[5].Width = Settings.Instance.RecInfoColumnWidth5;
+                    gridView_recinfo.Columns[6].Width = Settings.Instance.RecInfoColumnWidth5;
                 }
                 if (Settings.Instance.RecInfoColumnWidth6 != 0)
                 {
-                    gridView_recinfo.Columns[6].Width = Settings.Instance.RecInfoColumnWidth6;
+                    gridView_recinfo.Columns[7].Width = Settings.Instance.RecInfoColumnWidth6;
                 }
             }
             catch (Exception ex)
@@ -78,13 +81,13 @@ namespace EpgTimer
         {
             try
             {
-                Settings.Instance.RecInfoColumnWidth0 = gridView_recinfo.Columns[0].Width;
-                Settings.Instance.RecInfoColumnWidth1 = gridView_recinfo.Columns[1].Width;
-                Settings.Instance.RecInfoColumnWidth2 = gridView_recinfo.Columns[2].Width;
-                Settings.Instance.RecInfoColumnWidth3 = gridView_recinfo.Columns[3].Width;
-                Settings.Instance.RecInfoColumnWidth4 = gridView_recinfo.Columns[4].Width;
-                Settings.Instance.RecInfoColumnWidth5 = gridView_recinfo.Columns[5].Width;
-                Settings.Instance.RecInfoColumnWidth6 = gridView_recinfo.Columns[6].Width;
+                Settings.Instance.RecInfoColumnWidth0 = gridView_recinfo.Columns[1].Width;
+                Settings.Instance.RecInfoColumnWidth1 = gridView_recinfo.Columns[2].Width;
+                Settings.Instance.RecInfoColumnWidth2 = gridView_recinfo.Columns[3].Width;
+                Settings.Instance.RecInfoColumnWidth3 = gridView_recinfo.Columns[4].Width;
+                Settings.Instance.RecInfoColumnWidth4 = gridView_recinfo.Columns[5].Width;
+                Settings.Instance.RecInfoColumnWidth5 = gridView_recinfo.Columns[6].Width;
+                Settings.Instance.RecInfoColumnWidth6 = gridView_recinfo.Columns[7].Width;
             }
             catch (Exception ex)
             {
@@ -119,65 +122,6 @@ namespace EpgTimer
             }
         }
 
-        private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-                ListSortDirection direction;
-
-                if (headerClicked != null)
-                {
-                    if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
-                    {
-                        if (headerClicked.Column != _lastHeaderClicked)
-                        {
-                            direction = ListSortDirection.Ascending;
-                        }
-                        else
-                        {
-                            if (_lastDirection == ListSortDirection.Ascending)
-                            {
-                                direction = ListSortDirection.Descending;
-                            }
-                            else
-                            {
-                                direction = ListSortDirection.Ascending;
-                            }
-                        }
-
-                        string header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
-                        Sort(header, direction);
-
-                        if (direction == ListSortDirection.Ascending)
-                        {
-                            headerClicked.Column.HeaderTemplate =
-                              Resources["HeaderTemplateArrowUp"] as DataTemplate;
-                        }
-                        else
-                        {
-                            headerClicked.Column.HeaderTemplate =
-                              Resources["HeaderTemplateArrowDown"] as DataTemplate;
-                        }
-
-                        // Remove arrow from previously sorted header
-                        if (_lastHeaderClicked != null && _lastHeaderClicked != headerClicked.Column)
-                        {
-                            _lastHeaderClicked.HeaderTemplate = null;
-                        }
-
-
-                        _lastHeaderClicked = headerClicked.Column;
-                        _lastDirection = direction;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            } 
-        }
-
         private void Sort(string sortBy, ListSortDirection direction)
         {
             try
@@ -188,10 +132,19 @@ namespace EpgTimer
 
                 SortDescription sd = new SortDescription(sortBy, direction);
                 dataView.SortDescriptions.Add(sd);
+                if (_lastHeaderClicked2 != null)
+                {
+                    if (String.Compare(sortBy, _lastHeaderClicked2) != 0)
+                    {
+                        SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
+                        dataView.SortDescriptions.Add(sd2);
+                    }
+                }
                 dataView.Refresh();
 
                 Settings.Instance.RecInfoColumnHead = sortBy;
                 Settings.Instance.RecInfoSortDirection = direction;
+
             }
             catch (Exception ex)
             {
@@ -199,6 +152,41 @@ namespace EpgTimer
             }
         }
 
+        private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
+        {
+            GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
+            ListSortDirection direction;
+
+            if (headerClicked != null)
+            {
+                if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
+                {
+                    string header = headerClicked.Tag as string;
+                    if (String.Compare(header, _lastHeaderClicked) != 0)
+                    {
+                        direction = ListSortDirection.Ascending;
+                        _lastHeaderClicked2 = _lastHeaderClicked;
+                        _lastDirection2 = _lastDirection;
+                    }
+                    else
+                    {
+                        if (_lastDirection == ListSortDirection.Ascending)
+                        {
+                            direction = ListSortDirection.Descending;
+                        }
+                        else
+                        {
+                            direction = ListSortDirection.Ascending;
+                        }
+                    }
+
+                    Sort(header, direction);
+
+                    _lastHeaderClicked = header;
+                    _lastDirection = direction;
+                }
+            }
+        }
 
         public bool ReloadInfoData()
         {
@@ -248,31 +236,21 @@ namespace EpgTimer
                 listView_recinfo.DataContext = resultList;
                 if (_lastHeaderClicked != null)
                 {
-                    string header = ((Binding)_lastHeaderClicked.DisplayMemberBinding).Path.Path;
-                    Sort(header, _lastDirection);
+                    //GridViewColumnHeader columnHeader = _lastHeaderClicked.Header as GridViewColumnHeader;
+                    //string header = columnHeader.Tag as string;
+                    Sort(_lastHeaderClicked, _lastDirection);
                 }
                 else
                 {
                     bool sort = false;
                     foreach (GridViewColumn info in gridView_recinfo.Columns)
                     {
-                        string header = ((Binding)info.DisplayMemberBinding).Path.Path;
+                        GridViewColumnHeader columnHeader = info.Header as GridViewColumnHeader;
+                        string header = columnHeader.Tag as string;
                         if (String.Compare(header, Settings.Instance.RecInfoColumnHead, true) == 0)
                         {
                             Sort(header, Settings.Instance.RecInfoSortDirection);
-
-                            if (Settings.Instance.RecInfoSortDirection == ListSortDirection.Ascending)
-                            {
-                                info.HeaderTemplate =
-                                  Resources["HeaderTemplateArrowUp"] as DataTemplate;
-                            }
-                            else
-                            {
-                                info.HeaderTemplate =
-                                  Resources["HeaderTemplateArrowDown"] as DataTemplate;
-                            }
-
-                            _lastHeaderClicked = info;
+                            _lastHeaderClicked = header;
                             _lastDirection = Settings.Instance.RecInfoSortDirection;
                             sort = true;
                             break;
@@ -280,11 +258,11 @@ namespace EpgTimer
                     }
                     if (gridView_recinfo.Columns.Count > 0 && sort == false)
                     {
-                        string header = ((Binding)gridView_recinfo.Columns[0].DisplayMemberBinding).Path.Path;
+                        GridViewColumnHeader columnHeader = gridView_recinfo.Columns[1].Header as GridViewColumnHeader;
+                        string header = columnHeader.Tag as string;
+
                         Sort(header, _lastDirection);
-                        gridView_recinfo.Columns[0].HeaderTemplate =
-                          Resources["HeaderTemplateArrowUp"] as DataTemplate;
-                        _lastHeaderClicked = gridView_recinfo.Columns[0];
+                        _lastHeaderClicked = header;
                     }
                 }
             }

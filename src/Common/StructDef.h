@@ -156,6 +156,8 @@ typedef struct _REC_FILE_INFO{
 	wstring comment;			//コメント
 	wstring programInfo;		//.program.txtファイルの内容
 	wstring errInfo;			//.errファイルの内容
+	//CMD_VER 4以降
+	BYTE protectFlag;
 	//=オペレーターの処理
 	_REC_FILE_INFO(void){
 		id = 0;
@@ -175,6 +177,7 @@ typedef struct _REC_FILE_INFO{
 		comment = L"";
 		programInfo = L"";
 		errInfo = L"";
+		protectFlag = 0;
 	};
 	~_REC_FILE_INFO(void){
 	}
@@ -196,6 +199,7 @@ typedef struct _REC_FILE_INFO{
 		comment = o.comment;
 		programInfo = o.programInfo;
 		errInfo = o.errInfo;
+		protectFlag = o.protectFlag;
 		return *this;
 	};
 	_REC_FILE_INFO & operator= (const _RESERVE_DATA & o) {
@@ -216,6 +220,7 @@ typedef struct _REC_FILE_INFO{
 		comment = o.comment;
 		programInfo = L"";
 		errInfo = L"";
+		protectFlag = 0;
 		return *this;
 	};
 } REC_FILE_INFO;

@@ -242,6 +242,11 @@ BOOL CParseRecInfoText::Parse1Line(string parseLine, REC_FILE_INFO* item )
 		item->comment = L"";
 	}
 
+	//プロテクト
+	Separate( parseLine, "\t", strBuff, parseLine);
+	item->protectFlag = atoi(strBuff.c_str());
+
+
 	if( item->recFilePath.size() > 0 ){
 		wstring iniCommonPath = L"";
 		GetCommonIniPath(iniCommonPath);
@@ -416,6 +421,9 @@ BOOL CParseRecInfoText::SaveRecInfoText(LPCWSTR filePath)
 		WtoA(itr->second->comment, strBuff);
 		strWrite+=strBuff;
 		strWrite+="\t";
+		//プロテクト
+		Format(strBuff,"%d",itr->second->protectFlag);
+		strWrite+=strBuff +"\t";
 
 		strWrite+="\r\n";
 		WriteFile(hFile, strWrite.c_str(), (DWORD)strWrite.length(), &dwWrite, NULL);
@@ -554,16 +562,33 @@ BOOL CParseRecInfoText::DelRecInfo(DWORD id)
 	multimap<wstring, REC_FILE_INFO*>::iterator itr;
 	for( itr = this->recInfoMap.begin(); itr != this->recInfoMap.end(); itr++ ){
 		if( itr->second->id == id ){
-			DelTS_InfoFile(itr->second->recFilePath);
-			SAFE_DELETE(itr->second);
-			this->recInfoMap.erase(itr);
+			if( itr->second->protectFlag == 0 ){
+				DelTS_InfoFile(itr->second->recFilePath);
+				SAFE_DELETE(itr->second);
+				this->recInfoMap.erase(itr);
+			}
 			break;
 		}
 	}
 	map<DWORD, REC_FILE_INFO*>::iterator itr2;
 	itr2 = this->recIDMap.find(id);
 	if( itr2 != this->recIDMap.end() ){
-		this->recIDMap.erase(itr2);
+		if( itr2->second->protectFlag == 0 ){
+			this->recIDMap.erase(itr2);
+		}
+	}
+
+	return TRUE;
+}
+
+BOOL CParseRecInfoText::ChgProtectRecInfo(DWORD id, BYTE flag)
+{
+	multimap<wstring, REC_FILE_INFO*>::iterator itr;
+	for( itr = this->recInfoMap.begin(); itr != this->recInfoMap.end(); itr++ ){
+		if( itr->second->id == id ){
+			itr->second->protectFlag = flag;
+			break;
+		}
 	}
 
 	return TRUE;
@@ -578,11 +603,13 @@ void CParseRecInfoText::AutoDelInfo(DWORD keepCount)
 	int iDelCount = (int)this->recInfoMap.size() - (int)keepCount;
 	for( int i=0; i<iDelCount; i++ ){
 		multimap<wstring, REC_FILE_INFO*>::iterator itr;
-		itr = this->recInfoMap.begin();
-		if( itr != this->recInfoMap.end() ){
-			DelTS_InfoFile(itr->second->recFilePath);
-			SAFE_DELETE(itr->second);
-			this->recInfoMap.erase(itr);
+		for( itr = this->recInfoMap.begin(); itr != this->recInfoMap.end(); itr++ ){
+			if( itr->second->protectFlag == 0 ){
+				DelTS_InfoFile(itr->second->recFilePath);
+				SAFE_DELETE(itr->second);
+				this->recInfoMap.erase(itr);
+				break;
+			}
 		}
 	}
 	this->recIDMap.clear();
@@ -593,7 +620,6 @@ void CParseRecInfoText::AutoDelInfo(DWORD keepCount)
 		this->recIDMap.insert(pair<DWORD, REC_FILE_INFO*>(itr->second->id, itr->second));
 		this->nextID++;
 	}
-
 }
 
 void CParseRecInfoText::DelTS_InfoFile(wstring tsFilePath)
@@ -637,4 +663,14 @@ void CParseRecInfoText::DelTS_InfoFile(wstring tsFilePath)
 		_OutputDebugString(L"★RecInfo Auto Delete : %s", pgFile.c_str());
 	}
 
+}
+
+void CParseRecInfoText::GetProtectFiles(vector<wstring>* fileList)
+{
+	multimap<wstring, REC_FILE_INFO*>::iterator itr;
+	for( itr = this->recInfoMap.begin(); itr != this->recInfoMap.end(); itr++ ){
+		if( itr->second->protectFlag == 1 && itr->second->recFilePath.size() > 0){
+			fileList->push_back(itr->second->recFilePath);
+		}
+	}
 }

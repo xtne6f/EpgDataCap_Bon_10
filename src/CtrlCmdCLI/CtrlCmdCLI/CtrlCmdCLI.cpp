@@ -850,6 +850,7 @@ void CtrlCmdUtil::CopyData(Def::RecFileInfo^ src, REC_FILE_INFO* dest)
 	dest->comment = commentPin;
 	dest->programInfo = programInfoPin;
 	dest->errInfo = errInfoPin;
+	dest->protectFlag = src->ProtectFlag;
 }
 
 void CtrlCmdUtil::CopyData(REC_FILE_INFO* src, Def::RecFileInfo^% dest)
@@ -871,6 +872,11 @@ void CtrlCmdUtil::CopyData(REC_FILE_INFO* src, Def::RecFileInfo^% dest)
 	dest->Comment = gcnew String(src->comment.c_str());
 	dest->ProgramInfo = gcnew String(src->programInfo.c_str());
 	dest->ErrInfo = gcnew String(src->errInfo.c_str());
+	if( src->protectFlag == 1 ){
+		dest->ProtectFlag = true;
+	}else{
+		dest->ProtectFlag = false;
+	}
 }
 
 void CtrlCmdUtil::CopyData(Def::EpgAutoAddData^ src, EPG_AUTO_ADD_DATA* dest)
@@ -1294,7 +1300,7 @@ UInt32 CtrlCmdUtil::SendEnumRecInfo(
 	)
 {
 	vector<REC_FILE_INFO> list;
-	DWORD ret = this->sendCmd->SendEnumRecInfo(&list);
+	DWORD ret = this->sendCmd->SendEnumRecInfo2(&list);
 	if( ret == CMD_SUCCESS ){
 		for( size_t i=0; i<list.size(); i++ ){
 			Def::RecFileInfo^ item = gcnew Def::RecFileInfo();
@@ -1319,6 +1325,25 @@ UInt32 CtrlCmdUtil::SendDelRecInfo(
 		list.push_back(val[i]);
 	}
 	DWORD ret = this->sendCmd->SendDelRecInfo(&list);
+
+	return ret;
+}
+
+/// <summary>
+/// 予約を変更する
+/// </summary>
+/// <param name="val">[IN]変更する予約一覧</param>
+UInt32 CtrlCmdUtil::SendChgProtectRecInfo(
+	List<Def::RecFileInfo^>^ val
+	)
+{
+	vector<REC_FILE_INFO> list;
+	for( int i=0; i<val->Count; i++ ){
+		REC_FILE_INFO item;
+		CopyData(val[i], &item);
+		list.push_back(item);
+	}
+	DWORD ret = this->sendCmd->SendChgProtectRecInfo2(&list);
 
 	return ret;
 }

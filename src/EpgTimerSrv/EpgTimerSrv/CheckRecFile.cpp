@@ -22,7 +22,7 @@ void CCheckRecFile::SetDeleteExt(vector<wstring>* delExt)
 	this->delExt = *delExt;
 }
 
-void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstring defRecFolder)
+void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstring defRecFolder, vector<wstring>* protectFile)
 {
 	if( this->chkFolder.size() == 0 || chkReserve == NULL || defRecFolder.size() == 0 ){
 		return;
@@ -145,23 +145,34 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 					map<LONGLONG, TS_FILE_INFO>::iterator itrTS;
 					itrTS = tsFileList.begin();
 					if( itrTS != tsFileList.end() ){
-						DeleteFile( itrTS->second.filePath.c_str() );
-
-						_OutputDebugString(L"★Auto Delete : %s", itrTS->second.filePath.c_str());
-						for( size_t i=0 ; i<this->delExt.size(); i++ ){
-							wstring delFile = L"";
-							wstring delFileName = L"";
-							GetFileFolder(itrTS->second.filePath, delFile);
-							GetFileTitle(itrTS->second.filePath, delFileName);
-							delFile += L"\\";
-							delFile += delFileName;
-							delFile += this->delExt[i];
-
-							DeleteFile( delFile.c_str() );
-							_OutputDebugString(L"★Auto Delete : %s", delFile.c_str());
+						BOOL noDel = FALSE;
+						for( size_t i=0; i<protectFile->size(); i++ ){
+							if( CompareNoCase((*protectFile)[i], itrTS->second.filePath ) == 0){
+								noDel = TRUE;
+								break;
+							}
 						}
+						if( noDel == FALSE ){
+							DeleteFile( itrTS->second.filePath.c_str() );
 
-						free += itrTS->second.fileSize;
+							_OutputDebugString(L"★Auto Delete : %s", itrTS->second.filePath.c_str());
+							for( size_t i=0 ; i<this->delExt.size(); i++ ){
+								wstring delFile = L"";
+								wstring delFileName = L"";
+								GetFileFolder(itrTS->second.filePath, delFile);
+								GetFileTitle(itrTS->second.filePath, delFileName);
+								delFile += L"\\";
+								delFile += delFileName;
+								delFile += this->delExt[i];
+
+								DeleteFile( delFile.c_str() );
+								_OutputDebugString(L"★Auto Delete : %s", delFile.c_str());
+							}
+
+							free += itrTS->second.fileSize;
+						}else{
+							_OutputDebugString(L"★No Delete(Protected) : %s", itrTS->second.filePath.c_str());
+						}
 						tsFileList.erase(itrTS);
 					}else{
 						break;
@@ -191,23 +202,34 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 					map<LONGLONG, TS_FILE_INFO>::iterator itrTS;
 					itrTS = tsFileList.begin();
 					if( itrTS != tsFileList.end() ){
-						DeleteFile( itrTS->second.filePath.c_str() );
-
-						_OutputDebugString(L"★Auto Delete2 : %s", itrTS->second.filePath.c_str());
-						for( size_t i=0 ; i<this->delExt.size(); i++ ){
-							wstring delFile = L"";
-							wstring delFileName = L"";
-							GetFileFolder(itrTS->second.filePath, delFile);
-							GetFileTitle(itrTS->second.filePath, delFileName);
-							delFile += L"\\";
-							delFile += delFileName;
-							delFile += this->delExt[i];
-
-							DeleteFile( delFile.c_str() );
-							_OutputDebugString(L"★Auto Delete2 : %s", delFile.c_str());
+						BOOL noDel = FALSE;
+						for( size_t i=0; i<protectFile->size(); i++ ){
+							if( CompareNoCase((*protectFile)[i], itrTS->second.filePath ) == 0){
+								noDel = TRUE;
+								break;
+							}
 						}
+						if( noDel == FALSE ){
+							DeleteFile( itrTS->second.filePath.c_str() );
 
-						free += itrTS->second.fileSize;
+							_OutputDebugString(L"★Auto Delete2 : %s", itrTS->second.filePath.c_str());
+							for( size_t i=0 ; i<this->delExt.size(); i++ ){
+								wstring delFile = L"";
+								wstring delFileName = L"";
+								GetFileFolder(itrTS->second.filePath, delFile);
+								GetFileTitle(itrTS->second.filePath, delFileName);
+								delFile += L"\\";
+								delFile += delFileName;
+								delFile += this->delExt[i];
+
+								DeleteFile( delFile.c_str() );
+								_OutputDebugString(L"★Auto Delete2 : %s", delFile.c_str());
+							}
+
+							free += itrTS->second.fileSize;
+						}else{
+							_OutputDebugString(L"★No Delete(Protected) : %s", itrTS->second.filePath.c_str());
+						}
 						tsFileList.erase(itrTS);
 					}else{
 						break;
@@ -218,7 +240,7 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 	}
 }
 
-void CCheckRecFile::CheckFreeSpaceLive(RESERVE_DATA* reserve, wstring recFolder)
+void CCheckRecFile::CheckFreeSpaceLive(RESERVE_DATA* reserve, wstring recFolder, vector<wstring>* protectFile)
 {
 	if( this->chkFolder.size() == 0 || reserve == NULL || recFolder.size() == 0 ){
 		return;
@@ -255,23 +277,34 @@ void CCheckRecFile::CheckFreeSpaceLive(RESERVE_DATA* reserve, wstring recFolder)
 				map<LONGLONG, TS_FILE_INFO>::iterator itrTS;
 				itrTS = tsFileList.begin();
 				if( itrTS != tsFileList.end() ){
-					DeleteFile( itrTS->second.filePath.c_str() );
-
-					_OutputDebugString(L"★Auto Delete : %s", itrTS->second.filePath.c_str());
-					for( size_t i=0 ; i<this->delExt.size(); i++ ){
-						wstring delFile = L"";
-						wstring delFileName = L"";
-						GetFileFolder(itrTS->second.filePath, delFile);
-						GetFileTitle(itrTS->second.filePath, delFileName);
-						delFile += L"\\";
-						delFile += delFileName;
-						delFile += this->delExt[i];
-
-						DeleteFile( delFile.c_str() );
-						_OutputDebugString(L"★Auto Delete : %s", delFile.c_str());
+					BOOL noDel = FALSE;
+					for( size_t i=0; i<protectFile->size(); i++ ){
+						if( CompareNoCase((*protectFile)[i], itrTS->second.filePath ) == 0){
+							noDel = TRUE;
+							break;
+						}
 					}
+					if( noDel == FALSE ){
+						DeleteFile( itrTS->second.filePath.c_str() );
 
-					free += itrTS->second.fileSize;
+						_OutputDebugString(L"★Auto Delete : %s", itrTS->second.filePath.c_str());
+						for( size_t i=0 ; i<this->delExt.size(); i++ ){
+							wstring delFile = L"";
+							wstring delFileName = L"";
+							GetFileFolder(itrTS->second.filePath, delFile);
+							GetFileTitle(itrTS->second.filePath, delFileName);
+							delFile += L"\\";
+							delFile += delFileName;
+							delFile += this->delExt[i];
+
+							DeleteFile( delFile.c_str() );
+							_OutputDebugString(L"★Auto Delete : %s", delFile.c_str());
+						}
+
+						free += itrTS->second.fileSize;
+					}else{
+						_OutputDebugString(L"★No Delete(Protected) : %s", itrTS->second.filePath.c_str());
+					}
 					tsFileList.erase(itrTS);
 				}else{
 					break;

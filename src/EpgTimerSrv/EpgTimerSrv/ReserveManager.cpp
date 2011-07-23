@@ -1576,7 +1576,9 @@ void CReserveManager::_ReloadBankMap()
 		chkFile.SetDeleteExt(&this->delExtList);
 		wstring defRecPath = L"";
 		GetRecFolderPath(defRecPath);
-		chkFile.CheckFreeSpace(&this->reserveInfoMap, defRecPath);
+		vector<wstring> protectFile;
+		recInfoText.GetProtectFiles(&protectFile);
+		chkFile.CheckFreeSpace(&this->reserveInfoMap, defRecPath, &protectFile);
 	}
 
 	switch(this->reloadBankMapAlgo){
@@ -1709,11 +1711,13 @@ void CReserveManager::_ReloadBankMapAlgo0()
 		}else{
 			//チューナー固定
 			if( this->tunerManager.IsSupportService(itrSort->second->useTunerID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID) == TRUE ){
-				map<DWORD, BANK_INFO*>::iterator itrManual;
-				itrManual = this->bankMap.find(itrSort->second->useTunerID);
-				if( itrManual != this->bankMap.end() ){
-					itrManual->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					insert = TRUE;
+				if( itrSort->second->reserveInfo->IsNGTuner(itrSort->second->useTunerID) == FALSE ){
+					map<DWORD, BANK_INFO*>::iterator itrManual;
+					itrManual = this->bankMap.find(itrSort->second->useTunerID);
+					if( itrManual != this->bankMap.end() ){
+						itrManual->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
+						insert = TRUE;
+					}
 				}
 			}
 		}
@@ -1915,11 +1919,13 @@ void CReserveManager::_ReloadBankMapAlgo1()
 		}else{
 			//チューナー固定
 			if( this->tunerManager.IsSupportService(itrSort->second->useTunerID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID) == TRUE ){
-				map<DWORD, BANK_INFO*>::iterator itrManual;
-				itrManual = this->bankMap.find(itrSort->second->useTunerID);
-				if( itrManual != this->bankMap.end() ){
-					itrManual->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					insert = TRUE;
+				if( itrSort->second->reserveInfo->IsNGTuner(itrSort->second->useTunerID) == FALSE ){
+					map<DWORD, BANK_INFO*>::iterator itrManual;
+					itrManual = this->bankMap.find(itrSort->second->useTunerID);
+					if( itrManual != this->bankMap.end() ){
+						itrManual->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
+						insert = TRUE;
+					}
 				}
 			}
 		}
@@ -2477,12 +2483,17 @@ void CReserveManager::CheckOverTimeReserve()
 					//無効ものは結果に残さない
 					REC_FILE_INFO item;
 					item = data;
-					if( data.overlapMode == 0 ){
-						item.recStatus = REC_END_STATUS_START_ERR;
-						item.comment = L"録画時間に起動していなかった可能性があります";
+					if( itrInfo->second->IsOpenErred() == FALSE ){
+						if( data.overlapMode == 0 ){
+							item.recStatus = REC_END_STATUS_START_ERR;
+							item.comment = L"録画時間に起動していなかった可能性があります";
+						}else{
+							item.recStatus = REC_END_STATUS_NO_TUNER;
+							item.comment = L"チューナー不足のため失敗しました";
+						}
 					}else{
-						item.recStatus = REC_END_STATUS_NO_TUNER;
-						item.comment = L"チューナー不足のため失敗しました";
+						item.recStatus = REC_END_STATUS_OPEN_ERR;
+						item.comment = L"チューナーのオープンに失敗しました";
 					}
 					this->recInfoText.AddRecInfo(&item);
 				}
@@ -2774,7 +2785,9 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 				chkFile.SetDeleteExt(&sys->delExtList);
 				wstring defRecPath = L"";
 				GetRecFolderPath(defRecPath);
-				chkFile.CheckFreeSpace(&sys->reserveInfoMap, defRecPath);
+				vector<wstring> protectFile;
+				sys->recInfoText.GetProtectFiles(&protectFile);
+				chkFile.CheckFreeSpace(&sys->reserveInfoMap, defRecPath, &protectFile);
 				sys->UnLock();
 			}
 		}
@@ -3020,8 +3033,6 @@ void CReserveManager::CheckEndReserve()
 void CReserveManager::CheckErrReserve()
 {
 	BOOL needNotify = FALSE;
-	vector<BANK_WORK_INFO*> addReserve;
-	vector<BANK_WORK_INFO*> NGAddReserve;
 
 	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
@@ -3034,83 +3045,18 @@ void CReserveManager::CheckErrReserve()
 				RESERVE_DATA data;
 				reserveInfo[i]->GetData(&data);
 
-				map<DWORD, BANK_INFO*>::iterator itrBank;
-				itrBank = this->bankMap.find(itrCtrl->first);
-				if( itrBank != this->bankMap.end()){
-					map<DWORD, BANK_WORK_INFO*>::iterator itrWork;
-					itrWork = itrBank->second->reserveList.find(data.reserveID);
-					if( itrWork != itrBank->second->reserveList.end()){
-						SAFE_DELETE(itrWork->second);
-						itrBank->second->reserveList.erase(itrWork);
-					}
-				}
-
-
-				BANK_WORK_INFO* item = new BANK_WORK_INFO;
-				CreateWorkData(reserveInfo[i], item, this->backPriorityFlag, 0, 0);
 				reserveInfo[i]->AddNGTunerID(itrCtrl->first);
 				reserveInfo[i]->SetRecWaitMode(FALSE, 0);
+				reserveInfo[i]->SetOpenErred();
 
-				BOOL insert = FALSE;
-				//チューナー固定でエラーのものは空き探さない
-				if( item->useTunerID == 0 ){
-
-					//まずそのまま入るところ
-					for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-						if( itrBank->second->tunerID == itrCtrl->first ){
-							//チェックの必要なし
-							continue;
-						}
-						DWORD status = ChkInsertStatus(itrBank->second, item);
-						if( status == 1 ){
-							//問題なく追加可能
-							itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(item->reserveID,item));
-							insert = TRUE;
-							item->preTunerID = itrBank->second->tunerID;
-							addReserve.push_back(item);
-							break;
-						}
-					}
-					if( insert == FALSE ){
-						//次に開始と終了重なるもの
-						for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-							if( itrBank->second->tunerID == itrCtrl->first ){
-								//チェックの必要なし
-								continue;
-							}
-							DWORD status = ChkInsertStatus(itrBank->second, item);
-							if( status == 2 ){
-								//開始と終了同じだけど可能
-								itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(item->reserveID,item));
-								insert = TRUE;
-								item->preTunerID = itrBank->second->tunerID;
-								addReserve.push_back(item);
-								break;
-							}
-						}
-					}
-				}
-				if( insert == FALSE ){
-					NGAddReserve.push_back(item);
-				}
-				itrCtrl->second->DeleteReserve(item->reserveID);
+				itrCtrl->second->DeleteReserve(data.reserveID);
 			}
 			
 			itrCtrl->second->ResetOpenErr();
 			needNotify = TRUE;
 		}
 	}
-
-	//別チューナーに移動できるもの移動
-	for( size_t i=0; i<addReserve.size(); i++ ){
-		itrCtrl = this->tunerBankMap.find(addReserve[i]->preTunerID);
-		if( itrCtrl != this->tunerBankMap.end() ){
-			vector<CReserveInfo*> list;
-			list.push_back(addReserve[i]->reserveInfo);
-			itrCtrl->second->AddReserve(&list);
-		}
-	}
-
+	/*
 	//移動できないものエラーとして削除
 	if( NGAddReserve.size() > 0 ){
 		BYTE suspendMode = 0xFF;
@@ -3159,11 +3105,33 @@ void CReserveManager::CheckErrReserve()
 			EnableSuspendWork(suspendMode, rebootFlag, 0);
 		}
 	}
-
+	*/
 	if( needNotify == TRUE ){
 		_ReloadBankMap();
+
+		BYTE suspendMode = 0xFF;
+		BYTE rebootFlag = 0xFF;
+		map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
+		for( itrNG = NGReserveMap.begin(); itrNG != NGReserveMap.end(); itrNG++ ){
+			if( itrNG->second->reserveInfo->IsOpenErred() == TRUE ){
+				RESERVE_DATA data;
+				itrNG->second->reserveInfo->GetData(&data);
+				data.comment = L"チューナーのオープンに失敗しました";
+
+				this->reserveText.ChgReserve(&data);
+				itrNG->second->reserveInfo->SetData(&data);
+
+				suspendMode = data.recSetting.suspendMode;
+				rebootFlag = data.recSetting.rebootFlag;
+			}
+		}
+
 		_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
 		_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
+
+		if( suspendMode != 0xFF && rebootFlag != 0xFF ){
+			EnableSuspendWork(suspendMode, rebootFlag, 0);
+		}
 	}
 }
 
@@ -4525,6 +4493,35 @@ BOOL CReserveManager::DelRecFileInfo(
 
 	for( size_t i=0 ;i<idList->size(); i++){
 		this->recInfoText.DelRecInfo((*idList)[i]);
+	}
+
+	wstring filePath = L"";
+	GetSettingPath(filePath);
+	filePath += L"\\";
+	filePath += REC_INFO_TEXT_NAME;
+
+	this->recInfoText.SaveRecInfoText(filePath.c_str());
+
+	_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
+
+	UnLock();
+	return ret;
+}
+
+//録画済み情報のプロテクトを変更する
+//戻り値：
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// idList			[IN]IDリスト
+BOOL CReserveManager::ChgProtectRecFileInfo(
+	vector<REC_FILE_INFO>* infoList
+	)
+{
+	if( Lock(L"DelRecFileInfo") == FALSE ) return FALSE;
+	BOOL ret = TRUE;
+
+	for( size_t i=0 ;i<infoList->size(); i++){
+		this->recInfoText.ChgProtectRecInfo((*infoList)[i].id, (*infoList)[i].protectFlag);
 	}
 
 	wstring filePath = L"";

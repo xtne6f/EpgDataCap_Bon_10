@@ -126,6 +126,15 @@ public:
 		vector<DWORD>* idList
 		);
 
+	//録画済み情報のプロテクトを変更する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// idList			[IN]IDリスト
+	BOOL ChgProtectRecFileInfo(
+		vector<REC_FILE_INFO>* infoList
+		);
+
 
 	BOOL IsEnableSuspend(
 		BYTE* suspendMode,

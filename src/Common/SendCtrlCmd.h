@@ -539,6 +539,24 @@ public:
 		vector<MANUAL_AUTO_ADD_DATA>* val
 		);
 
+	//録画済み情報一覧取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[OUT]録画済み情報一覧
+	DWORD SendEnumRecInfo2(
+		vector<REC_FILE_INFO>* val
+		);
+
+	//録画済み情報一覧取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[OUT]録画済み情報一覧
+	DWORD SendChgProtectRecInfo2(
+		vector<REC_FILE_INFO>* val
+		);
+
 //タイマーGUI（EpgTimer_Bon.exe）用
 
 	//ダイアログを前面に表示

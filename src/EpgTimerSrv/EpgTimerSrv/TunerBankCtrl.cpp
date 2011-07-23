@@ -5,6 +5,7 @@
 #include <process.h>
 
 #include "../../Common/ReNamePlugInUtil.h"
+#include "../../Common/ParseRecInfoText.h"
 
 CTunerBankCtrl::CTunerBankCtrl(void)
 {
@@ -1384,6 +1385,14 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 				if( this->autoDel == TRUE ){
 					if( this->chkSpaceCount > 30 ){
 						CCheckRecFile chkFile;
+						CParseRecInfoText recInfoText;
+
+						wstring recInfoFilePath = L"";
+						GetSettingPath(recInfoFilePath);
+						recInfoFilePath += L"\\";
+						recInfoFilePath += REC_INFO_TEXT_NAME;
+						recInfoText.ParseRecInfoText(recInfoFilePath.c_str());
+
 						chkFile.SetCheckFolder(&this->delFolderList);
 						chkFile.SetDeleteExt(&this->delExtList);
 						for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
@@ -1391,7 +1400,9 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 							if( this->sendCtrl.SendViewGetRecFilePath(itr->second->ctrlID[i], &recFilePath) == CMD_SUCCESS ){
 								wstring folderPath = L"";
 								GetFileFolder(recFilePath, folderPath);
-								chkFile.CheckFreeSpaceLive(&data, folderPath);
+								vector<wstring> protectFile;
+								recInfoText.GetProtectFiles(&protectFile);
+								chkFile.CheckFreeSpaceLive(&data, folderPath, &protectFile);
 							}
 						}
 					}
@@ -2236,7 +2247,7 @@ void CTunerBankCtrl::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* src
 		destInfo->eventGroupInfo = item;
 
 		item->group_type = srcInfo->eventGroupInfo->group_type;
-		item->event_count = srcInfo->eventGroupInfo->eventDataList.size();
+		item->event_count = (BYTE)srcInfo->eventGroupInfo->eventDataList.size();
 
 		if( item->event_count > 0 ){
 			item->eventDataList = new EPG_EVENT_DATA[item->event_count];

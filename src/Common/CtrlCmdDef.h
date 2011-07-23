@@ -25,7 +25,8 @@
 
 //コマンドバージョン
 //#define CMD_VER 2	//バージョン情報追加対応　録画設定への部分受信録画フォルダ指定追加
-#define CMD_VER 3	//検索条件に同一録画チェック追加
+//#define CMD_VER 3	//検索条件に同一録画チェック追加
+#define CMD_VER 4	//録画済み情報にプロテクト追加
 
 //コマンド
 #define CMD2_EPG_SRV_ADDLOAD_RESERVE		1 //Program.txtの追加読み込み
@@ -51,6 +52,8 @@
 #define CMD2_EPG_SRV_GET_RESERVE2			2012 //予約情報取得
 #define CMD2_EPG_SRV_ADD_RESERVE2			2013 //予約追加
 #define CMD2_EPG_SRV_CHG_RESERVE2			2015 //予約変更
+#define CMD2_EPG_SRV_ENUM_RECINFO2			2017 //録画済み情報一覧取得
+#define CMD2_EPG_SRV_CHG_PROTECT_RECINFO2	2019 //録画済み情報のプロテクト変更
 #define CMD2_EPG_SRV_ADDCHK_RESERVE2		2030 //サーバー連携用　予約追加できるかのチェック（戻り値 0:追加不可 1:追加可能 2:追加可能だが開始か終了が重なるものあり 3:すでに同じ物がある）
 #define CMD2_EPG_SRV_GET_EPG_FILETIME2		2031 //サーバー連携用　EPGデータファイルのタイムスタンプ取得
 #define CMD2_EPG_SRV_GET_EPG_FILE2			2032 //サーバー連携用　EPGデータファイル取得

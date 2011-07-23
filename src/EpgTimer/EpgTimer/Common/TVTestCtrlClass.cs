@@ -176,27 +176,42 @@ namespace EpgTimer
                 TVTestStreamingInfo sendInfo = new TVTestStreamingInfo();
                 sendInfo.enableMode = 1;
                 sendInfo.ctrlID = playInfo.ctrlID;
-                sendInfo.serverIP = 0x7F000001;
-
-                string hostname = Dns.GetHostName();
-                IPAddress[] adrList = Dns.GetHostAddresses(hostname);
-                foreach (IPAddress address in adrList)
+                if (CommonManager.Instance.NWMode == false)
                 {
-                    if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                    {
-                        UInt32 ip = 0;
-                        Int32 shift = 24;
-                        foreach (string word in address.ToString().Split('.'))
-                        {
-                            ip |= Convert.ToUInt32(word) << shift;
-                            shift -= 8;
-                        }
-                        sendInfo.serverIP = ip;
-                        break;
-                    }
-                }
+                    sendInfo.serverIP = 0x7F000001;
 
-                sendInfo.serverPort = (UInt32)IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath);
+                    string hostname = Dns.GetHostName();
+                    IPAddress[] adrList = Dns.GetHostAddresses(hostname);
+                    foreach (IPAddress address in adrList)
+                    {
+                        if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                        {
+                            UInt32 ip = 0;
+                            Int32 shift = 24;
+                            foreach (string word in address.ToString().Split('.'))
+                            {
+                                ip |= Convert.ToUInt32(word) << shift;
+                                shift -= 8;
+                            }
+                            sendInfo.serverIP = ip;
+                            break;
+                        }
+                    }
+
+                    sendInfo.serverPort = (UInt32)IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath);
+                }
+                else
+                {
+                    UInt32 ip = 0;
+                    Int32 shift = 24;
+                    foreach (string word in CommonManager.Instance.NW.ConnectedIP.Split('.'))
+                    {
+                        ip |= Convert.ToUInt32(word) << shift;
+                        shift -= 8;
+                    }
+                    sendInfo.serverIP = ip;
+                    sendInfo.serverPort = CommonManager.Instance.NW.ConnectedPort;
+                }
                 sendInfo.filePath = playInfo.filePath;
                 if (Settings.Instance.NwTvModeUDP == true)
                 {

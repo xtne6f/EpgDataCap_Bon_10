@@ -651,11 +651,6 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <SplashScreen Include="..\..\EpgTimer\EpgTimer\splash.png">
-      <Link>splash.png</Link>
-    </SplashScreen>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\EpgTimer_Bon_Vista_blue_rev2.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -678,6 +673,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\TaskIconRed.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\key.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\key_no.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

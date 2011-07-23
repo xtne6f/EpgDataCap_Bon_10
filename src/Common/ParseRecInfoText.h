@@ -49,6 +49,15 @@ public:
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
 	BOOL DelRecInfo(DWORD id);
+	//プロテクト情報を変更する
+	//引数：
+	// id	変更する録画済み情報のID
+	// flag	プロテクトフラグ
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	BOOL ChgProtectRecInfo(DWORD id, BYTE flag);
+
+	void GetProtectFiles(vector<wstring>* fileList);
 
 	//一覧の自動削除を行うかの設定
 	//引数：
