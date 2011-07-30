@@ -210,6 +210,7 @@ protected:
 	BYTE enableCaption;
 	BYTE enableData;
 	DWORD processPriority;
+	BOOL keepDisk;
 
 	LONGLONG delayTime;
 
@@ -238,7 +239,7 @@ protected:
 	void StopAllRec();
 	void ErrStop();
 	void AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTRL_REC_STOP_RES_PARAM resVal);
-	void CheckRec(LONGLONG delay, BOOL* needShortCheck);
+	void CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait);
 	BOOL RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL sendNoyify);
 	BOOL CloseTuner();
 

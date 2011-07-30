@@ -13,6 +13,7 @@ using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Collections;
+using System.IO;
 
 namespace EpgTimer
 {
@@ -140,6 +141,24 @@ namespace EpgTimer
         {
             CommonManager.Instance.NotifyLogList.Clear();
             ReloadList();
+        }
+
+        private void button_save_Click(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
+            dlg.DefaultExt = ".txt";
+            dlg.Filter = "txt Files (.txt)|*.txt;|all Files(*.*)|*.*";
+
+            Nullable<bool> result = dlg.ShowDialog();
+            if (result == true)
+            {
+                StreamWriter file = new StreamWriter(dlg.FileName, false, System.Text.Encoding.GetEncoding("shift_jis") );
+                foreach (NotifySrvInfoItem info in logList)
+                {
+                    file.Write(info.FileLogText);
+                }
+                file.Close();
+            }
         }
     }
 }

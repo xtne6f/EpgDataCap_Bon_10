@@ -919,15 +919,36 @@ namespace EpgTimer
                             System.Diagnostics.Process process;
                             if (cmd.Length >= 3)
                             {
-                                process = System.Diagnostics.Process.Start(cmd[1], cmd[2]);
+                                System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo(cmd[1], cmd[2]);
+                                if (cmd[1].IndexOf(".bat") >= 0)
+                                {
+                                    startInfo.CreateNoWindow = true;
+                                    startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+
+                                }
+                                process = System.Diagnostics.Process.Start(startInfo);
                             }
                             else if (cmd.Length >= 2)
                             {
-                                process = System.Diagnostics.Process.Start(cmd[1]);
+                                System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo(cmd[1]);
+                                if (cmd[1].IndexOf(".bat") >= 0)
+                                {
+                                    startInfo.CreateNoWindow = true;
+                                    startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+
+                                }
+                                process = System.Diagnostics.Process.Start(startInfo);
                             }
                             else
                             {
-                                process = System.Diagnostics.Process.Start(cmd[0]);
+                                System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo(cmd[0]);
+                                if (cmd[1].IndexOf(".bat") >= 0)
+                                {
+                                    startInfo.CreateNoWindow = true;
+                                    startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+
+                                }
+                                process = System.Diagnostics.Process.Start(startInfo);
                             }
                             CmdStreamUtil.CreateStreamData(process.Id, ref pResParam);
                         }

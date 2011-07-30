@@ -1237,6 +1237,10 @@ namespace EpgTimer
                         }
                         DateTime EndTime;
                         EndTime = startTime.AddSeconds(duration);
+                        if ((duration / 60) < Settings.Instance.MinHeight)
+                        {
+                            duration = (int)Settings.Instance.MinHeight;
+                        }
 
                         if (timeList.ContainsKey(chkStartTime) == false)
                         {

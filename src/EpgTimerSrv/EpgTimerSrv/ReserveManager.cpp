@@ -1576,7 +1576,7 @@ void CReserveManager::_ReloadBankMap()
 		chkFile.SetDeleteExt(&this->delExtList);
 		wstring defRecPath = L"";
 		GetRecFolderPath(defRecPath);
-		vector<wstring> protectFile;
+		map<wstring, wstring> protectFile;
 		recInfoText.GetProtectFiles(&protectFile);
 		chkFile.CheckFreeSpace(&this->reserveInfoMap, defRecPath, &protectFile);
 	}
@@ -2741,6 +2741,7 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 	CSendCtrlCmd sendCtrl;
 	DWORD wait = 1000;
 	DWORD countTuijyuChk = 11;
+	DWORD countAutoDelChk = 11;
 	BOOL sendPreEpgCap = FALSE;
 
 	while(1){
@@ -2779,17 +2780,21 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 
 		//自動削除の確認
 		if( sys->autoDel == TRUE ){
-			if( sys->Lock(L"BankCheckThread5") == TRUE){
-				CCheckRecFile chkFile;
-				chkFile.SetCheckFolder(&sys->delFolderList);
-				chkFile.SetDeleteExt(&sys->delExtList);
-				wstring defRecPath = L"";
-				GetRecFolderPath(defRecPath);
-				vector<wstring> protectFile;
-				sys->recInfoText.GetProtectFiles(&protectFile);
-				chkFile.CheckFreeSpace(&sys->reserveInfoMap, defRecPath, &protectFile);
-				sys->UnLock();
+			countTuijyuChk++;
+			if( countTuijyuChk > 10 ){
+				if( sys->Lock(L"BankCheckThread5") == TRUE){
+					CCheckRecFile chkFile;
+					chkFile.SetCheckFolder(&sys->delFolderList);
+					chkFile.SetDeleteExt(&sys->delExtList);
+					wstring defRecPath = L"";
+					GetRecFolderPath(defRecPath);
+					map<wstring, wstring> protectFile;
+					sys->recInfoText.GetProtectFiles(&protectFile);
+					chkFile.CheckFreeSpace(&sys->reserveInfoMap, defRecPath, &protectFile);
+					sys->UnLock();
+				}
 			}
+			countAutoDelChk = 0;
 		}
 
 		//EPG取得時間の確認
@@ -3206,7 +3211,7 @@ void CReserveManager::CheckTuijyu()
 	BOOL chgReserve = FALSE;
 	map<DWORD, CReserveInfo*>::iterator itrRes;
 	BOOL chk6h = FALSE;
-	if( this->reserveInfoMap.size() > 100 ){
+	if( this->reserveInfoMap.size() > 50 ){
 		chk6h = TRUE;
 	}
 	for( itrRes = this->reserveInfoMap.begin(); itrRes != this->reserveInfoMap.end(); itrRes++ ){
@@ -3224,7 +3229,7 @@ void CReserveManager::CheckTuijyu()
 			continue;
 		}
 		if( chk6h == TRUE ){
-			if( ConvertI64Time(data.startTime) > GetNowI64Time() + 6*60*60*I64_1SEC ){
+			if( ConvertI64Time(data.startTime) > GetNowI64Time() + 3*60*60*I64_1SEC ){
 				continue;
 			}
 		}

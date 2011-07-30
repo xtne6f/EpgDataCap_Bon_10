@@ -307,6 +307,12 @@ BOOL CParseRecInfoText::Parse1Line(string parseLine, REC_FILE_INFO* item )
 		}
 	}
 
+	if( item->protectFlag == 1 ){
+		if( item->recFilePath.size() > 0 ){
+			AddPtotectFileList(item->recFilePath);
+		}
+	}
+
 	return TRUE;
 }
 
@@ -546,6 +552,12 @@ BOOL CParseRecInfoText::AddRecInfo(REC_FILE_INFO* item)
 		}
 	}
 
+	if( item->protectFlag == 1 ){
+		if( item->recFilePath.size() > 0 ){
+			AddPtotectFileList(item->recFilePath);
+		}
+	}
+
 	pSetItem->id = GetNextReserveID();
 	this->recInfoMap.insert( pair<wstring, REC_FILE_INFO*>(strKey,pSetItem) );
 	this->recIDMap.insert( pair<DWORD, REC_FILE_INFO*>(pSetItem->id,pSetItem) );
@@ -587,6 +599,15 @@ BOOL CParseRecInfoText::ChgProtectRecInfo(DWORD id, BYTE flag)
 	for( itr = this->recInfoMap.begin(); itr != this->recInfoMap.end(); itr++ ){
 		if( itr->second->id == id ){
 			itr->second->protectFlag = flag;
+			if( itr->second->protectFlag == 1 ){
+				if( itr->second->recFilePath.size() > 0 ){
+					AddPtotectFileList(itr->second->recFilePath);
+				}
+			}else{
+				if( itr->second->recFilePath.size() > 0 ){
+					DelPtotectFileList(itr->second->recFilePath);
+				}
+			}
 			break;
 		}
 	}
@@ -665,12 +686,28 @@ void CParseRecInfoText::DelTS_InfoFile(wstring tsFilePath)
 
 }
 
-void CParseRecInfoText::GetProtectFiles(vector<wstring>* fileList)
+void CParseRecInfoText::GetProtectFiles(map<wstring, wstring>* fileMap)
 {
-	multimap<wstring, REC_FILE_INFO*>::iterator itr;
-	for( itr = this->recInfoMap.begin(); itr != this->recInfoMap.end(); itr++ ){
-		if( itr->second->protectFlag == 1 && itr->second->recFilePath.size() > 0){
-			fileList->push_back(itr->second->recFilePath);
-		}
+	*fileMap = protectFileList;
+}
+
+void CParseRecInfoText::AddPtotectFileList(wstring tsFilePath)
+{
+	wstring key = tsFilePath;
+	transform(key.begin(), key.end(), key.begin(), toupper);
+	protectFileList.insert(pair<wstring, wstring>(key, tsFilePath));
+}
+
+void CParseRecInfoText::DelPtotectFileList(wstring tsFilePath)
+{
+	wstring key = tsFilePath;
+	transform(key.begin(), key.end(), key.begin(), toupper);
+
+	map<wstring, wstring>::iterator itr;
+	itr = protectFileList.find(key);
+	if( itr != protectFileList.end() ){
+		protectFileList.erase(itr);
 	}
 }
+
+

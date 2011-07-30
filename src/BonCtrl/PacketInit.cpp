@@ -214,14 +214,22 @@ BOOL CPacketInit::GetTSData(
 		DWORD copySize = 0;
 		if( offset < this->nextStartSize ){
 			copyOffset = this->nextStartSize - offset;
-			copySize = *outSize-copyOffset;
+			if(*outSize == 0){
+				// 出力できるパケットがないので断片として取り込む
+				memmove( this->nextStartBuff, this->nextStartBuff + offset, copyOffset);
+				memcpy( this->nextStartBuff + copyOffset, inData, inSize);
+				this->nextStartSize = copyOffset + inSize;
+			}
+			else {
+				copySize = *outSize-copyOffset;
 
-			memcpy( *outData, this->nextStartBuff + offset, copyOffset);
-			memcpy( (*outData) + copyOffset, inData, copySize);
+				memcpy( *outData, this->nextStartBuff + offset, copyOffset);
+				memcpy( (*outData) + copyOffset, inData, copySize);
 
-			this->nextStartSize = inSize - copySize;
-			if( this->nextStartSize > 0 ){
-				memcpy( this->nextStartBuff, inData+copySize, this->nextStartSize);
+				this->nextStartSize = inSize - copySize;
+				if( this->nextStartSize > 0 ){
+					memcpy( this->nextStartBuff, inData+copySize, this->nextStartSize);
+				}
 			}
 		}else{
 			copyOffset = offset - this->nextStartSize;

@@ -201,6 +201,80 @@ BOOL GetDayOfWeekString( SYSTEMTIME Time, wstring& strWeek )
 	return TRUE;
 }
 
+BOOL GetDayOfWeekString2( SYSTEMTIME Time, wstring& strWeek )
+{
+	SYSTEMTIME sTime;
+	FILETIME fTime;
+	SystemTimeToFileTime( &Time, &fTime );
+	FileTimeToSystemTime( &fTime, &sTime );
+
+	switch( sTime.wDayOfWeek ){
+		case 0:
+			strWeek=L"日";
+			break;
+		case 1:
+			strWeek=L"月";
+			break;
+		case 2:
+			strWeek=L"火";
+			break;
+		case 3:
+			strWeek=L"水";
+			break;
+		case 4:
+			strWeek=L"木";
+			break;
+		case 5:
+			strWeek=L"金";
+			break;
+		case 6:
+			strWeek=L"土";
+			break;
+		default:
+			strWeek=L"";
+			break;
+	}
+
+	return TRUE;
+}
+
+BOOL GetDayOfWeekString2( SYSTEMTIME Time, string& strWeek )
+{
+	SYSTEMTIME sTime;
+	FILETIME fTime;
+	SystemTimeToFileTime( &Time, &fTime );
+	FileTimeToSystemTime( &fTime, &sTime );
+
+	switch( sTime.wDayOfWeek ){
+		case 0:
+			strWeek="日";
+			break;
+		case 1:
+			strWeek="月";
+			break;
+		case 2:
+			strWeek="火";
+			break;
+		case 3:
+			strWeek="水";
+			break;
+		case 4:
+			strWeek="木";
+			break;
+		case 5:
+			strWeek="金";
+			break;
+		case 6:
+			strWeek="土";
+			break;
+		default:
+			strWeek="";
+			break;
+	}
+
+	return TRUE;
+}
+
 __int64 GetTimeCount()
 {
 	SYSTEMTIME sTime;

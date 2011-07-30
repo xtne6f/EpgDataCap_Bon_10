@@ -57,7 +57,7 @@ public:
 	// TRUE（成功）、FALSE（失敗）
 	BOOL ChgProtectRecInfo(DWORD id, BYTE flag);
 
-	void GetProtectFiles(vector<wstring>* fileList);
+	void GetProtectFiles(map<wstring, wstring>* fileMap);
 
 	//一覧の自動削除を行うかの設定
 	//引数：
@@ -72,12 +72,15 @@ protected:
 
 	DWORD nextID;
 
+	map<wstring, wstring> protectFileList;
 protected:
 	BOOL Parse1Line(string parseLine, REC_FILE_INFO* item );
 	void AutoDelInfo(DWORD keepCount);
 	DWORD GetNextReserveID();
 
 	void DelTS_InfoFile(wstring tsFilePath);
+	void AddPtotectFileList(wstring tsFilePath);
+	void DelPtotectFileList(wstring tsFilePath);
 };
 
 #endif

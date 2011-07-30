@@ -1292,6 +1292,10 @@ namespace EpgTimer
                                         duration += info.RecSetting.EndMargine;
                                     }
                                 }
+                                if ((duration/60) < Settings.Instance.MinHeight)
+                                {
+                                    duration = (int)Settings.Instance.MinHeight;
+                                }
 
                                 //TimePosInfo topTime = timeList.GetByIndex(0) as TimePosInfo;
                                 //viewItem.TopPos = Math.Floor((startTime - topTime.Time).TotalMinutes * Settings.Instance.MinHeight);

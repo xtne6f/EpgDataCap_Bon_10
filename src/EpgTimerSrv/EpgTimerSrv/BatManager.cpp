@@ -312,6 +312,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	SAFE_DELETE_ARRAY(pBuff);
 
 	string strRecFilePath="";
+	string strFolderPath="";
 	string strFileName="";
 	string strTitle="";
 	string strSDYYYY="";
@@ -320,6 +321,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	string strSDM="";
 	string strSDDD="";
 	string strSDD="";
+	string strSDW="";
 	string strSTHH="";
 	string strSTH="";
 	string strSTMM="";
@@ -332,6 +334,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	string strEDM="";
 	string strEDDD="";
 	string strEDD="";
+	string strEDW="";
 	string strETHH="";
 	string strETH="";
 	string strETMM="";
@@ -353,6 +356,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	string strSDM28="";
 	string strSDDD28="";
 	string strSDD28="";
+	string strSDW28="";
 	string strSTHH28="";
 	string strSTH28="";
 	string strEDYYYY28="";
@@ -361,6 +365,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	string strEDM28="";
 	string strEDDD28="";
 	string strEDD28="";
+	string strEDW28="";
 	string strETHH28="";
 	string strETH28="";
 	string strDUH="";
@@ -375,6 +380,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	string strResult="";
 	string strTitleF="";
 	string strTitle2F="";
+	string strAddKey="";
 
 	WtoA(info->recFileInfo.recFilePath, strRecFilePath);
 
@@ -382,9 +388,15 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	WCHAR szDir[_MAX_DIR];
 	WCHAR szFname[_MAX_FNAME];
 	WCHAR szExt[_MAX_EXT];
+	WCHAR szPath[_MAX_PATH] = L"";
 	_tsplitpath_s( info->recFileInfo.recFilePath.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
+	_tmakepath_s( szPath, _MAX_PATH, szDrive, szDir, NULL, NULL );
+	wstring strFolder;
+	strFolder = szPath;
+	ChkFolderPath(strFolder);
 
 	WtoA(szFname, strFileName);
+	WtoA(strFolder, strFolderPath);
 	WtoA(info->recFileInfo.title, strTitle);
 
 	Format(strSDYYYY, "%04d", info->recFileInfo.startTime.wYear);
@@ -393,6 +405,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	Format(strSDM, "%d", info->recFileInfo.startTime.wMonth);
 	Format(strSDDD, "%02d", info->recFileInfo.startTime.wDay);
 	Format(strSDD, "%d", info->recFileInfo.startTime.wDay);
+	GetDayOfWeekString2(info->recFileInfo.startTime, strSDW);
 	Format(strSTHH, "%02d", info->recFileInfo.startTime.wHour);
 	Format(strSTH, "%d", info->recFileInfo.startTime.wHour);
 	Format(strSTMM, "%02d", info->recFileInfo.startTime.wMinute);
@@ -403,9 +416,11 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	SYSTEMTIME t28TimeS;
 	if( 0 <= info->recFileInfo.startTime.wHour && info->recFileInfo.startTime.wHour < 4 ){
 		GetSumTime(info->recFileInfo.startTime, -24*60*60, &t28TimeS);
+		GetDayOfWeekString2(t28TimeS, strSDW28);
 		t28TimeS.wHour+=24;
 	}else{
 		t28TimeS = info->recFileInfo.startTime;
+		GetDayOfWeekString2(t28TimeS, strSDW28);
 	}
 
 	Format(strSDYYYY28, "%04d", t28TimeS.wYear);
@@ -426,6 +441,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	Format(strEDM, "%d", tEnd.wMonth);
 	Format(strEDDD, "%02d", tEnd.wDay);
 	Format(strEDD, "%d", tEnd.wDay);
+	GetDayOfWeekString2(tEnd, strEDW);
 	Format(strETHH, "%02d", tEnd.wHour);
 	Format(strETH, "%d", tEnd.wHour);
 	Format(strETMM, "%02d", tEnd.wMinute);
@@ -436,9 +452,11 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	SYSTEMTIME t28TimeE;
 	if( 0 <= tEnd.wHour && tEnd.wHour < 4 ){
 		GetSumTime(tEnd, -24*60*60, &t28TimeE);
+		GetDayOfWeekString2(t28TimeE, strEDW28);
 		t28TimeE.wHour+=24;
 	}else{
 		t28TimeE = tEnd;
+		GetDayOfWeekString2(tEnd, strEDW28);
 	}
 
 	Format(strEDYYYY28, "%04d", t28TimeE.wYear);
@@ -488,7 +506,14 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	CheckFileName(strTitleF);
 	CheckFileName(strTitle2F);
 
+	if( info->reserveInfo.comment.find(L"EPG自動予約(") != string::npos ){
+		WtoA(info->reserveInfo.comment, strAddKey);
+		Replace(strAddKey, "EPG自動予約(", "");
+		strAddKey.erase(strAddKey.length()-1, 1);
+	}
+
 	Replace(strRead, "$FilePath$", strRecFilePath);
+	Replace(strRead, "$FolderPath$", strFolderPath);
 	Replace(strRead, "$FileName$", strFileName);
 	Replace(strRead, "$Title$", strTitle);
 	Replace(strRead, "$SDYYYY$", strSDYYYY);
@@ -497,6 +522,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	Replace(strRead, "$SDM$", strSDM);
 	Replace(strRead, "$SDDD$", strSDDD);
 	Replace(strRead, "$SDD$", strSDD);
+	Replace(strRead, "$SDW$", strSDW);
 	Replace(strRead, "$STHH$", strSTHH);
 	Replace(strRead, "$STH$", strSTH);
 	Replace(strRead, "$STMM$", strSTMM);
@@ -509,6 +535,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	Replace(strRead, "$EDM$", strEDM);
 	Replace(strRead, "$EDDD$", strEDDD);
 	Replace(strRead, "$EDD$", strEDD);
+	Replace(strRead, "$EDW$", strEDW);
 	Replace(strRead, "$ETHH$", strETHH);
 	Replace(strRead, "$ETH$", strETH);
 	Replace(strRead, "$ETMM$", strETMM);
@@ -530,6 +557,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	Replace(strRead, "$SDM28$", strSDM28);
 	Replace(strRead, "$SDDD28$", strSDDD28);
 	Replace(strRead, "$SDD28$", strSDD28);
+	Replace(strRead, "$SDW28$", strSDW28);
 	Replace(strRead, "$STHH28$", strSTHH28);
 	Replace(strRead, "$STH28$", strSTH28);
 	Replace(strRead, "$EDYYYY28$", strEDYYYY28);
@@ -538,6 +566,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	Replace(strRead, "$EDM28$", strEDM28);
 	Replace(strRead, "$EDDD28$", strEDDD28);
 	Replace(strRead, "$EDD28$", strEDD28);
+	Replace(strRead, "$EDW28$", strEDW28);
 	Replace(strRead, "$ETHH28$", strETHH28);
 	Replace(strRead, "$ETH28$", strETH28);
 	Replace(strRead, "$DUHH$", strDUHH);
@@ -552,6 +581,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	Replace(strRead, "$Result$", strResult);
 	Replace(strRead, "$TitleF$", strTitleF);
 	Replace(strRead, "$Title2F$", strTitle2F);
+	Replace(strRead, "$AddKey$", strAddKey);
 
 	DWORD dwWrite=0;
 	WriteFile(hWrite, strRead.c_str(), (DWORD)strRead.length(), &dwWrite, NULL );

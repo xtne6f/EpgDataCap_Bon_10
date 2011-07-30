@@ -32,6 +32,7 @@ CTunerBankCtrl::CTunerBankCtrl(void)
 	this->enableData = 0;
 
 	this->delayTime = 0;
+	this->keepDisk = 1;
 
 	this->chkSpaceCount = 0;
 	this->twitterManager = NULL;
@@ -174,6 +175,7 @@ void CTunerBankCtrl::ReloadSetting()
 	this->enableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str());
 
 	this->processPriority = (DWORD)GetPrivateProfileInt(L"SET", L"ProcessPriority", 3, iniPath.c_str());
+	this->keepDisk = (BOOL)GetPrivateProfileInt(L"SET", L"KeepDisk", 1, iniPath.c_str());
 
 }
 
@@ -483,7 +485,7 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 
 					BOOL needShortCheck = FALSE;
 					//録画時間のチェック
-					sys->CheckRec(delay, &needShortCheck);
+					sys->CheckRec(delay, &needShortCheck, wait);
 
 					if( needShortCheck == TRUE ){
 						wait = 100;
@@ -1211,7 +1213,7 @@ void CTunerBankCtrl::ErrStop()
 	this->openTuner = FALSE;
 }
 
-void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
+void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 {
 	LONGLONG nowTime = GetNowI64Time();
 	nowTime += delay;
@@ -1382,8 +1384,8 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 						}
 					}
 				}
-				if( this->autoDel == TRUE ){
-					if( this->chkSpaceCount > 30 ){
+				/*if( this->autoDel == TRUE ){
+					if( this->chkSpaceCount > 30000 ){
 						CCheckRecFile chkFile;
 						CParseRecInfoText recInfoText;
 
@@ -1400,13 +1402,13 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 							if( this->sendCtrl.SendViewGetRecFilePath(itr->second->ctrlID[i], &recFilePath) == CMD_SUCCESS ){
 								wstring folderPath = L"";
 								GetFileFolder(recFilePath, folderPath);
-								vector<wstring> protectFile;
+								map<wstring, wstring> protectFile;
 								recInfoText.GetProtectFiles(&protectFile);
 								chkFile.CheckFreeSpaceLive(&data, folderPath, &protectFile);
 							}
 						}
 					}
-				}
+				}*/
 			}
 		}else if( chkEndTime-5*I64_1SEC < nowTime && nowTime <chkEndTime ){
 			//終了5秒前になったらチェック間隔を短くする
@@ -1474,10 +1476,10 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck)
 	}
 
 	if( this->autoDel == TRUE ){
-		if( this->chkSpaceCount > 30 ){
+		if( this->chkSpaceCount > 30000 ){
 			this->chkSpaceCount = 0;
 		}else{
-			this->chkSpaceCount++;
+			this->chkSpaceCount+=wait;
 		}
 	}
 	//終了リストに移行
@@ -1750,9 +1752,13 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 			durationSec += sumSec;
 		}
 
-		DWORD bitrate = 0;
-		_GetBitrate(data.originalNetworkID, data.transportStreamID, data.serviceID, &bitrate);
-		param.createSize = ((ULONGLONG)(bitrate/8)*1000) * durationSec;
+		if( this->keepDisk == 1 ){
+			DWORD bitrate = 0;
+			_GetBitrate(data.originalNetworkID, data.transportStreamID, data.serviceID, &bitrate);
+			param.createSize = ((ULONGLONG)(bitrate/8)*1000) * durationSec;
+		}else{
+			param.createSize = 0;
+		}
 
 		if( this->sendCtrl.SendViewStartRec(param) != CMD_SUCCESS){
 			if( reserve->ctrlID[i] == reserve->mainCtrlID ){

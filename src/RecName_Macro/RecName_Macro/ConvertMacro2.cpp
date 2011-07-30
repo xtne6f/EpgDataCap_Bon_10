@@ -24,6 +24,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	wstring strSDM=L"";
 	wstring strSDDD=L"";
 	wstring strSDD=L"";
+	wstring strSDW=L"";
 	wstring strSTHH=L"";
 	wstring strSTH=L"";
 	wstring strSTMM=L"";
@@ -36,6 +37,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	wstring strEDM=L"";
 	wstring strEDDD=L"";
 	wstring strEDD=L"";
+	wstring strEDW=L"";
 	wstring strETHH=L"";
 	wstring strETH=L"";
 	wstring strETMM=L"";
@@ -57,6 +59,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	wstring strSDM28=L"";
 	wstring strSDDD28=L"";
 	wstring strSDD28=L"";
+	wstring strSDW28=L"";
 	wstring strSTHH28=L"";
 	wstring strSTH28=L"";
 	wstring strEDYYYY28=L"";
@@ -65,6 +68,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	wstring strEDM28=L"";
 	wstring strEDDD28=L"";
 	wstring strEDD28=L"";
+	wstring strEDW28=L"";
 	wstring strETHH28=L"";
 	wstring strETH28=L"";
 	wstring strDUH=L"";
@@ -85,6 +89,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	Format(strSDM, L"%d", info->startTime.wMonth);
 	Format(strSDDD, L"%02d", info->startTime.wDay);
 	Format(strSDD, L"%d", info->startTime.wDay);
+	GetDayOfWeekString2(info->startTime, strSDW);
 	Format(strSTHH, L"%02d", info->startTime.wHour);
 	Format(strSTH, L"%d", info->startTime.wHour);
 	Format(strSTMM, L"%02d", info->startTime.wMinute);
@@ -95,9 +100,11 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	SYSTEMTIME t28TimeS;
 	if( 0 <= info->startTime.wHour && info->startTime.wHour < 4 ){
 		GetSumTime(info->startTime, -24*60*60, &t28TimeS);
+		GetDayOfWeekString2(t28TimeS, strSDW28);
 		t28TimeS.wHour+=24;
 	}else{
 		t28TimeS = info->startTime;
+		GetDayOfWeekString2(t28TimeS, strSDW28);
 	}
 
 	Format(strSDYYYY28, L"%04d", t28TimeS.wYear);
@@ -118,6 +125,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	Format(strEDM, L"%d", tEnd.wMonth);
 	Format(strEDDD, L"%02d", tEnd.wDay);
 	Format(strEDD, L"%d", tEnd.wDay);
+	GetDayOfWeekString2(tEnd, strEDW);
 	Format(strETHH, L"%02d", tEnd.wHour);
 	Format(strETH, L"%d", tEnd.wHour);
 	Format(strETMM, L"%02d", tEnd.wMinute);
@@ -128,9 +136,11 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	SYSTEMTIME t28TimeE;
 	if( 0 <= tEnd.wHour && tEnd.wHour < 4 ){
 		GetSumTime(tEnd, -24*60*60, &t28TimeE);
+		GetDayOfWeekString2(t28TimeE, strEDW28);
 		t28TimeE.wHour+=24;
 	}else{
 		t28TimeE = tEnd;
+		GetDayOfWeekString2(t28TimeE, strEDW28);
 	}
 
 	Format(strEDYYYY28, L"%04d", t28TimeE.wYear);
@@ -186,6 +196,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	Replace(convert, L"$SDM$", strSDM);
 	Replace(convert, L"$SDDD$", strSDDD);
 	Replace(convert, L"$SDD$", strSDD);
+	Replace(convert, L"$SDW$", strSDW);
 	Replace(convert, L"$STHH$", strSTHH);
 	Replace(convert, L"$STH$", strSTH);
 	Replace(convert, L"$STMM$", strSTMM);
@@ -198,6 +209,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	Replace(convert, L"$EDM$", strEDM);
 	Replace(convert, L"$EDDD$", strEDDD);
 	Replace(convert, L"$EDD$", strEDD);
+	Replace(convert, L"$EDW$", strEDW);
 	Replace(convert, L"$ETHH$", strETHH);
 	Replace(convert, L"$ETH$", strETH);
 	Replace(convert, L"$ETMM$", strETMM);
@@ -219,6 +231,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	Replace(convert, L"$SDM28$", strSDM28);
 	Replace(convert, L"$SDDD28$", strSDDD28);
 	Replace(convert, L"$SDD28$", strSDD28);
+	Replace(convert, L"$SDW28$", strSDD28);
 	Replace(convert, L"$STHH28$", strSTHH28);
 	Replace(convert, L"$STH28$", strSTH28);
 	Replace(convert, L"$EDYYYY28$", strEDYYYY28);
@@ -227,6 +240,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	Replace(convert, L"$EDM28$", strEDM28);
 	Replace(convert, L"$EDDD28$", strEDDD28);
 	Replace(convert, L"$EDD28$", strEDD28);
+	Replace(convert, L"$EDW28$", strEDD28);
 	Replace(convert, L"$ETHH28$", strETHH28);
 	Replace(convert, L"$ETH28$", strETH28);
 	Replace(convert, L"$DUHH$", strDUHH);

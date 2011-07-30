@@ -22,6 +22,8 @@ BOOL GetTimeString3( SYSTEMTIME StartTime, DWORD dwDureSec, wstring& strDay );
 BOOL GetTimeString4( SYSTEMTIME Time, wstring& strDay );
 
 BOOL GetDayOfWeekString( SYSTEMTIME Time, wstring& strWeek );
+BOOL GetDayOfWeekString2( SYSTEMTIME Time, wstring& strWeek );
+BOOL GetDayOfWeekString2( SYSTEMTIME Time, string& strWeek );
 
 __int64 GetTimeCount();
 

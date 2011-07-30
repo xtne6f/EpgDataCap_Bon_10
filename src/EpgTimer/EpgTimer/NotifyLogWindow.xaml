@@ -27,6 +27,7 @@
                     </GridViewColumn>
                 </GridView>
             </ListView.View>
-        </ListView>        
+        </ListView>
+        <Button Content="ファイルに保存する" Height="23" HorizontalAlignment="Left" Margin="112,12,0,0" Name="button_save" VerticalAlignment="Top" Width="130" Click="button_save_Click" />
     </Grid>
 </Window>

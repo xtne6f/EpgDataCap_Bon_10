@@ -13,6 +13,8 @@ CReserveInfo::CReserveInfo(void)
 	this->pfInfoCheck = FALSE;
 
 	this->coopStatus = 0xFFFF;
+
+	this->openErr = FALSE;
 }
 
 
@@ -315,3 +317,21 @@ void CReserveInfo::GetCoopAddStatus(wstring& srv, WORD* status)
 	UnLock();
 }
 
+void CReserveInfo::SetOpenErred()
+{
+	if( Lock() == FALSE ) return ;
+
+	openErr = TRUE;
+
+	UnLock();
+}
+
+BOOL CReserveInfo::IsOpenErred()
+{
+	if( Lock() == FALSE ) return FALSE;
+
+	BOOL ret = openErr;
+
+	UnLock();
+	return ret;
+}

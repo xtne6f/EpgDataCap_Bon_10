@@ -22,7 +22,7 @@ void CCheckRecFile::SetDeleteExt(vector<wstring>* delExt)
 	this->delExt = *delExt;
 }
 
-void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstring defRecFolder, vector<wstring>* protectFile)
+void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstring defRecFolder, map<wstring, wstring>* protectFile)
 {
 	if( this->chkFolder.size() == 0 || chkReserve == NULL || defRecFolder.size() == 0 ){
 		return;
@@ -146,11 +146,10 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 					itrTS = tsFileList.begin();
 					if( itrTS != tsFileList.end() ){
 						BOOL noDel = FALSE;
-						for( size_t i=0; i<protectFile->size(); i++ ){
-							if( CompareNoCase((*protectFile)[i], itrTS->second.filePath ) == 0){
-								noDel = TRUE;
-								break;
-							}
+						map<wstring, wstring>::iterator itrP;
+						itrP = protectFile->find(itrTS->second.filePath);
+						if( itrP != protectFile->end() ){
+							noDel = TRUE;
 						}
 						if( noDel == FALSE ){
 							DeleteFile( itrTS->second.filePath.c_str() );
@@ -203,11 +202,10 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 					itrTS = tsFileList.begin();
 					if( itrTS != tsFileList.end() ){
 						BOOL noDel = FALSE;
-						for( size_t i=0; i<protectFile->size(); i++ ){
-							if( CompareNoCase((*protectFile)[i], itrTS->second.filePath ) == 0){
-								noDel = TRUE;
-								break;
-							}
+						map<wstring, wstring>::iterator itrP;
+						itrP = protectFile->find(itrTS->second.filePath);
+						if( itrP != protectFile->end() ){
+							noDel = TRUE;
 						}
 						if( noDel == FALSE ){
 							DeleteFile( itrTS->second.filePath.c_str() );
@@ -240,7 +238,7 @@ void CCheckRecFile::CheckFreeSpace(map<DWORD, CReserveInfo*>* chkReserve, wstrin
 	}
 }
 
-void CCheckRecFile::CheckFreeSpaceLive(RESERVE_DATA* reserve, wstring recFolder, vector<wstring>* protectFile)
+void CCheckRecFile::CheckFreeSpaceLive(RESERVE_DATA* reserve, wstring recFolder, map<wstring, wstring>* protectFile)
 {
 	if( this->chkFolder.size() == 0 || reserve == NULL || recFolder.size() == 0 ){
 		return;
@@ -278,11 +276,10 @@ void CCheckRecFile::CheckFreeSpaceLive(RESERVE_DATA* reserve, wstring recFolder,
 				itrTS = tsFileList.begin();
 				if( itrTS != tsFileList.end() ){
 					BOOL noDel = FALSE;
-					for( size_t i=0; i<protectFile->size(); i++ ){
-						if( CompareNoCase((*protectFile)[i], itrTS->second.filePath ) == 0){
-							noDel = TRUE;
-							break;
-						}
+					map<wstring, wstring>::iterator itrP;
+					itrP = protectFile->find(itrTS->second.filePath);
+					if( itrP != protectFile->end() ){
+						noDel = TRUE;
 					}
 					if( noDel == FALSE ){
 						DeleteFile( itrTS->second.filePath.c_str() );
@@ -334,6 +331,7 @@ void CCheckRecFile::FindTsFileList(wstring findFolder, map<LONGLONG, TS_FILE_INF
 				TS_FILE_INFO item;
 
 				Format(item.filePath, L"%s\\%s", findFolder.c_str(), findData.cFileName);
+				transform(item.filePath.begin(), item.filePath.end(), item.filePath.begin(), toupper);
 
 				HANDLE file = _CreateFile( item.filePath.c_str(), GENERIC_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 				if( file != INVALID_HANDLE_VALUE ){

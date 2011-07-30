@@ -85,9 +85,13 @@ void CEpgDBManager::UnLock(LPCWSTR log)
 
 void CEpgDBManager::ClearEpgData()
 {
-	map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
-	for( itr = this->epgMap.begin(); itr != this->epgMap.end(); itr++ ){
-		SAFE_DELETE(itr->second);
+	try{
+		map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
+		for( itr = this->epgMap.begin(); itr != this->epgMap.end(); itr++ ){
+			SAFE_DELETE(itr->second);
+		}
+	}catch(...){
+		_OutputDebugString(L"★CEpgDBManager::ClearEpgData() Exception");
 	}
 	this->epgMap.clear();
 }
@@ -99,6 +103,7 @@ BOOL CEpgDBManager::ReloadEpgData()
 	BOOL ret = TRUE;
 	if( this->loadThread == NULL ){
 		//受信スレッド起動
+		ClearEpgData();
 		ResetEvent(this->loadStopEvent);
 		this->loadThread = (HANDLE)_beginthreadex(NULL, 0, LoadThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
 		SetThreadPriority( this->loadThread, THREAD_PRIORITY_NORMAL );
@@ -114,9 +119,6 @@ BOOL CEpgDBManager::ReloadEpgData()
 UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 {
 	CEpgDBManager* sys = (CEpgDBManager*)param;
-
-	sys->ClearEpgData();
-	BOOL ret = SetProcessWorkingSetSize( GetCurrentProcess(), (SIZE_T)-1, (SIZE_T)-1 );
 
 	OutputDebugString(L"Start Load EpgData\r\n");
 	DWORD time = GetTickCount();
