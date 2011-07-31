@@ -231,7 +231,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	Replace(convert, L"$SDM28$", strSDM28);
 	Replace(convert, L"$SDDD28$", strSDDD28);
 	Replace(convert, L"$SDD28$", strSDD28);
-	Replace(convert, L"$SDW28$", strSDD28);
+	Replace(convert, L"$SDW28$", strSDW28);
 	Replace(convert, L"$STHH28$", strSTHH28);
 	Replace(convert, L"$STH28$", strSTH28);
 	Replace(convert, L"$EDYYYY28$", strEDYYYY28);
@@ -240,7 +240,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	Replace(convert, L"$EDM28$", strEDM28);
 	Replace(convert, L"$EDDD28$", strEDDD28);
 	Replace(convert, L"$EDD28$", strEDD28);
-	Replace(convert, L"$EDW28$", strEDD28);
+	Replace(convert, L"$EDW28$", strEDW28);
 	Replace(convert, L"$ETHH28$", strETHH28);
 	Replace(convert, L"$ETH28$", strETH28);
 	Replace(convert, L"$DUHH$", strDUHH);

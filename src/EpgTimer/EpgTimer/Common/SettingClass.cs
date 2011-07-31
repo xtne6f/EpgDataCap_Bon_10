@@ -211,6 +211,8 @@ namespace EpgTimer
         private byte epgTipsForeColorB;
         private bool epgInfoSingleClick;
         private byte epgInfoOpenMode;
+        private UInt32 execBat;
+        private UInt32 suspendChk;
 
         public bool UseCustomEpgView
         {
@@ -752,6 +754,16 @@ namespace EpgTimer
             get { return epgInfoOpenMode; }
             set { epgInfoOpenMode = value; }
         }
+        public UInt32 ExecBat
+        {
+            get { return execBat; }
+            set { execBat = value; }
+        }
+        public UInt32 SuspendChk
+        {
+            get { return suspendChk; }
+            set { suspendChk = value; }
+        }
 
         public Settings()
         {
@@ -847,6 +859,8 @@ namespace EpgTimer
             epgTipsForeColorB = 0;
             epgInfoSingleClick = false;
             epgInfoOpenMode = 0;
+            execBat = 0;
+            suspendChk = 0;
         }
 
         [NonSerialized()]

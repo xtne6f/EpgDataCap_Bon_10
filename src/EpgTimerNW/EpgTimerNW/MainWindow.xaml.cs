@@ -1203,7 +1203,11 @@ namespace EpgTimer
                 case UpdateNotifyItem.EpgData:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
-                        epgView.UpdateEpgData();
+                        if (PresentationSource.FromVisual(Application.Current.MainWindow) != null)
+                        {
+                            epgView.UpdateEpgData();
+                        }
+                        GC.Collect();
                     }
                     break;
                 case UpdateNotifyItem.ReserveInfo:

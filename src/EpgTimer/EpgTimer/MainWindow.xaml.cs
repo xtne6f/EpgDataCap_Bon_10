@@ -682,6 +682,16 @@ namespace EpgTimer
             }
             else
             {
+                if (Settings.Instance.SuspendChk == 1)
+                {
+                    SuspendCheckWindow dlg = new SuspendCheckWindow();
+                    dlg.SetMode(0, 2);
+                    if (dlg.ShowDialog() == true)
+                    {
+                        return;
+                    }
+                }
+
                 if (CommonManager.Instance.NWMode == false)
                 {
                     if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
@@ -735,6 +745,16 @@ namespace EpgTimer
             }
             else
             {
+                if (Settings.Instance.SuspendChk == 1)
+                {
+                    SuspendCheckWindow dlg = new SuspendCheckWindow();
+                    dlg.SetMode(0, 1);
+                    if (dlg.ShowDialog() == true)
+                    {
+                        return;
+                    }
+                }
+
                 if (CommonManager.Instance.NWMode == false)
                 {
                     if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
@@ -923,7 +943,14 @@ namespace EpgTimer
                                 if (cmd[1].IndexOf(".bat") >= 0)
                                 {
                                     startInfo.CreateNoWindow = true;
-                                    startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+                                    if (Settings.Instance.ExecBat == 0)
+                                    {
+                                        startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+                                    }
+                                    else if(Settings.Instance.ExecBat == 1)
+                                    {
+                                        startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+                                    }
 
                                 }
                                 process = System.Diagnostics.Process.Start(startInfo);
@@ -934,7 +961,14 @@ namespace EpgTimer
                                 if (cmd[1].IndexOf(".bat") >= 0)
                                 {
                                     startInfo.CreateNoWindow = true;
-                                    startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+                                    if (Settings.Instance.ExecBat == 0)
+                                    {
+                                        startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+                                    }
+                                    else if (Settings.Instance.ExecBat == 1)
+                                    {
+                                        startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+                                    }
 
                                 }
                                 process = System.Diagnostics.Process.Start(startInfo);
@@ -945,7 +979,14 @@ namespace EpgTimer
                                 if (cmd[1].IndexOf(".bat") >= 0)
                                 {
                                     startInfo.CreateNoWindow = true;
-                                    startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+                                    if (Settings.Instance.ExecBat == 0)
+                                    {
+                                        startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+                                    }
+                                    else if (Settings.Instance.ExecBat == 1)
+                                    {
+                                        startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+                                    }
 
                                 }
                                 process = System.Diagnostics.Process.Start(startInfo);
@@ -1080,7 +1121,10 @@ namespace EpgTimer
                         {
                             CommonManager.Instance.DB.ReloadEpgData();
                         }
-                        epgView.UpdateEpgData();
+                        if (PresentationSource.FromVisual(Application.Current.MainWindow) != null)
+                        {
+                            epgView.UpdateEpgData();
+                        }
                         GC.Collect();
                     }
                     break;
