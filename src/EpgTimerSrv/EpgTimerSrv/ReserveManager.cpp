@@ -3995,7 +3995,7 @@ BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 			info->event_id,
 			title.c_str()
 			);
-		for( size_t i=0; info->eventRelayInfo->eventDataList.size(); i++ ){
+		for( size_t i=0; i<info->eventRelayInfo->eventDataList.size(); i++ ){
 			LONGLONG chKey = _Create64Key(
 				info->eventRelayInfo->eventDataList[i].original_network_id,
 				info->eventRelayInfo->eventDataList[i].transport_stream_id,

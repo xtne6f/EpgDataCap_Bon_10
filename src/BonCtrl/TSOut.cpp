@@ -1208,7 +1208,7 @@ BOOL CTSOut::StartSave(
 			ULARGE_INTEGER stTotal;
 			ULARGE_INTEGER stTotalFree;
 			if( _GetDiskFreeSpaceEx( drive, &stFree, &stTotal, &stTotalFree ) == TRUE ){
-				_OutputDebugString(L"%s free : %I64 dbyte", drive, stFree.QuadPart);
+				_OutputDebugString(L"%s free : %I64d byte", drive, stFree.QuadPart);
 			}
 			drive[0]++;
 		}
