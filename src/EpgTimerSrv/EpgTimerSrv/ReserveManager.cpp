@@ -2813,7 +2813,31 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 					}
 				}
 				if( (sendPreEpgCap == FALSE) && ((GetNowI64Time()+60*I64_1SEC) > capTime) ){
-					if( sys->notifyManager != NULL ){
+					BOOL bUseTuner = FALSE;
+					vector<DWORD> tunerIDList;
+					sys->tunerManager.GetEnumEpgCapTuner(&tunerIDList);
+					map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
+					for( size_t i=0; i<tunerIDList.size(); i++ ){
+						itrCtrl = sys->tunerBankMap.find(tunerIDList[i]);
+						if( itrCtrl != sys->tunerBankMap.end() ){
+							if( itrCtrl->second->IsEpgCapWorking() == FALSE ){
+								itrCtrl->second->ClearEpgCapItem();
+								if( sys->ngCapMin != 0 ){
+									if( itrCtrl->second->IsEpgCapOK(sys->ngCapMin) == FALSE ){
+										//実行しちゃいけない
+										bUseTuner = FALSE;
+										break;
+									}
+								}
+								if( itrCtrl->second->IsEpgCapOK(sys->ngCapTunerMin) == TRUE ){
+									//使えるチューナー
+									bUseTuner = TRUE;
+								}
+							}
+						}
+					}
+
+					if( sys->notifyManager != NULL && bUseTuner == TRUE ){
 						sys->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_PRE_EPGCAP_START, L"取得開始１分前");
 					}
 					sendPreEpgCap = TRUE;

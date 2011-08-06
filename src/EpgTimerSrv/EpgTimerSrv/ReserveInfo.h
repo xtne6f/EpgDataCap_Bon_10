@@ -41,6 +41,9 @@ public:
 	void SetChkPfInfo(BOOL chk);
 	BOOL IsChkPfInfo();
 
+	void SetPfInfoAddMode(BOOL mode);
+	BOOL IsPfInfoAddMode();
+
 	DWORD GetReserveAddStatus();
 
 	BOOL IsNeedCoopAdd();
@@ -63,6 +66,7 @@ protected:
 	BOOL continueRecStart;
 
 	BOOL pfInfoCheck;
+	BOOL pfInfoAddMode;
 
 	wstring coopAddsrv;
 	WORD coopStatus;

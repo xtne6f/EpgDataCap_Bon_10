@@ -32,40 +32,46 @@ namespace EpgTimer
         public SearchKeyDescView()
         {
             InitializeComponent();
-
-            foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+            try
             {
-                ServiceItem item = new ServiceItem();
+                foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                {
+                    ServiceItem item = new ServiceItem();
 
-                item.ServiceInfo = CommonManager.ConvertChSet5To(info);
-                serviceList.Add(item);
-                serviceDict.Add((Int64)item.ID, item);
+                    item.ServiceInfo = CommonManager.ConvertChSet5To(info);
+                    serviceList.Add(item);
+                    serviceDict.Add((Int64)item.ID, item);
+                }
+                listView_service.ItemsSource = serviceList;
+
+                comboBox_content.DataContext = CommonManager.Instance.ContentKindDictionary.Values;
+                comboBox_content.SelectedIndex = 0;
+
+                comboBox_time_sw.DataContext = CommonManager.Instance.DayOfWeekDictionary.Values;
+                comboBox_time_sw.SelectedIndex = 0;
+                comboBox_time_sh.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_time_sh.SelectedIndex = 0;
+                comboBox_time_sm.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_time_sm.SelectedIndex = 0;
+                comboBox_time_ew.DataContext = CommonManager.Instance.DayOfWeekDictionary.Values;
+                comboBox_time_ew.SelectedIndex = 6;
+                comboBox_time_eh.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_time_eh.SelectedIndex = 23;
+                comboBox_time_em.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_time_em.SelectedIndex = 59;
+                comboBox_week_sh.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_week_sh.SelectedIndex = 0;
+                comboBox_week_sm.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_week_sm.SelectedIndex = 0;
+                comboBox_week_eh.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_week_eh.SelectedIndex = 23;
+                comboBox_week_em.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_week_em.SelectedIndex = 59;
             }
-            listView_service.ItemsSource = serviceList;
-
-            comboBox_content.DataContext = CommonManager.Instance.ContentKindDictionary.Values;
-            comboBox_content.SelectedIndex = 0;
-
-            comboBox_time_sw.DataContext = CommonManager.Instance.DayOfWeekDictionary.Values;
-            comboBox_time_sw.SelectedIndex = 0;
-            comboBox_time_sh.DataContext = CommonManager.Instance.HourDictionary.Values;
-            comboBox_time_sh.SelectedIndex = 0;
-            comboBox_time_sm.DataContext = CommonManager.Instance.MinDictionary.Values;
-            comboBox_time_sm.SelectedIndex = 0;
-            comboBox_time_ew.DataContext = CommonManager.Instance.DayOfWeekDictionary.Values;
-            comboBox_time_ew.SelectedIndex = 6;
-            comboBox_time_eh.DataContext = CommonManager.Instance.HourDictionary.Values;
-            comboBox_time_eh.SelectedIndex = 23;
-            comboBox_time_em.DataContext = CommonManager.Instance.MinDictionary.Values;
-            comboBox_time_em.SelectedIndex = 59;
-            comboBox_week_sh.DataContext = CommonManager.Instance.HourDictionary.Values;
-            comboBox_week_sh.SelectedIndex = 0;
-            comboBox_week_sm.DataContext = CommonManager.Instance.MinDictionary.Values;
-            comboBox_week_sm.SelectedIndex = 0;
-            comboBox_week_eh.DataContext = CommonManager.Instance.HourDictionary.Values;
-            comboBox_week_eh.SelectedIndex = 23;
-            comboBox_week_em.DataContext = CommonManager.Instance.MinDictionary.Values;
-            comboBox_week_em.SelectedIndex = 59;
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
         }
 
         public void SetSearchKey(EpgSearchKeyInfo key)
@@ -76,96 +82,103 @@ namespace EpgTimer
 
         public void GetSearchKey(ref EpgSearchKeyInfo key)
         {
-            if (checkBox_regExp.IsChecked == true)
+            try
             {
-                key.regExpFlag = 1;
-                key.aimaiFlag = 0;
-            }
-            else
-            {
-                key.regExpFlag = 0;
-                if (checkBox_aimai.IsChecked == true)
+                if (checkBox_regExp.IsChecked == true)
                 {
-                    key.aimaiFlag = 1;
+                    key.regExpFlag = 1;
+                    key.aimaiFlag = 0;
                 }
                 else
                 {
-                    key.aimaiFlag = 0;
+                    key.regExpFlag = 0;
+                    if (checkBox_aimai.IsChecked == true)
+                    {
+                        key.aimaiFlag = 1;
+                    }
+                    else
+                    {
+                        key.aimaiFlag = 0;
+                    }
                 }
-            }
-            if (checkBox_titleOnly.IsChecked == true)
-            {
-                key.titleOnlyFlag = 1;
-            }
-            else
-            {
-                key.titleOnlyFlag = 0;
-            }
-
-            key.contentList.Clear();
-            foreach (ContentKindInfo info in listBox_content.Items)
-            {
-                EpgContentData item = new EpgContentData();
-                item.content_nibble_level_1 = info.Nibble1;
-                item.content_nibble_level_2 = info.Nibble2;
-                key.contentList.Add(item);
-            }
-            if (checkBox_notContent.IsChecked == true)
-            {
-                key.notContetFlag = 1;
-            }
-            else
-            {
-                key.notContetFlag = 0;
-            }
-
-            key.serviceList.Clear();
-            foreach (ServiceItem info in listView_service.Items)
-            {
-                if (info.IsSelected == true)
+                if (checkBox_titleOnly.IsChecked == true)
                 {
-                    key.serviceList.Add((Int64)info.ID);
+                    key.titleOnlyFlag = 1;
                 }
-            }
+                else
+                {
+                    key.titleOnlyFlag = 0;
+                }
 
-            key.dateList.Clear();
-            foreach (DateItem info in listBox_date.Items)
-            {
-                key.dateList.Add(info.DateInfo);
-            }
-            if (checkBox_notDate.IsChecked == true)
-            {
-                key.notDateFlag = 1;
-            }
-            else
-            {
-                key.notDateFlag = 0;
-            }
+                key.contentList.Clear();
+                foreach (ContentKindInfo info in listBox_content.Items)
+                {
+                    EpgContentData item = new EpgContentData();
+                    item.content_nibble_level_1 = info.Nibble1;
+                    item.content_nibble_level_2 = info.Nibble2;
+                    key.contentList.Add(item);
+                }
+                if (checkBox_notContent.IsChecked == true)
+                {
+                    key.notContetFlag = 1;
+                }
+                else
+                {
+                    key.notContetFlag = 0;
+                }
 
-            if (radioButton_free_2.IsChecked == true)
-            {
-                //無料
-                key.freeCAFlag = 1;
-            }
-            else if (radioButton_free_3.IsChecked == true)
-            {
-                //有料
-                key.freeCAFlag = 2;
-            }
-            else
-            {
-                key.freeCAFlag = 0;
-            }
+                key.serviceList.Clear();
+                foreach (ServiceItem info in listView_service.Items)
+                {
+                    if (info.IsSelected == true)
+                    {
+                        key.serviceList.Add((Int64)info.ID);
+                    }
+                }
 
-            if (checkBox_chkRecEnd.IsChecked == true)
-            {
-                key.chkRecEnd = 1;
+                key.dateList.Clear();
+                foreach (DateItem info in listBox_date.Items)
+                {
+                    key.dateList.Add(info.DateInfo);
+                }
+                if (checkBox_notDate.IsChecked == true)
+                {
+                    key.notDateFlag = 1;
+                }
+                else
+                {
+                    key.notDateFlag = 0;
+                }
+
+                if (radioButton_free_2.IsChecked == true)
+                {
+                    //無料
+                    key.freeCAFlag = 1;
+                }
+                else if (radioButton_free_3.IsChecked == true)
+                {
+                    //有料
+                    key.freeCAFlag = 2;
+                }
+                else
+                {
+                    key.freeCAFlag = 0;
+                }
+
+                if (checkBox_chkRecEnd.IsChecked == true)
+                {
+                    key.chkRecEnd = 1;
+                }
+                else
+                {
+                    key.chkRecEnd = 0;
+                }
+                key.chkRecDay = Convert.ToUInt16(textBox_chkRecDay.Text.ToString());
             }
-            else
+            catch (Exception ex)
             {
-                key.chkRecEnd = 0;
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-            key.chkRecDay = Convert.ToUInt16(textBox_chkRecDay.Text.ToString());
         }
 
         private void UpdateView()

@@ -31,6 +31,7 @@ CEpgTimerSrvMain::CEpgTimerSrvMain(void)
 	this->enableTCPSrv = FALSE;
 	this->tcpPort = 4510;
 	this->autoAddDays = 8;
+	this->autoAddHour = 0;
 	this->chkGroupEvent = TRUE;
 	this->rebootDef = 0;
 	this->ngEpgFileSrvCoop = FALSE;
@@ -263,6 +264,7 @@ void CEpgTimerSrvMain::ReloadSetting()
 
 	this->wakeMargin = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath.c_str());
 	this->autoAddDays = GetPrivateProfileInt(L"SET", L"AutoAddDays", 8, iniPath.c_str());
+	this->autoAddHour = GetPrivateProfileInt(L"SET", L"AutoAddHour", 0, iniPath.c_str());
 	this->chkGroupEvent = GetPrivateProfileInt(L"SET", L"ChkGroupEvent", 1, iniPath.c_str());
 	this->rebootDef = (BYTE)GetPrivateProfileInt(L"SET", L"Reboot", 0, iniPath.c_str());
 	this->ngFileStreaming = (BYTE)GetPrivateProfileInt(L"NO_SUSPEND", L"NoFileStreaming", 0, iniPath.c_str());
@@ -634,7 +636,7 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 				//開始時間過ぎているので対象外
 				continue;
 			}
-			if( nowTime + ((LONGLONG)this->autoAddDays)*24*60*60*I64_1SEC < ConvertI64Time(result->start_time)){
+			if( nowTime + ((LONGLONG)this->autoAddDays)*24*60*60*I64_1SEC + ((LONGLONG)this->autoAddHour)*60*60*I64_1SEC < ConvertI64Time(result->start_time)){
 				//対象期間外
 				continue;
 			}
@@ -2639,6 +2641,12 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 					SAFE_DELETE(reserveList[i]);
 				}
 				reserveList.clear();
+			}else if(url.find("/addprogres.html") == 0 ){
+				vector<TUNER_RESERVE_INFO> tunerList;
+				sys->reserveManager.GetTunerReserveAll(&tunerList);
+
+				string param = "";
+				htmlManager.GetAddProgramReservePage(&sys->epgDB, &tunerList, param, sendParam);
 			}
 		}else if( CompareNoCase(verb, "POST") == 0 ){
 			if(url.find("/reserveinfo.html") == 0 ){
@@ -2722,6 +2730,30 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				string param = "";
 				param.append((char*)recvParam->data, 0, recvParam->dataSize);
 				if( htmlManager.GetAddReserveData(&sys->epgDB, &reserveData, param) == TRUE ){
+					vector<RESERVE_DATA> chgList;
+					chgList.push_back(reserveData);
+					if( sys->reserveManager.AddReserveData(&chgList) == TRUE ){
+						htmlManager.GetReserveAddPage(sendParam);
+					}else{
+						htmlManager.GetReserveAddPage(sendParam, TRUE);
+					}
+				}
+			}
+			else if(url.find("/addprogres.html") == 0 ){
+				vector<TUNER_RESERVE_INFO> tunerList;
+				sys->reserveManager.GetTunerReserveAll(&tunerList);
+
+				string param = "";
+				if( recvParam->dataSize > 0 ){
+					param.append((char*)recvParam->data, 0, recvParam->dataSize);
+				}
+				htmlManager.GetAddProgramReservePage(&sys->epgDB, &tunerList, param, sendParam);
+			}
+			else if(url.find("/reservepgadd.html") == 0 ){
+				RESERVE_DATA reserveData;
+				string param = "";
+				param.append((char*)recvParam->data, 0, recvParam->dataSize);
+				if( htmlManager.GetAddReservePgData(&sys->epgDB, &reserveData, param) == TRUE ){
 					vector<RESERVE_DATA> chgList;
 					chgList.push_back(reserveData);
 					if( sys->reserveManager.AddReserveData(&chgList) == TRUE ){

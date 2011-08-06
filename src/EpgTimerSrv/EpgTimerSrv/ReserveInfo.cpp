@@ -11,7 +11,7 @@ CReserveInfo::CReserveInfo(void)
 
 	this->continueRecStart = FALSE;
 	this->pfInfoCheck = FALSE;
-
+	this->pfInfoAddMode = FALSE;
 	this->coopStatus = 0xFFFF;
 
 	this->openErr = FALSE;
@@ -268,6 +268,26 @@ BOOL CReserveInfo::IsChkPfInfo()
 	if( Lock() == FALSE ) return FALSE;
 
 	ret = this->pfInfoCheck;
+
+	UnLock();
+	return ret;
+}
+
+void CReserveInfo::SetPfInfoAddMode(BOOL mode)
+{
+	if( Lock() == FALSE ) return;
+
+	this->pfInfoAddMode = mode;
+
+	UnLock();
+}
+
+BOOL CReserveInfo::IsPfInfoAddMode()
+{
+	BOOL ret = FALSE;
+	if( Lock() == FALSE ) return FALSE;
+
+	ret = this->pfInfoAddMode;
 
 	UnLock();
 	return ret;

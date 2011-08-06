@@ -351,7 +351,19 @@ namespace EpgTimer
             String tag = sender.ToString();
             if (String.Compare("設定", tag) == 0)
             {
-                SettingCmd();
+                PresentationSource topWindow = PresentationSource.FromVisual(this);
+                if (topWindow == null)
+                {
+                    this.Visibility = System.Windows.Visibility.Visible;
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        SettingCmd();
+                    }));
+                }
+                else
+                {
+                    SettingCmd();
+                }
             }
             else if (String.Compare("終了", tag) == 0)
             {

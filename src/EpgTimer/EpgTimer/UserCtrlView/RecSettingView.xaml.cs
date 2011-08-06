@@ -305,8 +305,54 @@ namespace EpgTimer
                 }
                 else
                 {
-                    setInfo.StartMargine = Convert.ToInt32(textBox_margineStart.Text);
-                    setInfo.EndMargine = Convert.ToInt32(textBox_margineEnd.Text);
+                    int startSec = 0;
+                    int startMinus = 1;
+                    if (textBox_margineStart.Text.IndexOf("-") == 0)
+                    {
+                        startMinus = -1;
+                    }
+                    string[] startArray = textBox_margineStart.Text.Split(':');
+                    if (startArray.Length == 2)
+                    {
+                        startSec = Convert.ToInt32(startArray[0]) * 60;
+                        startSec += Convert.ToInt32(startArray[1]) * startMinus;
+                    }
+                    else if (startArray.Length == 3)
+                    {
+                        startSec = Convert.ToInt32(startArray[0]) * 60 * 60;
+                        startSec += Convert.ToInt32(startArray[1]) * 60 * startMinus;
+                        startSec += Convert.ToInt32(startArray[2]) * startMinus;
+                    }
+                    else
+                    {
+                        startSec = Convert.ToInt32(startArray[0]);
+                    }
+
+                    int endSec = 0;
+                    int endMinus = 1;
+                    if (textBox_margineEnd.Text.IndexOf("-") == 0)
+                    {
+                        endMinus = -1;
+                    }
+                    string[] endArray = textBox_margineEnd.Text.Split(':');
+                    if (endArray.Length == 2)
+                    {
+                        endSec = Convert.ToInt32(endArray[0]) * 60;
+                        endSec += Convert.ToInt32(endArray[1]) * endMinus;
+                    }
+                    else if (endArray.Length == 3)
+                    {
+                        endSec = Convert.ToInt32(endArray[0]) * 60 * 60;
+                        endSec += Convert.ToInt32(endArray[1]) * 60 * endMinus;
+                        endSec += Convert.ToInt32(endArray[2]) * endMinus;
+                    }
+                    else
+                    {
+                        endSec = Convert.ToInt32(endArray[0]);
+                    }
+
+                    setInfo.StartMargine = startSec;
+                    setInfo.EndMargine = endSec;
                 }
             }
             if (checkBox_partial.IsChecked == true)

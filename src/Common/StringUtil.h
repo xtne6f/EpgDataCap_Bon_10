@@ -35,4 +35,8 @@ int CompareNoCase(string str1, string str2);
 
 int CompareNoCase(wstring str1, wstring str2);
 
+BOOL UrlDecode(LPCSTR src, DWORD srcSize, string& dest);
+
+BOOL UrlDecode(LPCWSTR src, DWORD srcSize, wstring& dest);
+
 #endif

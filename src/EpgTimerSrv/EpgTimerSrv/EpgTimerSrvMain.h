@@ -73,6 +73,7 @@ protected:
 	BOOL enableTCPSrv;
 	DWORD tcpPort;
 	int autoAddDays;
+	int autoAddHour;
 	BOOL chkGroupEvent;
 	BYTE rebootDef;
 	BOOL ngFileStreaming;

@@ -134,7 +134,7 @@ namespace EpgTimer
         public void UpdateEpgData()
         {
             updateEpgData = true;
-            if (this.IsVisible == true)
+            if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
             {
                 ClearInfo();
                 if (ReloadEpgData() == true)
@@ -203,23 +203,47 @@ namespace EpgTimer
                         ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
                         if (err == ErrCode.CMD_ERR_CONNECT)
                         {
-                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                            if (this.IsVisible == true)
+                            {
+                                this.Dispatcher.BeginInvoke(new Action(() =>
+                                {
+                                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                                }), null);
+                            }
                             return false;
                         }
                         if (err == ErrCode.CMD_ERR_BUSY)
                         {
-                            MessageBox.Show("EPGデータの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
+                            /*if (this.IsVisible == true)
+                            {
+                                this.Dispatcher.BeginInvoke(new Action(() =>
+                                {
+                                    MessageBox.Show("EPGデータの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
+                                }), null);
+                            }*/
                             return false;
                         }
                         if (err == ErrCode.CMD_ERR_TIMEOUT)
                         {
-                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                            if (this.IsVisible == true)
+                            {
+                                this.Dispatcher.BeginInvoke(new Action(() =>
+                                {
+                                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                                }), null);
+                            }
                             return false;
                         }
                         if (err != ErrCode.CMD_SUCCESS)
                         {
-                            MessageBox.Show("EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
-                            return false;
+                            if (this.IsVisible == true)
+                            {
+                                this.Dispatcher.BeginInvoke(new Action(() =>
+                                {
+                                    MessageBox.Show("EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
+                                }), null);
+                            }
+                            return false; 
                         }
 
                         ReloadProgramViewItem();

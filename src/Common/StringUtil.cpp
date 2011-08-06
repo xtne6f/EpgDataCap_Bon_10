@@ -285,3 +285,85 @@ int CompareNoCase(wstring str1, wstring str2)
 
 	return strBuff1.compare(strBuff2);
 }
+
+BOOL UrlDecode(LPCSTR src, DWORD srcSize, string& dest)
+{
+	if( src == NULL ){
+		return FALSE;
+	}
+
+	string sjis;
+	for( DWORD i=0; i<srcSize; i++ ){
+		if( src[i] == '%' ){
+			if( i+2 > srcSize ){
+				break;
+			}
+			char tmp[3]="";
+			tmp[0] = src[i+1];
+			tmp[1] = src[i+2];
+			CHAR *endstr;
+			char tmp2[2]="";
+			tmp2[0] = (CHAR)strtol(tmp, &endstr, 16);
+			sjis += tmp2;
+
+			i+=2;
+		}else if( src[i] == '+' ){
+			sjis += " ";
+		}else if( src[i] == '\0' ){
+			break;
+		}else{
+			char tmp[2]="";
+			tmp[0] = src[i];
+			sjis += tmp;
+		}
+	}
+
+	dest = sjis;
+	
+	return TRUE;
+}
+
+BOOL UrlDecode(LPCWSTR src, DWORD srcSize, wstring& dest)
+{
+	if( src == NULL ){
+		return FALSE;
+	}
+
+	string sjis;
+	for( DWORD i=0; i<srcSize; i++ ){
+		if( src[i] == '%' ){
+			if( i+2 > srcSize ){
+				break;
+			}
+			WCHAR tmp[3]=L"";
+			tmp[0] = (char)src[i+1];
+			tmp[1] = (char)src[i+2];
+
+			WCHAR *endstr;
+			char tmp2[2]="";
+			tmp2[0] = (char)wcstol(tmp, &endstr, 16);
+			sjis += tmp2;
+
+			i+=2;
+		}else if( src[i] == '+' ){
+			sjis += " ";
+		}else if( src[i] == '\0' ){
+			break;
+		}else{
+			char tmp[2]="";
+			tmp[0] = (char)src[i];
+			sjis += tmp;
+		}
+	}
+
+	int iLen = MultiByteToWideChar( 932, 0, sjis.c_str(), -1, NULL, 0 );
+	WCHAR* pwszBuff = new WCHAR[iLen+1];
+	ZeroMemory(pwszBuff, sizeof(WCHAR)*(iLen+1));
+	MultiByteToWideChar( 932, 0, sjis.c_str(), -1, pwszBuff, iLen );
+
+	dest = pwszBuff;
+	
+	delete[] pwszBuff;
+
+	return TRUE;
+}

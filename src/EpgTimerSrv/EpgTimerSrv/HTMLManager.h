@@ -24,6 +24,9 @@ public:
 	BOOL GetEpgInfoPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* reserveList, vector<TUNER_RESERVE_INFO>* tunerList, string param, HTTP_STREAM* sendParam);
 	BOOL GetAddReserveData(CEpgDBManager* epgDB, RESERVE_DATA* reserveData, string param);
 	BOOL GetReserveAddPage(HTTP_STREAM* sendParam, BOOL err = FALSE);
+
+	BOOL GetAddProgramReservePage(CEpgDBManager* epgDB, vector<TUNER_RESERVE_INFO>* tunerList, string param, HTTP_STREAM* sendParam);
+	BOOL GetAddReservePgData(CEpgDBManager* epgDB, RESERVE_DATA* reserveData, string param);
 protected:
 	typedef struct _EVENT_ITEM{
 		int colspan;

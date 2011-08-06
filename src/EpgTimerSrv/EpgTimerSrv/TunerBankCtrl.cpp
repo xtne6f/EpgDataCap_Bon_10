@@ -1078,9 +1078,11 @@ BOOL CTunerBankCtrl::ContinueRec(RESERVE_WORK* info)
 					info->stratTime <= itr->second->endTime &&
 					itr->second->endTime < info->endTime
 					){
+					//連続録画なので、同一制御IDで録画開始されたことにする
 					info->ctrlID = itr->second->ctrlID;
 					info->mainCtrlID = itr->second->mainCtrlID;
 					info->reserveInfo->SetRecWaitMode(TRUE, this->tunerID);
+					info->reserveInfo->SetPfInfoAddMode(TRUE);
 					itr->second->reserveInfo->SetContinueRecFlag(TRUE);
 
 					info->recStartFlag = TRUE;
@@ -1351,10 +1353,10 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 												GetFileName(recFilePath, tsFileName);
 												wstring pgFile = L"";
 												Format(pgFile, L"%s\\%s.program.txt", infoFolder.c_str(), tsFileName.c_str());
-												SaveProgramInfo(pgFile, &resVal, 0);
+												SaveProgramInfo(pgFile, &resVal, 0, itr->second->reserveInfo->IsPfInfoAddMode());
 											}else{
 												recFilePath += L".program.txt";
-												SaveProgramInfo(recFilePath, &resVal, 0);
+												SaveProgramInfo(recFilePath, &resVal, 0, itr->second->reserveInfo->IsPfInfoAddMode());
 											}
 										}
 									}
@@ -1491,7 +1493,7 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 	}
 }
 
-void CTunerBankCtrl::SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, BYTE mode)
+void CTunerBankCtrl::SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, BYTE mode, BOOL addMode)
 {
 	wstring outText = L"";
 	wstring serviceName = L"";
@@ -1506,7 +1508,16 @@ void CTunerBankCtrl::SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, B
 	string buff = "";
 	WtoA(outText, buff);
 
-	HANDLE file = _CreateFile2( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE file = INVALID_HANDLE_VALUE;
+	if(addMode == TRUE ){
+		file = _CreateFile2( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+		SetFilePointer(file, 0, NULL, FILE_END);
+		string buff2 = "\r\n-----------------------\r\n";
+		DWORD dwWrite;
+		WriteFile(file, buff2.c_str(), (DWORD)buff2.size(), &dwWrite, NULL);
+	}else{
+		file = _CreateFile2( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	}
 	if( file != INVALID_HANDLE_VALUE ){
 		DWORD dwWrite;
 		WriteFile(file, buff.c_str(), (DWORD)buff.size(), &dwWrite, NULL);

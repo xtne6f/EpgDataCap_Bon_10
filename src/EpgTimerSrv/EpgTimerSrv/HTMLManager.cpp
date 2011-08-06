@@ -3,6 +3,7 @@
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "../../Common/PathUtil.h"
+#include "../../Common/ParseChText5.h"
 
 #define HTML_TOP "<HTML LANG=\"ja\">\r\n<HEAD>\r\n<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html;charset=Shift_JIS\">\r\n<TITLE>EpgTimer</TITLE>\r\n</HEAD>\r\n<BODY>\r\n"
 #define HTML_END "</BODY>\r\n</HTML>\r\n"
@@ -347,7 +348,12 @@ BOOL CHTMLManager::GetIndexPage(HTTP_STREAM* sendParam)
 		return FALSE;
 	}
 	string html = HTML_TOP;
-	html+="メニュー<BR><BR><A HREF=\"reserve.html\">予約一覧</A><BR>\r\n<A HREF=\"recinfo.html\">録画結果一覧</A><BR>\r\n<A HREF=\"epg.html\">番組表</A><BR>\r\n";
+	html+="メニュー<BR><BR>";
+	html+="<A HREF=\"reserve.html\">予約一覧</A><BR>\r\n";
+	html+="<A HREF=\"recinfo.html\">録画結果一覧</A><BR>\r\n";
+	html+="<A HREF=\"epg.html\">番組表</A><BR>\r\n";
+	html+="<BR>\r\n";
+	html+="<A HREF=\"addprogres.html\">プログラム予約追加</A><BR>\r\n";
 	html+=HTML_END;
 	sendParam->dataSize = (DWORD)html.size();
 	sendParam->data = new BYTE[sendParam->dataSize];
@@ -2747,3 +2753,506 @@ BOOL CHTMLManager::CreateEpgWeekTable(vector<string>* dateList, map<LONGLONG, TI
 	htmlText+="</TABLE><BR>\r\n";
 	return TRUE;
 }
+
+BOOL CHTMLManager::GetAddProgramReservePage(CEpgDBManager* epgDB, vector<TUNER_RESERVE_INFO>* tunerList, string param, HTTP_STREAM* sendParam)
+{
+	if( sendParam == NULL || epgDB == NULL){
+		return FALSE;
+	}
+	OutputDebugStringA(param.c_str());
+	map<string,string> paramMap;
+	while(param.size()>0){
+		string buff;
+		Separate(param, "&", buff, param);
+		if(buff.size()>0){
+			string key;
+			string val;
+			Separate(buff, "=", key, val);
+			paramMap.insert(pair<string,string>(key, val));
+		}
+	}
+	map<string,string>::iterator itr;
+	WORD preset = 0;
+	itr = paramMap.find("preset");
+	if( itr != paramMap.end() ){
+		preset = (WORD)atoi(itr->second.c_str());
+	}
+	string pgname = "";
+	itr = paramMap.find("pgname");
+	if( itr != paramMap.end() ){
+		UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), pgname);
+	}
+
+	SYSTEMTIME nowTime;
+	SYSTEMTIME endTime;
+	GetLocalTime(&nowTime);
+	GetSumTime(nowTime, 30*60, &endTime);
+
+	WORD sdy = nowTime.wYear;
+	itr = paramMap.find("sdy");
+	if( itr != paramMap.end() ){
+		sdy = (WORD)atoi(itr->second.c_str());
+	}
+	WORD sdm = nowTime.wMonth;
+	itr = paramMap.find("sdm");
+	if( itr != paramMap.end() ){
+		sdm = (WORD)atoi(itr->second.c_str());
+	}
+	WORD sdd = nowTime.wDay;
+	itr = paramMap.find("sdd");
+	if( itr != paramMap.end() ){
+		sdd = (WORD)atoi(itr->second.c_str());
+	}
+	WORD sth = nowTime.wHour;
+	itr = paramMap.find("sth");
+	if( itr != paramMap.end() ){
+		sth = (WORD)atoi(itr->second.c_str());
+	}
+	WORD stm = nowTime.wMinute;
+	itr = paramMap.find("stm");
+	if( itr != paramMap.end() ){
+		stm = (WORD)atoi(itr->second.c_str());
+	}
+
+	WORD edy = endTime.wYear;
+	itr = paramMap.find("edy");
+	if( itr != paramMap.end() ){
+		edy = (WORD)atoi(itr->second.c_str());
+	}
+	WORD edm = endTime.wMonth;
+	itr = paramMap.find("edm");
+	if( itr != paramMap.end() ){
+		edm = (WORD)atoi(itr->second.c_str());
+	}
+	WORD edd = endTime.wDay;
+	itr = paramMap.find("edd");
+	if( itr != paramMap.end() ){
+		edd = (WORD)atoi(itr->second.c_str());
+	}
+	WORD eth = endTime.wHour;
+	itr = paramMap.find("eth");
+	if( itr != paramMap.end() ){
+		eth = (WORD)atoi(itr->second.c_str());
+	}
+	WORD etm = endTime.wMinute;
+	itr = paramMap.find("etm");
+	if( itr != paramMap.end() ){
+		etm = (WORD)atoi(itr->second.c_str());
+	}
+
+	__int64 chID = 0;
+	itr = paramMap.find("serviceID");
+	if( itr != paramMap.end() ){
+		CHAR *endstr;
+		chID = _strtoi64(itr->second.c_str(), &endstr, 10);
+	}
+
+	string buff;
+
+	string html = HTML_TOP;
+
+	//予約情報
+	html+="<HR>予約情報<HR>\r\n";
+	html+="<B>※予約情報を確定してから録画設定の変更と追加をしてください</B>\r\n";
+
+	Format(buff, "<form method=\"POST\" action=\"addprogres.html\">\r\n");
+	html+=buff;
+
+
+	wstring chSet5Path = L"";
+	GetSettingPath(chSet5Path);
+	chSet5Path += L"\\ChSet5.txt";
+
+	CParseChText5 chSet5;
+	chSet5.ParseText(chSet5Path.c_str());
+
+	html+="サービス\r\n<select name=\"serviceID\">\r\n";
+	map<LONGLONG, CH_DATA5>::iterator itrCh;
+	for(itrCh = chSet5.chList.begin(); itrCh != chSet5.chList.end(); itrCh++ ){
+		if( itrCh->second.serviceType == 0x01 || itrCh->second.serviceType == 0xA5 ){
+			__int64 key = _Create64Key(itrCh->second.originalNetworkID,itrCh->second.transportStreamID, itrCh->second.serviceID);
+			string name;
+			WtoA(itrCh->second.serviceName, name);
+			if( itrCh->second.originalNetworkID == 0x04 ){
+				name += "(BS)";
+			}else if( itrCh->second.originalNetworkID == 0x06 ){
+				name += "(CS1)";
+			}else if( itrCh->second.originalNetworkID == 0x07 ){
+				name += "(CS2)";
+			}else if( 0x7880 <= itrCh->second.originalNetworkID && itrCh->second.originalNetworkID <= 0x7FE8 ){
+				name += "(地デジ)";
+			}else{
+				name += "(その他)";
+			}
+			if( key == chID ){
+				Format(buff, "<option value=\"%I64d\" selected>%s\r\n", key, name.c_str());
+			}else{
+				Format(buff, "<option value=\"%I64d\">%s\r\n", key, name.c_str());
+			}
+			html+=buff;
+		}else if(itrCh->second.partialFlag == 1 && 0x7880 <= itrCh->second.originalNetworkID && itrCh->second.originalNetworkID <= 0x7FE8 ){
+			__int64 key = _Create64Key(itrCh->second.originalNetworkID,itrCh->second.transportStreamID, itrCh->second.serviceID);
+			string name;
+			WtoA(itrCh->second.serviceName, name);
+			name += "(ワンセグ)";
+			if( key == chID ){
+				Format(buff, "<option value=\"%I64d\" selected>%s\r\n", key, name.c_str());
+			}else{
+				Format(buff, "<option value=\"%I64d\">%s\r\n", key, name.c_str());
+			}
+			html+=buff;
+		}
+	}
+	html+="</select><BR>\r\n";
+
+	Format(buff, "番組名<input type=text name=\"pgname\" value=\"%s\" size=25><BR>\r\n", pgname.c_str());
+	html+=buff;
+	Format(buff, "開始日時<input type=text name=\"sdy\" value=\"%d\" size=5>/<input type=text name=\"sdm\" value=\"%d\" size=5>/<input type=text name=\"sdd\" value=\"%d\" size=5> \r\n", sdy,sdm,sdd);
+	html+=buff;
+	Format(buff, "<input type=text name=\"sth\" value=\"%d\" size=5>:<input type=text name=\"stm\" value=\"%d\" size=5><BR>\r\n", sth,stm);
+	html+=buff;
+	Format(buff, "終了日時<input type=text name=\"edy\" value=\"%d\" size=5>/<input type=text name=\"edm\" value=\"%d\" size=5>/<input type=text name=\"edd\" value=\"%d\" size=5> \r\n", edy,edm,edd);
+	html+=buff;
+	Format(buff, "<input type=text name=\"eth\" value=\"%d\" size=5>:<input type=text name=\"etm\" value=\"%d\" size=5><BR>\r\n", eth,etm);
+	html+=buff;
+
+	html+="</select>\r\n<input type=submit value=\"確定\">\r\n</form>\r\n";
+
+	html+="<HR>録画設定<HR>\r\n";
+
+	//プリセット
+	Format(buff, "<form method=\"POST\" action=\"addprogres.html\">\r\n");
+	html+=buff;
+	html+="プリセット:\r\n<select name=\"preset\">\r\n";
+	html+="<option value=\"0\">デフォルト\r\n";
+
+	wstring iniPath = L"";
+	GetModuleIniPath(iniPath);
+	WCHAR iniBuff[512]=L"";
+	GetPrivateProfileString(L"SET", L"PresetID", L"", iniBuff, 512, iniPath.c_str());
+	wstring parseBuff = iniBuff;
+	vector<DWORD> idList;
+	do{
+		wstring presetID =L"";
+		Separate(parseBuff, L",", presetID, parseBuff);
+		idList.push_back((DWORD)_wtoi(presetID.c_str()));
+	}while(parseBuff.size()>0);
+	for( size_t i=0; i<idList.size(); i++ ){
+		wstring appName = L"";
+		Format(appName, L"REC_DEF%d", idList[i]);
+		ZeroMemory(iniBuff, sizeof(WCHAR)*512);
+		GetPrivateProfileString(appName.c_str(), L"SetName", L"", iniBuff, 512, iniPath.c_str());
+		string item = "";
+		string name = "";
+		WtoA(iniBuff, name);
+		if( idList[i]==preset ){
+			Format(item, "<option value=\"%d\" selected>%s\r\n", idList[i], name.c_str());
+		}else{
+			Format(item, "<option value=\"%d\">%s\r\n", idList[i], name.c_str());
+		}
+		html+=item;
+	}
+	Format(buff, "<input type=hidden name=\"presetID\" value=\"%d\">\r\n", preset);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"pgname\" value=\"%s\">\r\n", pgname.c_str());
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"sdy\" value=\"%d\">\r\n", sdy);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"sdm\" value=\"%d\">\r\n", sdm);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"sdd\" value=\"%d\">\r\n", sdd);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"sth\" value=\"%d\">\r\n", sth);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"stm\" value=\"%d\">\r\n", stm);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"edy\" value=\"%d\">\r\n", edy);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"edm\" value=\"%d\">\r\n", edm);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"edd\" value=\"%d\">\r\n", edd);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"eth\" value=\"%d\">\r\n", eth);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"etm\" value=\"%d\">\r\n", etm);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"serviceID\" value=\"%I64d\">\r\n", chID);
+	html+=buff;
+	html+="</select>\r\n<input type=submit value=\"load\">\r\n</form>\r\n";
+
+	//録画設定
+	Format(buff, "<form method=\"POST\" action=\"reservepgadd.html\">\r\n");
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"presetID\" value=\"%d\">\r\n", preset);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"pgname\" value=\"%s\">\r\n", pgname.c_str());
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"sdy\" value=\"%d\">\r\n", sdy);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"sdm\" value=\"%d\">\r\n", sdm);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"sdd\" value=\"%d\">\r\n", sdd);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"sth\" value=\"%d\">\r\n", sth);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"stm\" value=\"%d\">\r\n", stm);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"edy\" value=\"%d\">\r\n", edy);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"edm\" value=\"%d\">\r\n", edm);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"edd\" value=\"%d\">\r\n", edd);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"eth\" value=\"%d\">\r\n", eth);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"etm\" value=\"%d\">\r\n", etm);
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"serviceID\" value=\"%I64d\">\r\n", chID);
+	html+=buff;
+
+	string paramText = "";
+	if( preset != 0xFFFF ){
+		REC_SETTING_DATA recSetData;
+		LoadRecSetData(preset, &recSetData);
+		CreateRecSetForm(&recSetData, tunerList, paramText);
+	}
+	html+=paramText;
+	html+="<input type=submit value=\"追加\">\r\n</form>\r\n";
+	
+
+	html+= "<A HREF=\"index.html\">メニューへ</A><BR>\r\n";
+
+	html+=HTML_END;
+	sendParam->dataSize = (DWORD)html.size();
+	sendParam->data = new BYTE[sendParam->dataSize];
+	memcpy(sendParam->data, html.c_str(), sendParam->dataSize);
+	if( sendParam->dataSize > 0 ){
+		Format(sendParam->httpHeader, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", sendParam->dataSize);
+	}else{
+		sendParam->httpHeader = "HTTP/1.0 400 Bad Request\r\nConnection: close\r\n\r\n";
+	}
+	return TRUE;
+}
+
+BOOL CHTMLManager::GetAddReservePgData(CEpgDBManager* epgDB, RESERVE_DATA* reserveData, string param)
+{
+	if( epgDB == NULL){
+		return FALSE;
+	}
+	OutputDebugStringA(param.c_str());
+	map<string,string> paramMap;
+	while(param.size()>0){
+		string buff;
+		Separate(param, "&", buff, param);
+		if(buff.size()>0){
+			string key;
+			string val;
+			Separate(buff, "=", key, val);
+			paramMap.insert(pair<string,string>(key, val));
+		}
+	}
+
+	map<string,string>::iterator itr;
+	wstring chSet5Path = L"";
+	GetSettingPath(chSet5Path);
+	chSet5Path += L"\\ChSet5.txt";
+
+	CParseChText5 chSet5;
+	chSet5.ParseText(chSet5Path.c_str());
+
+	string pgname = "";
+	itr = paramMap.find("pgname");
+	if( itr != paramMap.end() ){
+		UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), pgname);
+	}
+
+	SYSTEMTIME startTime;
+	startTime.wSecond = 0;
+	startTime.wMilliseconds = 0;
+	SYSTEMTIME endTime;
+	endTime.wSecond = 0;
+	endTime.wMilliseconds = 0;
+
+	itr = paramMap.find("sdy");
+	if( itr != paramMap.end() ){
+		startTime.wYear = (WORD)atoi(itr->second.c_str());
+	}
+	itr = paramMap.find("sdm");
+	if( itr != paramMap.end() ){
+		startTime.wMonth = (WORD)atoi(itr->second.c_str());
+	}
+	itr = paramMap.find("sdd");
+	if( itr != paramMap.end() ){
+		startTime.wDay = (WORD)atoi(itr->second.c_str());
+	}
+	itr = paramMap.find("sth");
+	if( itr != paramMap.end() ){
+		startTime.wHour = (WORD)atoi(itr->second.c_str());
+	}
+	itr = paramMap.find("stm");
+	if( itr != paramMap.end() ){
+		startTime.wMinute = (WORD)atoi(itr->second.c_str());
+	}
+
+	itr = paramMap.find("edy");
+	if( itr != paramMap.end() ){
+		endTime.wYear = (WORD)atoi(itr->second.c_str());
+	}
+	itr = paramMap.find("edm");
+	if( itr != paramMap.end() ){
+		endTime.wMonth = (WORD)atoi(itr->second.c_str());
+	}
+	itr = paramMap.find("edd");
+	if( itr != paramMap.end() ){
+		endTime.wDay = (WORD)atoi(itr->second.c_str());
+	}
+	itr = paramMap.find("eth");
+	if( itr != paramMap.end() ){
+		endTime.wHour = (WORD)atoi(itr->second.c_str());
+	}
+	itr = paramMap.find("etm");
+	if( itr != paramMap.end() ){
+		endTime.wMinute = (WORD)atoi(itr->second.c_str());
+	}
+
+	__int64 chID = 0;
+	itr = paramMap.find("serviceID");
+	if( itr != paramMap.end() ){
+		CHAR *endstr;
+		chID = _strtoi64(itr->second.c_str(), &endstr, 10);
+	}
+	map<LONGLONG, CH_DATA5>::iterator itrCh;
+	itrCh = chSet5.chList.find(chID);
+	if( itrCh == chSet5.chList.end()){
+		return FALSE;
+	}
+
+
+	AtoW(pgname, reserveData->title);
+	reserveData->startTime = startTime;
+	reserveData->startTimeEpg = startTime;
+	reserveData->durationSecond = (DWORD)((ConvertI64Time(endTime)-ConvertI64Time(startTime))/I64_1SEC);
+	if( reserveData->durationSecond < 0 ){
+		return FALSE;
+	}
+	reserveData->stationName = itrCh->second.serviceName;
+	reserveData->originalNetworkID = itrCh->second.originalNetworkID;
+	reserveData->transportStreamID = itrCh->second.transportStreamID;
+	reserveData->serviceID = itrCh->second.serviceID;
+	reserveData->eventID = 0xFFFF;
+
+	itr = paramMap.find("presetID");
+	if( itr == paramMap.end() ){
+		return FALSE;
+	}
+	WORD presetID = (WORD)atoi(itr->second.c_str());
+	reserveData->recSetting.recFolderList.clear();
+	reserveData->recSetting.partialRecFolder.clear();
+	LoadRecSetData(presetID, &reserveData->recSetting);
+
+	itr = paramMap.find("recMode");
+	if( itr == paramMap.end() ){
+		return FALSE;
+	}
+	reserveData->recSetting.recMode = (BYTE)atoi(itr->second.c_str());
+
+	if(reserveData->eventID != 0xFFFF){
+		itr = paramMap.find("tuijyuuFlag");
+		if( itr == paramMap.end() ){
+			return FALSE;
+		}
+		reserveData->recSetting.tuijyuuFlag = (BYTE)atoi(itr->second.c_str());
+	}else{
+		reserveData->recSetting.tuijyuuFlag = 0;
+	}
+
+	itr = paramMap.find("priority");
+	if( itr == paramMap.end() ){
+		return FALSE;
+	}
+	reserveData->recSetting.priority = (BYTE)atoi(itr->second.c_str());
+
+	if(reserveData->eventID != 0xFFFF){
+		itr = paramMap.find("pittariFlag");
+		if( itr == paramMap.end() ){
+			return FALSE;
+		}
+		reserveData->recSetting.pittariFlag = (BYTE)atoi(itr->second.c_str());
+	}else{
+		reserveData->recSetting.pittariFlag = 0;
+	}
+
+	itr = paramMap.find("suspendMode");
+	if( itr == paramMap.end() ){
+		return FALSE;
+	}
+	reserveData->recSetting.suspendMode = (BYTE)atoi(itr->second.c_str());
+	
+	if( reserveData->recSetting.suspendMode == 1 || reserveData->recSetting.suspendMode == 2 ){
+		itr = paramMap.find("rebootFlag");
+		if( itr == paramMap.end() ){
+			reserveData->recSetting.rebootFlag = 0;
+		}else{
+			reserveData->recSetting.rebootFlag = 1;
+		}
+	}else{
+		reserveData->recSetting.rebootFlag = 0;
+	}
+
+	itr = paramMap.find("useDefMargineFlag");
+	if( itr == paramMap.end() ){
+		reserveData->recSetting.useMargineFlag = 1;
+		itr = paramMap.find("startMargine");
+		if( itr == paramMap.end() ){
+			return FALSE;
+		}
+		reserveData->recSetting.startMargine = atoi(itr->second.c_str());
+		itr = paramMap.find("endMargine");
+		if( itr == paramMap.end() ){
+			return FALSE;
+		}
+		reserveData->recSetting.endMargine = atoi(itr->second.c_str());
+	}else{
+		reserveData->recSetting.useMargineFlag = 0;
+		reserveData->recSetting.startMargine = 0;
+		reserveData->recSetting.endMargine = 0;
+	}
+
+	itr = paramMap.find("serviceMode");
+	if( itr != paramMap.end() ){
+		reserveData->recSetting.serviceMode = 0;
+	}else{
+		reserveData->recSetting.serviceMode = 1;
+		itr = paramMap.find("serviceMode_1");
+		if( itr != paramMap.end() ){
+			reserveData->recSetting.serviceMode |= 0x10;
+		}
+		itr = paramMap.find("serviceMode_2");
+		if( itr != paramMap.end() ){
+			reserveData->recSetting.serviceMode |= 0x20;
+		}
+	}
+
+	itr = paramMap.find("continueRecFlag");
+	if( itr == paramMap.end() ){
+		reserveData->recSetting.continueRecFlag = 0;
+	}else{
+		reserveData->recSetting.continueRecFlag = 1;
+	}
+	
+	itr = paramMap.find("tunerID");
+	if( itr == paramMap.end() ){
+		return FALSE;
+	}
+	reserveData->recSetting.tunerID = (DWORD)atoi(itr->second.c_str());
+
+	itr = paramMap.find("partialRecFlag");
+	if( itr == paramMap.end() ){
+		reserveData->recSetting.partialRecFlag = 0;
+	}else{
+		reserveData->recSetting.partialRecFlag = 1;
+	}
+
+	return TRUE;
+}
+
