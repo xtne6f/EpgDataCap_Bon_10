@@ -449,6 +449,7 @@ namespace EpgTimer
                     {
                         reserveView.SaveSize();
                         recInfoView.SaveSize();
+                        autoAddView.SaveSize();
 
                         cmd.SetConnectTimeOut(3000);
                         cmd.SendUnRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
@@ -470,6 +471,8 @@ namespace EpgTimer
                 {
                     reserveView.SaveSize();
                     recInfoView.SaveSize();
+                    autoAddView.SaveSize();
+
                     if (CommonManager.Instance.NW.IsConnected == true && needUnRegist == true)
                     {
                         if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)

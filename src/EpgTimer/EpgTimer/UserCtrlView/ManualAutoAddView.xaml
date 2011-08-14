@@ -28,32 +28,32 @@
                     <GridView x:Name="gridView_key">
                         <GridViewColumn DisplayMemberBinding="{Binding Path=DayOfWeek}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="曜日" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="曜日" Tag="DayOfWeek" HorizontalContentAlignment="Left"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=Time}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="時間" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="時間" Tag="Time" HorizontalContentAlignment="Left"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=Title}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="番組名" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="番組名" Tag="Title" HorizontalContentAlignment="Left"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=StationName}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="サービス名" Tag="StationName" HorizontalContentAlignment="Left"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="録画モード" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="録画モード" Tag="RecMode" HorizontalContentAlignment="Left"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=Priority}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="優先度" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="優先度" Tag="Priority" HorizontalContentAlignment="Left"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                     </GridView>

@@ -656,8 +656,16 @@ namespace EpgTimer
                         }
                         DateTime EndTime;
                         EndTime = startTime.AddSeconds(duration);
+                        //if ((duration / 60) < Settings.Instance.MinHeight)
+                        //{
+                        //    duration = (int)Settings.Instance.MinHeight;
+                        //}
 
                         viewItem.Height = Math.Floor((duration / 60) * Settings.Instance.MinHeight);
+                        if (viewItem.Height == 0)
+                        {
+                            viewItem.Height = Settings.Instance.MinHeight;
+                        }
                         viewItem.Width = 150;
                         viewItem.LeftPos = leftPos;
 

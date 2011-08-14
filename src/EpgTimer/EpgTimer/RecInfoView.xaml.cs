@@ -26,6 +26,7 @@ namespace EpgTimer
     public partial class RecInfoView : UserControl
     {
         private List<RecInfoItem> resultList = new List<RecInfoItem>();
+        private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
 
         private string _lastHeaderClicked = null;
         private ListSortDirection _lastDirection = ListSortDirection.Ascending;
@@ -42,6 +43,19 @@ namespace EpgTimer
 
             try
             {
+                foreach (GridViewColumn info in gridView_recinfo.Columns)
+                {
+                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
+                    columnList.Add((string)header.Tag, info);
+                }
+                gridView_recinfo.Columns.Clear();
+
+                foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
+                {
+                    columnList[info.Tag].Width = info.Width;
+                    gridView_recinfo.Columns.Add(columnList[info.Tag]);
+                }
+                /*
                 if (Settings.Instance.RecInfoColumnWidth0 != 0)
                 {
                     gridView_recinfo.Columns[1].Width = Settings.Instance.RecInfoColumnWidth0;
@@ -69,7 +83,7 @@ namespace EpgTimer
                 if (Settings.Instance.RecInfoColumnWidth6 != 0)
                 {
                     gridView_recinfo.Columns[7].Width = Settings.Instance.RecInfoColumnWidth6;
-                }
+                }*/
             }
             catch (Exception ex)
             {
@@ -81,6 +95,7 @@ namespace EpgTimer
         {
             try
             {
+                /*
                 Settings.Instance.RecInfoColumnWidth0 = gridView_recinfo.Columns[1].Width;
                 Settings.Instance.RecInfoColumnWidth1 = gridView_recinfo.Columns[2].Width;
                 Settings.Instance.RecInfoColumnWidth2 = gridView_recinfo.Columns[3].Width;
@@ -88,6 +103,15 @@ namespace EpgTimer
                 Settings.Instance.RecInfoColumnWidth4 = gridView_recinfo.Columns[5].Width;
                 Settings.Instance.RecInfoColumnWidth5 = gridView_recinfo.Columns[6].Width;
                 Settings.Instance.RecInfoColumnWidth6 = gridView_recinfo.Columns[7].Width;
+                */
+                Settings.Instance.RecInfoListColumn.Clear();
+                foreach (GridViewColumn info in gridView_recinfo.Columns)
+                {
+                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
+
+                    Settings.Instance.RecInfoListColumn.Add(new ListColumnInfo((String)header.Tag, info.Width));
+                }
+
             }
             catch (Exception ex)
             {
@@ -393,6 +417,33 @@ namespace EpgTimer
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetRecInfo(info.RecInfo);
                 dlg.ShowDialog();
+            }
+        }
+
+        private void openFolder_Click(object sender, RoutedEventArgs e)
+        {
+            if (listView_recinfo.SelectedItem != null && CommonManager.Instance.NWMode == false)
+            {
+                RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                if (info.RecFilePath.Length == 0)
+                {
+                    MessageBox.Show("録画ファイルが存在しません");
+                }
+                else
+                {
+                    if (System.IO.File.Exists(info.RecFilePath) == true)
+                    {
+                        String cmd = "/select,";
+                        cmd += info.RecFilePath;
+
+                        System.Diagnostics.Process.Start("EXPLORER.EXE", cmd);
+                    }
+                    else
+                    {
+                        String folderPath = System.IO.Path.GetDirectoryName(info.RecFilePath);
+                        System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
+                    }
+                }
             }
         }
     }

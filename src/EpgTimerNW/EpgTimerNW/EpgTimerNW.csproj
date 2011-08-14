@@ -90,6 +90,9 @@
     <Compile Include="..\..\EpgTimer\EpgTimer\Common\NWConnectClass.cs">
       <Link>Common\NWConnectClass.cs</Link>
     </Compile>
+    <Compile Include="..\..\EpgTimer\EpgTimer\DefineClass\ListColumnInfo.cs">
+      <Link>DefineClass\ListColumnInfo.cs</Link>
+    </Compile>
     <Compile Include="ConnectWindow.xaml.cs">
       <DependentUpon>ConnectWindow.xaml</DependentUpon>
     </Compile>

@@ -2120,6 +2120,14 @@ BOOL CTunerBankCtrl::ReRec(DWORD reserveID, BOOL deleteFile)
 			if( resVal.recFilePath.size() > 0 ){
 				if(deleteFile == TRUE ){
 					DeleteFile( resVal.recFilePath.c_str() );
+
+					wstring errFile = resVal.recFilePath;
+					errFile += L".err";
+					DeleteFile( errFile.c_str() );
+
+					wstring pgFile = resVal.recFilePath;
+					pgFile += L".program.txt";
+					DeleteFile( pgFile.c_str() );
 				}
 			}
 		}

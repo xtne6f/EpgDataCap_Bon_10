@@ -28,42 +28,42 @@
                 <GridView x:Name="gridView_reserve">
                     <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="日時" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="ネットワーク" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="ネットワーク" Tag="NetworkName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="サービス名" Tag="ServiceName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="番組名" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="番組名" Tag="EventName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="録画モード" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="録画モード" Tag="RecMode" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Priority}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="優先度" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="優先度" Tag="Priority" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Tuijyu}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="追従" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="追従" Tag="Tuijyu" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Comment}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="予約状況" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="予約状況" Tag="Comment" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <!--<GridViewColumn Header="ぴったり（？）" DisplayMemberBinding="{Binding Path=Pittari}" />-->

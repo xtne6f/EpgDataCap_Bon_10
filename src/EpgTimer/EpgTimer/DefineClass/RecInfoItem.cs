@@ -156,6 +156,18 @@ namespace EpgTimer
                 return view;
             }
         }
+        public String RecFilePath
+        {
+            get
+            {
+                String view = "";
+                if (RecInfo != null)
+                {
+                    view = RecInfo.RecFilePath;
+                }
+                return view;
+            }
+        }
         public SolidColorBrush BackColor
         {
             get

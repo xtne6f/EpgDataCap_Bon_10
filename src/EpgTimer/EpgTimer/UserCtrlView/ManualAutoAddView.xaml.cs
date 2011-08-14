@@ -26,9 +26,49 @@ namespace EpgTimer
         private List<ManualAutoAddDataItem> resultList = new List<ManualAutoAddDataItem>();
         private bool ReloadInfo = true;
 
+        private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
+
         public ManualAutoAddView()
         {
             InitializeComponent();
+            try
+            {
+                foreach (GridViewColumn info in gridView_key.Columns)
+                {
+                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
+                    columnList.Add((string)header.Tag, info);
+                }
+                gridView_key.Columns.Clear();
+
+                foreach (ListColumnInfo info in Settings.Instance.AutoAddManualColumn)
+                {
+                    columnList[info.Tag].Width = info.Width;
+                    gridView_key.Columns.Add(columnList[info.Tag]);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        public void SaveSize()
+        {
+            try
+            {
+                Settings.Instance.AutoAddManualColumn.Clear();
+                foreach (GridViewColumn info in gridView_key.Columns)
+                {
+                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
+
+                    Settings.Instance.AutoAddManualColumn.Add(new ListColumnInfo((String)header.Tag, info.Width));
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
         }
 
         /// <summary>

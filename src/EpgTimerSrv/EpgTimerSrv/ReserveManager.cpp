@@ -10,6 +10,10 @@
 #include <algorithm>
 #include <locale>
 
+#include <LM.h>
+#pragma comment (lib, "netapi32.lib")
+
+
 CReserveManager::CReserveManager(void)
 {
 	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
@@ -84,6 +88,8 @@ CReserveManager::CReserveManager(void)
 	textPath += L"\\ConvertText.txt";
 
 	this->chgText.ParseReserveText(textPath.c_str() );
+
+	this->ngShareFile = FALSE;
 
 	ReloadSetting();
 }
@@ -397,6 +403,7 @@ void CReserveManager::ReloadSetting()
 	}
 
 	this->noStandbyTime = GetPrivateProfileInt(L"NO_SUSPEND", L"NoStandbyTime", 10, iniAppPath.c_str());
+	this->ngShareFile = (BOOL)GetPrivateProfileInt(L"NO_SUSPEND", L"NoShareFile", 0, iniAppPath.c_str());
 	this->autoDel = (BOOL)GetPrivateProfileInt(L"SET", L"AutoDel", 0, iniAppPath.c_str());
 
 	this->delExtList.clear();
@@ -556,6 +563,7 @@ void CReserveManager::ReloadSetting()
 	this->recEndTweetErr = GetPrivateProfileInt(L"SET", L"RecEndTweetErr", 0, iniAppPath.c_str());
 	this->recEndTweetDrop = GetPrivateProfileInt(L"SET", L"RecEndTweetDrop", 0, iniAppPath.c_str());
 
+	IsFindShareTSFile();
 	UnLock();
 }
 
@@ -4340,8 +4348,14 @@ BOOL CReserveManager::_IsSuspendOK(BOOL rebootFlag)
 	}
 
 	if( IsFindNoSuspendExe() == TRUE ){
-		//バッチ処理中
+		//Exe起動中
 		OutputDebugString(L"IsFindNoSuspendExe");
+		return FALSE;
+	}
+
+	if( IsFindShareTSFile() == TRUE ){
+		//TSファイルアクセス中
+		OutputDebugString(L"IsFindShareTSFile");
 		return FALSE;
 	}
 
@@ -4377,11 +4391,13 @@ BOOL CReserveManager::IsFindNoSuspendExe()
 				for( size_t i=0; i<this->noStandbyExeList.size(); i++ ){
 					if( b2000 == TRUE ){
 						if( strExe.find( this->noStandbyExeList[i].substr(0, 15).c_str()) == 0 ){
+							_OutputDebugString(L"起動exe:%s", strExe.c_str());
 							bFind = TRUE;
 							break;
 						}
 					}else{
 						if( strExe.find( this->noStandbyExeList[i].c_str()) == 0 ){
+							_OutputDebugString(L"起動exe:%s", strExe.c_str());
 							bFind = TRUE;
 							break;
 						}
@@ -4395,6 +4411,31 @@ BOOL CReserveManager::IsFindNoSuspendExe()
 		CloseHandle( hSnapshot );
 	}
 	return bFind;
+}
+
+BOOL CReserveManager::IsFindShareTSFile()
+{
+	BOOL ret = FALSE;
+	if( this->ngShareFile == TRUE ){
+		LPBYTE bufptr = NULL;
+		DWORD entriesread = 0;
+		DWORD totalentries = 0;
+		NetFileEnum(NULL, NULL, NULL, 3, &bufptr, MAX_PREFERRED_LENGTH, &entriesread, &totalentries, NULL);
+		if( entriesread > 0 ){
+			_OutputDebugString(L"共有フォルダアクセス");
+			for(DWORD i=0; i<entriesread; i++){
+				FILE_INFO_3* info = (FILE_INFO_3*)(bufptr+(sizeof(FILE_INFO_3)*i));
+
+				wstring filePath = info->fi3_pathname;
+				_OutputDebugString(filePath.c_str());
+				if( IsExt(filePath, L".ts") == TRUE ){
+					ret = TRUE;
+				}
+			}
+		}
+		NetApiBufferFree(bufptr);
+	}
+	return ret;
 }
 
 BOOL CReserveManager::GetSleepReturnTime(

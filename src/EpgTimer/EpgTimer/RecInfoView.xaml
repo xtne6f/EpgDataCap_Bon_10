@@ -98,6 +98,11 @@
                             <GridViewColumnHeader Content="結果" Tag="Result" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=RecFilePath}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="録画ファイル" Tag="RecFilePath" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
                 </GridView>
             </ListView.View>
             <ListView.ContextMenu>
@@ -106,6 +111,7 @@
                     <MenuItem Header="削除" Click="button_del_Click" />
                     <MenuItem Header="再生" Click="button_play_Click" />
                     <MenuItem Header="自動予約登録" Click="autoadd_Click" />
+                    <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" />
                 </ContextMenu>
             </ListView.ContextMenu>
         </ListView>

@@ -40,6 +40,24 @@ namespace EpgTimer
 
             try
             {
+                //ウインドウ位置の復元
+                if (Settings.Instance.SearchWndTop != 0)
+                {
+                    this.Top = Settings.Instance.SearchWndTop;
+                }
+                if (Settings.Instance.SearchWndLeft != 0)
+                {
+                    this.Left = Settings.Instance.SearchWndLeft;
+                }
+                if (Settings.Instance.SearchWndWidth != 0)
+                {
+                    this.Width = Settings.Instance.SearchWndWidth;
+                }
+                if (Settings.Instance.SearchWndHeight != 0)
+                {
+                    this.Height = Settings.Instance.SearchWndHeight;
+                }                
+
                 EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
                 Settings.GetDefSearchSetting(ref defKey);
 
@@ -453,5 +471,31 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (this.WindowState == WindowState.Normal)
+            {
+                if (this.Visibility == System.Windows.Visibility.Visible && this.Width > 0 && this.Height > 0)
+                {
+                    Settings.Instance.SearchWndWidth = this.Width;
+                    Settings.Instance.SearchWndHeight = this.Height;
+                }
+            }
+        }
+
+        private void Window_LocationChanged(object sender, EventArgs e)
+        {
+            if (this.WindowState == WindowState.Normal)
+            {
+                if (this.Visibility == System.Windows.Visibility.Visible && this.Top > 0 && this.Left > 0)
+                {
+                    Settings.Instance.SearchWndTop = this.Top;
+                    Settings.Instance.SearchWndLeft = this.Left;
+                }
+            }
+        }
+
+
     }
 }

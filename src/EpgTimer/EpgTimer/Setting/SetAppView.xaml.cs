@@ -26,6 +26,7 @@ namespace EpgTimer.Setting
         private List<String> ngProcessList = new List<String>();
         private String ngMin = "10";
         public bool ngFileStreaming = false;
+        public bool ngShareFile = false;
 
         private List<String> extList = new List<string>();
         private List<String> delChkFolderList = new List<string>();
@@ -125,6 +126,10 @@ namespace EpgTimer.Setting
                 if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoFileStreaming", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     ngFileStreaming = true;
+                }
+                if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoShareFile", 0, SettingPath.TimerSrvIniPath) == 1)
+                {
+                    ngShareFile = true;
                 }
 
                 comboBox_process.Items.Add("リアルタイム");
@@ -487,6 +492,14 @@ namespace EpgTimer.Setting
             {
                 IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoFileStreaming", "0", SettingPath.TimerSrvIniPath);
             }
+            if (ngShareFile == true)
+            {
+                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoShareFile", "1", SettingPath.TimerSrvIniPath);
+            }
+            else
+            {
+                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoShareFile", "0", SettingPath.TimerSrvIniPath);
+            }
 
             IniFileHandler.WritePrivateProfileString("SET", "ProcessPriority", comboBox_process.SelectedIndex.ToString(), SettingPath.TimerSrvIniPath);
 
@@ -777,12 +790,14 @@ namespace EpgTimer.Setting
             dlg.processList = this.ngProcessList;
             dlg.ngMin = this.ngMin;
             dlg.ngFileStreaming = this.ngFileStreaming;
+            dlg.ngShareFile = this.ngShareFile;
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
             dlg.ShowDialog();
 
             this.ngProcessList = dlg.processList;
             this.ngMin = dlg.ngMin;
             this.ngFileStreaming = dlg.ngFileStreaming;
+            this.ngShareFile = dlg.ngShareFile;
         }
 
         private void button_autoDel_Click(object sender, RoutedEventArgs e)

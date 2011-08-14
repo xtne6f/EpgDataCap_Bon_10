@@ -8,6 +8,7 @@ using System.Collections;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
+using System.Windows;
 
 namespace EpgTimer
 {
@@ -213,6 +214,14 @@ namespace EpgTimer
         private byte epgInfoOpenMode;
         private UInt32 execBat;
         private UInt32 suspendChk;
+        private List<ListColumnInfo> reserveListColumn;
+        private List<ListColumnInfo> recInfoListColumn;
+        private List<ListColumnInfo> autoAddEpgColumn;
+        private List<ListColumnInfo> autoAddManualColumn;
+        private double searchWndLeft;
+        private double searchWndTop;
+        private double searchWndWidth;
+        private double searchWndHeight;
 
         public bool UseCustomEpgView
         {
@@ -764,6 +773,46 @@ namespace EpgTimer
             get { return suspendChk; }
             set { suspendChk = value; }
         }
+        public List<ListColumnInfo> ReserveListColumn
+        {
+            get { return reserveListColumn; }
+            set { reserveListColumn = value; }
+        }
+        public List<ListColumnInfo> RecInfoListColumn
+        {
+            get { return recInfoListColumn; }
+            set { recInfoListColumn = value; }
+        }
+        public List<ListColumnInfo> AutoAddEpgColumn
+        {
+            get { return autoAddEpgColumn; }
+            set { autoAddEpgColumn = value; }
+        }
+        public List<ListColumnInfo> AutoAddManualColumn
+        {
+            get { return autoAddManualColumn; }
+            set { autoAddManualColumn = value; }
+        }
+        public double SearchWndLeft
+        {
+            get { return searchWndLeft; }
+            set { searchWndLeft = value; }
+        }
+        public double SearchWndTop
+        {
+            get { return searchWndTop; }
+            set { searchWndTop = value; }
+        }
+        public double SearchWndWidth
+        {
+            get { return searchWndWidth; }
+            set { searchWndWidth = value; }
+        }
+        public double SearchWndHeight
+        {
+            get { return searchWndHeight; }
+            set { searchWndHeight = value; }
+        }
 
         public Settings()
         {
@@ -861,6 +910,15 @@ namespace EpgTimer
             epgInfoOpenMode = 0;
             execBat = 0;
             suspendChk = 0;
+            reserveListColumn = new List<ListColumnInfo>();
+            recInfoListColumn = new List<ListColumnInfo>();
+            autoAddEpgColumn = new List<ListColumnInfo>();
+            autoAddManualColumn = new List<ListColumnInfo>();
+            searchWndLeft = 0;
+            searchWndTop = 0;
+            searchWndWidth = 0;
+            searchWndHeight = 0;
+
         }
 
         [NonSerialized()]
@@ -902,8 +960,12 @@ namespace EpgTimer
                 Instance = (Settings)obj;
 
             }
-            catch
+            catch (Exception ex)
             {
+                if (ex.GetBaseException().GetType() != typeof(System.IO.FileNotFoundException))
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                }
             }
             finally
             {
@@ -949,6 +1011,47 @@ namespace EpgTimer
                     Instance.taskMenuList.Add("（セパレータ）");
                     Instance.taskMenuList.Add("終了");
                 }
+                if (Instance.reserveListColumn.Count == 0)
+                {
+                    Instance.reserveListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("EventName", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("RecMode", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("Comment", double.NaN));
+                }
+                if (Instance.recInfoListColumn.Count == 0)
+                {
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("IsProtect", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("EventName", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("Drops", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("Scrambles", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("Result", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("RecFilePath", double.NaN));
+                }
+                if (Instance.autoAddEpgColumn.Count == 0)
+                {
+                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("AndKey", double.NaN));
+                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("NotKey", double.NaN));
+                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RegExp", double.NaN));
+                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RecMode", double.NaN));
+                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
+                }
+                if (Instance.autoAddManualColumn.Count == 0)
+                {
+                    Instance.autoAddManualColumn.Add(new ListColumnInfo("DayOfWeek", double.NaN));
+                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Time", double.NaN));
+                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Title", double.NaN));
+                    Instance.autoAddManualColumn.Add(new ListColumnInfo("StationName", double.NaN));
+                    Instance.autoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
+                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                }
             }
         }
  
@@ -963,7 +1066,7 @@ namespace EpgTimer
             {
                 FileStream fs = new FileStream(path,
                     FileMode.Open,
-                    FileAccess.Read);
+                    FileAccess.Read, FileShare.None);
                 System.Xml.Serialization.XmlSerializer xs =
                     new System.Xml.Serialization.XmlSerializer(
                         typeof(Settings));
@@ -973,8 +1076,12 @@ namespace EpgTimer
                 Instance = (Settings)obj;
 
             }
-            catch
+            catch (Exception ex)
             {
+                if (ex.GetBaseException().GetType() != typeof(System.IO.FileNotFoundException))
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                }
             }
             finally
             {
@@ -1018,23 +1125,64 @@ namespace EpgTimer
                     Instance.taskMenuList.Add("（セパレータ）");
                     Instance.taskMenuList.Add("終了");
                 }
+                if (Instance.reserveListColumn.Count == 0)
+                {
+                    Instance.reserveListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("EventName", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("RecMode", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("Comment", double.NaN));
+                }
+                if (Instance.recInfoListColumn.Count == 0)
+                {
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("IsProtect", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("EventName", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("Drops", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("Scrambles", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("Result", double.NaN));
+                    Instance.recInfoListColumn.Add(new ListColumnInfo("RecFilePath", double.NaN));
+                }
+                if (Instance.autoAddEpgColumn.Count == 0)
+                {
+                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("AndKey", double.NaN));
+                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("NotKey", double.NaN));
+                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RegExp", double.NaN));
+                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RecMode", double.NaN));
+                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
+                }
+                if (Instance.autoAddManualColumn.Count == 0)
+                {
+                    Instance.autoAddManualColumn.Add(new ListColumnInfo("DayOfWeek", double.NaN));
+                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Time", double.NaN));
+                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Title", double.NaN));
+                    Instance.autoAddManualColumn.Add(new ListColumnInfo("StationName", double.NaN));
+                    Instance.autoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
+                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                }
             }
         }
 
         public static void SaveToXmlFile()
         {
-            string path = GetSettingPath();
-            if (path.IndexOf("EpgTimer.exe.xml") < 0 && path.IndexOf("EpgTimerNW.exe.xml") < 0)
-            {
-                path = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
-                path += "\\EpgTimer.exe.xml";
-            }
-
             try
             {
+                string path = GetSettingPath();
+                if (path.IndexOf("EpgTimer.exe.xml") < 0 && path.IndexOf("EpgTimerNW.exe.xml") < 0)
+                {
+                    path = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+                    path += "\\EpgTimer.exe.xml";
+                } 
+                
                 FileStream fs = new FileStream(path,
                     FileMode.Create,
-                    FileAccess.Write);
+                    FileAccess.Write, FileShare.None);
                 System.Xml.Serialization.XmlSerializer xs =
                     new System.Xml.Serialization.XmlSerializer(
                     typeof(Settings));
@@ -1042,8 +1190,9 @@ namespace EpgTimer
                 xs.Serialize(fs, Instance);
                 fs.Close();
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 

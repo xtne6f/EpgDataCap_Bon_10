@@ -1262,10 +1262,10 @@ namespace EpgTimer
                         }
                         DateTime EndTime;
                         EndTime = startTime.AddSeconds(duration);
-                        if ((duration / 60) < Settings.Instance.MinHeight)
-                        {
-                            duration = (int)Settings.Instance.MinHeight;
-                        }
+                        //if ((duration / 60) < Settings.Instance.MinHeight)
+                        //{
+                        //    duration = (int)Settings.Instance.MinHeight;
+                        //}
 
                         if (timeList.ContainsKey(chkStartTime) == false)
                         {
@@ -1276,6 +1276,10 @@ namespace EpgTimer
                         //viewItem.LeftPos = i * Settings.Instance.ServiceWidth;
 
                         viewItem.Height = Math.Floor((duration / 60) * Settings.Instance.MinHeight);
+                        if (viewItem.Height == 0)
+                        {
+                            viewItem.Height = Settings.Instance.MinHeight;
+                        }
                         viewItem.Width = Settings.Instance.ServiceWidth;
 
                         TimePosInfo time = timeList[chkStartTime] as TimePosInfo;
