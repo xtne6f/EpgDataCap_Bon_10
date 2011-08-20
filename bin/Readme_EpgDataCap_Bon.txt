@@ -298,3 +298,26 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこと�
 　　FixONID：OriginalNetworkIDの10進数
 　　FixTSID：TransportStreamIDの10進数
 　　FixSID：ServiceIDの10進数
+
+■TSデータのバッファリング最大値を変更する■
+　TSデータのバッファリング最大値を設定します。
+　設定値はBonDriverからのTSデータ取得を何回バッファリングするかになります。
+　Byte単位でのバッファサイズは使用BonDriverによって変化します。
+　（例：BonDriver_PT-STの場合、1回で取得するTSデータは 188*256=48128バイト）
+　EpgDataCap_Bon.iniのSETにTsBuffMaxCountを追加すること設定可能。
+　（デフォルト:5000）
+
+■ファイル出力データのバッファリング最大値を変更する■
+　ファイル出力データのバッファリング最大値を設定します。
+　設定値は出力予定のTSデータを何回バッファリングするかになります。
+　Byte単位でのバッファサイズは使用BonDriver、指定サービスでの出力かによって変化します。
+　（最大値は使用BonDriverで1回で取得するTSデータのサイズ）
+　EpgDataCap_Bon.iniのSETにWriteBuffMaxCountを追加すること設定可能。
+　-1で最大値無限
+　（デフォルト:-1）
+
+　ファイル出力データのバッファリングで最大値に達した場合、エラーログや録画結果の
+　ドロップ数にカウントされません。
+　エラーログなどの数値はファイル出力処理を行う前までのTSデータに対しての数値にな
+　ります。
+

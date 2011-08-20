@@ -991,7 +991,9 @@ void CTunerBankCtrl::CreateCtrl(RESERVE_WORK* info)
 	//作成
 	DWORD newCtrlID = 0;
 	BOOL createFull = TRUE;
-	if( info->partialRecFlag == 1 || info->partialRecFlag == 2){
+	BYTE recMode = 0;
+	info->reserveInfo->GetRecMode(&recMode);
+	if( (info->partialRecFlag == 1 || info->partialRecFlag == 2) && recMode != RECMODE_VIEW){
 		//部分受信サービスも
 		WORD partialSID = 0;
 		if( FindPartialService(info->ONID, info->TSID, info->SID, &partialSID, NULL) == TRUE ){
@@ -1418,38 +1420,52 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 		}else if( chkEndTime < nowTime){
 			//終了時間過ぎている
 			if( itr->second->reserveInfo->IsContinueRec() == FALSE ){
-				for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
-					SET_CTRL_REC_STOP_PARAM param;
-					param.ctrlID = itr->second->ctrlID[i];
-					param.saveErrLog = this->saveErrLog;
-					SET_CTRL_REC_STOP_RES_PARAM resVal;
-					BOOL errEnd = FALSE;
-					if( this->sendCtrl.SendViewStopRec(param, &resVal) == CMD_ERR ){
-						errEnd = TRUE;
-					}
-
-					this->sendCtrl.SendViewDeleteCtrl(itr->second->ctrlID[i]);
-					if( itr->second->ctrlID[i] == itr->second->mainCtrlID ){
-						DWORD endType = REC_END_STATUS_NORMAL;
-						if( itr->second->notStartHeadFlag == TRUE ){
-							endType = REC_END_STATUS_NOT_START_HEAD;
-						}
-						if( resVal.subRecFlag == 1 ){
-							endType = REC_END_STATUS_END_SUBREC;
-						}
-						if( data.recSetting.tuijyuuFlag == 1 && data.eventID != 0xFFFF ){
-							if( itr->second->reserveInfo->IsChkPfInfo() == FALSE ){
-								endType = REC_END_STATUS_NOT_FIND_PF;
-							}
-						}
-						if( errEnd == TRUE ){
-							endType = REC_END_STATUS_ERR_END2;
+				if( data.recSetting.recMode == RECMODE_VIEW ){
+					for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
+						this->sendCtrl.SendViewDeleteCtrl(itr->second->ctrlID[i]);
+						if( itr->second->ctrlID[i] == itr->second->mainCtrlID ){
+							SET_CTRL_REC_STOP_RES_PARAM resVal;
 							resVal.drop=0;
 							resVal.scramble=0;
 							resVal.subRecFlag=0;
 							resVal.recFilePath = L"";
+							AddEndReserve(itr->second, REC_END_STATUS_NORMAL, resVal);
 						}
-						AddEndReserve(itr->second, endType, resVal);
+					}
+				}else{
+					for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
+						SET_CTRL_REC_STOP_PARAM param;
+						param.ctrlID = itr->second->ctrlID[i];
+						param.saveErrLog = this->saveErrLog;
+						SET_CTRL_REC_STOP_RES_PARAM resVal;
+						BOOL errEnd = FALSE;
+						if( this->sendCtrl.SendViewStopRec(param, &resVal) == CMD_ERR ){
+							errEnd = TRUE;
+						}
+
+						this->sendCtrl.SendViewDeleteCtrl(itr->second->ctrlID[i]);
+						if( itr->second->ctrlID[i] == itr->second->mainCtrlID ){
+							DWORD endType = REC_END_STATUS_NORMAL;
+							if( itr->second->notStartHeadFlag == TRUE ){
+								endType = REC_END_STATUS_NOT_START_HEAD;
+							}
+							if( resVal.subRecFlag == 1 ){
+								endType = REC_END_STATUS_END_SUBREC;
+							}
+							if( data.recSetting.tuijyuuFlag == 1 && data.eventID != 0xFFFF ){
+								if( itr->second->reserveInfo->IsChkPfInfo() == FALSE ){
+									endType = REC_END_STATUS_NOT_FIND_PF;
+								}
+							}
+							if( errEnd == TRUE ){
+								endType = REC_END_STATUS_ERR_END2;
+								resVal.drop=0;
+								resVal.scramble=0;
+								resVal.subRecFlag=0;
+								resVal.recFilePath = L"";
+							}
+							AddEndReserve(itr->second, endType, resVal);
+						}
 					}
 				}
 			}else{

@@ -30,6 +30,8 @@ public:
 
 	void SetEMMMode(BOOL enable);
 
+	void SetTsBuffMaxCount(DWORD tsBuffMaxCount, int writeBuffMaxCount);
+
 	//BonDriverフォルダのBonDriver_*.dllを列挙
 	//戻り値：
 	// エラーコード
@@ -532,7 +534,8 @@ protected:
 	WORD lastSID;
 
 	DWORD epgCapBackStartWaitSec;
-
+	DWORD tsBuffMaxCount;
+	int writeBuffMaxCount;
 protected:
 	//PublicAPI排他制御用
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 15*1000);

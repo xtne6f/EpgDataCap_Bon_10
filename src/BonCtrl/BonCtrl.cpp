@@ -38,6 +38,8 @@ CBonCtrl::CBonCtrl(void)
 	this->enableRecEpgCap = FALSE;
 
 	this->epgCapBackStartWaitSec = 30;
+	this->tsBuffMaxCount = 5000;
+	this->writeBuffMaxCount = -1;
 }
 
 
@@ -187,6 +189,15 @@ void CBonCtrl::SetEMMMode(BOOL enable)
 	UnLock();
 }
 
+void CBonCtrl::SetTsBuffMaxCount(DWORD tsBuffMaxCount, int writeBuffMaxCount)
+{
+	if( Lock(L"SetTsBuffMaxCount") == FALSE ) return ;
+
+	this->tsBuffMaxCount = tsBuffMaxCount;
+	this->writeBuffMaxCount = writeBuffMaxCount;
+
+	UnLock();
+}
 
 //BonDriverフォルダのBonDriver_*.dllを列挙
 //戻り値：
@@ -610,13 +621,19 @@ UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
 					try{
 						if( sys->packetInit.GetTSData(data, size, &item->data, &item->size) == TRUE ){
 							if( WaitForSingleObject( sys->buffLockEvent, 50000 ) == WAIT_OBJECT_0 ){
-								if(sys->TSBuff.size()>10000){
-									for( size_t i=9000; i<sys->TSBuff.size(); i++ ){
+								if(sys->TSBuff.size() > sys->tsBuffMaxCount){
+									size_t startIndex = sys->tsBuffMaxCount;
+									if( sys->tsBuffMaxCount < 1000 ){
+										startIndex = 0;
+									}else{
+										startIndex -= 1000;
+									}
+									for( size_t i=startIndex; i<sys->TSBuff.size(); i++ ){
 										SAFE_DELETE(sys->TSBuff[i]);
 									}
 									vector<TS_DATA*>::iterator itr;
 									itr = sys->TSBuff.begin();
-									advance(itr,9000);
+									advance(itr,startIndex);
 									sys->TSBuff.erase( itr, sys->TSBuff.end() );
 								}
 								sys->TSBuff.push_back(item);
@@ -661,13 +678,19 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 		TS_DATA* data = NULL;
 		try{
 			if( WaitForSingleObject( sys->buffLockEvent, 5000 ) == WAIT_OBJECT_0 ){
-				if(sys->TSBuff.size()>10000){
-					for( size_t i=9000; i<sys->TSBuff.size(); i++ ){
+				if(sys->TSBuff.size() > sys->tsBuffMaxCount){
+					size_t startIndex = sys->tsBuffMaxCount;
+					if( sys->tsBuffMaxCount < 1000 ){
+						startIndex = 0;
+					}else{
+						startIndex -= 1000;
+					}
+					for( size_t i=startIndex; i<sys->TSBuff.size(); i++ ){
 						SAFE_DELETE(sys->TSBuff[i]);
 					}
 					vector<TS_DATA*>::iterator itr;
 					itr = sys->TSBuff.begin();
-					advance(itr,9000);
+					advance(itr,startIndex);
 					sys->TSBuff.erase( itr, sys->TSBuff.end() );
 				}
 				if( sys->TSBuff.size() != 0 ){
@@ -917,7 +940,7 @@ BOOL CBonCtrl::StartSave(
 )
 {
 	if( Lock(L"StartSave") == FALSE ) return FALSE;
-	BOOL ret = this->tsOut.StartSave(id, fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub);
+	BOOL ret = this->tsOut.StartSave(id, fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub, writeBuffMaxCount);
 
 	StartBackgroundEpgCap();
 

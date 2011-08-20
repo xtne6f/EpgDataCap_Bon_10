@@ -22,7 +22,7 @@ COneServiceUtil::COneServiceUtil(void)
 
 	this->pittariStart = FALSE;
 	this->pittariEndChk = FALSE;
-
+	this->maxBuffCount = -1;
 }
 
 
@@ -381,14 +381,16 @@ BOOL COneServiceUtil::StartSave(
 	WORD pittariEventID,
 	ULONGLONG createSize,
 	vector<REC_FILE_SET_INFO>* saveFolder,
-	vector<wstring>* saveFolderSub
+	vector<wstring>* saveFolderSub,
+	int maxBuffCount
 )
 {
+	this->maxBuffCount = maxBuffCount;
 	if( pittariFlag == FALSE ){
 		if( this->writeFile == NULL ){
 			OutputDebugString(L"*:StartSave");
 			this->writeFile = new CWriteTSFile;
-			return this->writeFile->StartSave(fileName, overWriteFlag, createSize, saveFolder, saveFolderSub);
+			return this->writeFile->StartSave(fileName, overWriteFlag, createSize, saveFolder, saveFolderSub, this->maxBuffCount);
 		}
 	}else{
 		if( this->writeFile == NULL ){
@@ -421,7 +423,7 @@ void COneServiceUtil::StratPittariRec()
 	if( this->writeFile == NULL ){
 		OutputDebugString(L"*:StratPittariRec");
 		this->writeFile = new CWriteTSFile;
-		this->writeFile->StartSave(this->fileName, this->overWriteFlag, this->createSize, &this->saveFolder, &this->saveFolderSub);
+		this->writeFile->StartSave(this->fileName, this->overWriteFlag, this->createSize, &this->saveFolder, &this->saveFolderSub, this->maxBuffCount);
 	}
 }
 

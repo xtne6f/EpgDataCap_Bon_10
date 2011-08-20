@@ -184,7 +184,8 @@ public:
 		WORD pittariEventID,
 		ULONGLONG createSize,
 		vector<REC_FILE_SET_INFO>* saveFolder,
-		vector<wstring>* saveFolderSub
+		vector<wstring>* saveFolderSub,
+		int maxBuffCount
 	);
 
 	//ファイル保存を終了する

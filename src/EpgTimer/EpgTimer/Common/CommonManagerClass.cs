@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Media;
+using System.Collections;
+using System.IO;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -1166,5 +1168,20 @@ namespace EpgTimer
             }
         }
 
+        public void AddNotifySave(NotifySrvInfo notifyInfo)
+        {
+            if (Settings.Instance.AutoSaveNotifyLog == 1)
+            {
+                String filePath = SettingPath.ModulePath;
+                filePath += "\\Log";
+                Directory.CreateDirectory(filePath);
+                filePath += "\\EpgTimerNotify_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
+                StreamWriter file = new StreamWriter(filePath, true, System.Text.Encoding.GetEncoding("shift_jis"));
+                NotifySrvInfoItem info = new NotifySrvInfoItem();
+                info.NotifyInfo = notifyInfo;
+                file.Write(info.FileLogText);
+                file.Close();
+            }
+        }
     }
 }

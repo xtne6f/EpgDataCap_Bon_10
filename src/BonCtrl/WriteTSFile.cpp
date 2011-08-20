@@ -12,6 +12,8 @@ CWriteTSFile::CWriteTSFile(void)
     this->outThread = NULL;
     this->outStopEvent = _CreateEvent(FALSE, FALSE, NULL);
 	this->writeTotalSize = 0;
+	this->maxBuffCount = -1;
+	this->buffOverErr = FALSE;
 }
 
 CWriteTSFile::~CWriteTSFile(void)
@@ -98,13 +100,16 @@ BOOL CWriteTSFile::StartSave(
 	BOOL overWriteFlag,
 	ULONGLONG createSize,
 	vector<REC_FILE_SET_INFO>* saveFolder,
-	vector<wstring>* saveFolderSub
+	vector<wstring>* saveFolderSub,
+	int maxBuffCount
 )
 {
 	if( Lock(L"StartSave") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
-	exceptionErr = FALSE;
+	this->exceptionErr = FALSE;
+	this->buffOverErr = FALSE;
+	this->maxBuffCount = maxBuffCount;
 
 	if( saveFolder->size() == 0 ){
 		UnLock();
@@ -315,7 +320,10 @@ BOOL CWriteTSFile::EndSave()
 	}
 	this->fileList.clear();
 
-	if(exceptionErr == TRUE ){
+	if( this->buffOverErr == TRUE ){
+		ret = FALSE;
+	}
+	if( this->exceptionErr == TRUE ){
 		ret = FALSE;
 	}
 
@@ -348,6 +356,25 @@ BOOL CWriteTSFile::AddTSBuff(
 	item->data = new BYTE[size];
 	memcpy(item->data, data, size);
 	if( WaitForSingleObject( this->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
+		if( this->maxBuffCount > 0 ){
+			if(this->TSBuff.size() > this->maxBuffCount){
+				_OutputDebugString(L"★writeBuffList MaxOver");
+				this->buffOverErr = TRUE;
+				size_t startIndex = this->maxBuffCount;
+				if( this->maxBuffCount < 1000 ){
+					startIndex = 0;
+				}else{
+					startIndex -= 1000;
+				}
+				for( size_t i=startIndex; i<this->TSBuff.size(); i++ ){
+					SAFE_DELETE(this->TSBuff[i]);
+				}
+				vector<TS_DATA*>::iterator itr;
+				itr = this->TSBuff.begin();
+				advance(itr,startIndex);
+				this->TSBuff.erase( itr, this->TSBuff.end() );
+			}
+		}
 		this->TSBuff.push_back(item);
 		if( this->buffLockEvent != NULL ){
 			SetEvent(this->buffLockEvent);

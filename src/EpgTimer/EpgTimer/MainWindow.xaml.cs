@@ -138,7 +138,17 @@ namespace EpgTimer
             {
                 if (Settings.Instance.WakeMin == true)
                 {
-                    this.Visibility = System.Windows.Visibility.Hidden;
+                    if (Settings.Instance.MinHide == true)
+                    {
+                        this.Visibility = System.Windows.Visibility.Hidden;
+                    }
+                    else
+                    {
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            this.WindowState = System.Windows.WindowState.Minimized;
+                        }));
+                    }
                 }
                 
                 //ウインドウ位置の復元
@@ -355,6 +365,7 @@ namespace EpgTimer
                 if (topWindow == null)
                 {
                     this.Visibility = System.Windows.Visibility.Visible;
+                    this.WindowState = Settings.Instance.LastWindowState;
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
                         SettingCmd();
@@ -523,7 +534,10 @@ namespace EpgTimer
         {
             if (this.WindowState == WindowState.Minimized)
             {
-                this.Visibility = System.Windows.Visibility.Hidden;
+                if (Settings.Instance.MinHide == true)
+                {
+                    this.Visibility = System.Windows.Visibility.Hidden;
+                }
             }
             if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
             {
@@ -1209,6 +1223,7 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
+                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.RecStart:
@@ -1222,6 +1237,7 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
+                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.RecEnd:
@@ -1235,6 +1251,7 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
+                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.RecTuijyu:
@@ -1248,6 +1265,7 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
+                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.ChgTuijyu:
@@ -1261,6 +1279,7 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
+                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.PreEpgCapStart:
@@ -1274,6 +1293,7 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
+                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.EpgCapStart:
@@ -1287,6 +1307,7 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
+                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.EpgCapEnd:
@@ -1300,6 +1321,7 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
+                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 default:

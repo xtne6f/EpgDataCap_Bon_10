@@ -96,7 +96,7 @@ namespace EpgTimer
             else if (mode == 2)
             {
                 button_add_reserve.Visibility = System.Windows.Visibility.Hidden;
-                button_add_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
+                button_add_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
                 button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
 
                 Title = "EPG予約条件";

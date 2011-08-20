@@ -222,6 +222,8 @@ namespace EpgTimer
         private double searchWndTop;
         private double searchWndWidth;
         private double searchWndHeight;
+        private short autoSaveNotifyLog;
+        private bool minHide;
 
         public bool UseCustomEpgView
         {
@@ -813,7 +815,17 @@ namespace EpgTimer
             get { return searchWndHeight; }
             set { searchWndHeight = value; }
         }
-
+        public short AutoSaveNotifyLog
+        {
+            get { return autoSaveNotifyLog; }
+            set { autoSaveNotifyLog = value; }
+        }
+        public bool MinHide
+        {
+            get { return minHide; }
+            set { minHide = value; }
+        }
+        
         public Settings()
         {
             useCustomEpgView = false;
@@ -918,7 +930,8 @@ namespace EpgTimer
             searchWndTop = 0;
             searchWndWidth = 0;
             searchWndHeight = 0;
-
+            autoSaveNotifyLog = 0;
+            minHide = true;
         }
 
         [NonSerialized()]

@@ -1187,7 +1187,8 @@ BOOL CTSOut::StartSave(
 	WORD pittariEventID,
 	ULONGLONG createSize,
 	vector<REC_FILE_SET_INFO>* saveFolder,
-	vector<wstring>* saveFolderSub
+	vector<wstring>* saveFolderSub,
+	int maxBuffCount
 )
 {
 	if( Lock(L"StartSave") == FALSE ) return FALSE;
@@ -1199,7 +1200,7 @@ BOOL CTSOut::StartSave(
 		return FALSE;
 	}
 
-	BOOL ret = itr->second->StartSave(fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub);
+	BOOL ret = itr->second->StartSave(fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub, maxBuffCount);
 	if( ret == FALSE ){
 		_OutputDebugString(L"認識ドライブ");
 		WCHAR drive[4] = L"A:\\";

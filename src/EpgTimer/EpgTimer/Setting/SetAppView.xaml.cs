@@ -225,6 +225,7 @@ namespace EpgTimer.Setting
                     checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
                     checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
                     checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
+                    checkBox_minHide.IsChecked = Settings.Instance.MinHide;
                 }
                 catch
                 {
@@ -638,6 +639,8 @@ namespace EpgTimer.Setting
 
             Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
             Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
+            Settings.Instance.MinHide = (bool)checkBox_minHide.IsChecked;
+
 
             IniFileHandler.WritePrivateProfileString("DEL_EXT", "Count", extList.Count.ToString(), SettingPath.TimerSrvIniPath);
             for (int i = 0; i < extList.Count; i++)

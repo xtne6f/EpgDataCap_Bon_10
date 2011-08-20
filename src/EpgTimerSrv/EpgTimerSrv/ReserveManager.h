@@ -293,6 +293,7 @@ protected:
 	int batMargin;
 	vector<wstring> noStandbyExeList;
 	DWORD noStandbyTime;
+	BOOL ngShareFile;
 	BOOL autoDel;
 	vector<wstring> delExtList;
 	vector<wstring> delFolderList;
@@ -346,6 +347,7 @@ protected:
 	void _ReloadBankMapAlgo0();
 	void _ReloadBankMapAlgo1();
 	void _ReloadBankMapAlgo2();
+	void _ReloadBankMapAlgo3();
 	void CheckOverTimeReserve();
 	void CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* workInfo, BOOL backPriority, DWORD reserveCount, DWORD reserveNum, BOOL noTuner = FALSE);
 	DWORD ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
@@ -383,6 +385,7 @@ protected:
 	void EnableSuspendWork(BYTE suspendMode, BYTE rebootFlag, BYTE epgReload);
 	BOOL _IsSuspendOK(BOOL rebootFlag);
 	BOOL IsFindNoSuspendExe();
+	BOOL IsFindShareTSFile();
 
 	BOOL GetNextEpgcapTime(LONGLONG* capTime, LONGLONG chkMargineMin);
 
