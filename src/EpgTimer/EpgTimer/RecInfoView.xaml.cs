@@ -446,5 +446,62 @@ namespace EpgTimer
                 }
             }
         }
+
+
+        private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            try
+            {
+                foreach (MenuItem item in listView_recinfo.ContextMenu.Items)
+                {
+                    item.IsChecked = false;
+                    foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
+                    {
+                        if (info.Tag.CompareTo(item.Name) == 0)
+                        {
+                            item.IsChecked = true;
+                            break;
+                        }
+                    }
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void headerSelect_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                MenuItem menuItem = sender as MenuItem;
+                if (menuItem.IsChecked == true)
+                {
+
+                    Settings.Instance.RecInfoListColumn.Add(new ListColumnInfo(menuItem.Name, Double.NaN));
+                    gridView_recinfo.Columns.Add(columnList[menuItem.Name]);
+                }
+                else
+                {
+                    foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
+                    {
+                        if (info.Tag.CompareTo(menuItem.Name) == 0)
+                        {
+                            Settings.Instance.RecInfoListColumn.Remove(info);
+                            gridView_recinfo.Columns.Remove(columnList[menuItem.Name]);
+                            break;
+                        }
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
     }
 }

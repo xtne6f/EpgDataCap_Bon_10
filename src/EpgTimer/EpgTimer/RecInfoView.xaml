@@ -34,18 +34,38 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
+            <MenuItem Header="プロテクト" Name="IsProtect" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="番組名" Name="EventName" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="Drop" Name="Drops" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="Scramble" Name="Scrambles" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="結果" Name="Result" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" Click="headerSelect_Click" />
+        </ContextMenu>
+        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu">
+            <MenuItem Header="録画情報" Click="button_recInfo_Click" />
+            <MenuItem Header="削除" Click="button_del_Click" />
+            <MenuItem Header="再生" Click="button_play_Click" />
+            <MenuItem Header="自動予約登録" Click="autoadd_Click" />
+            <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" />
+        </ContextMenu>
+
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="100" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" >
+        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" >
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
                     <Setter Property="Background" Value="{Binding BackColor}" />
+                    <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_recinfo_MouseDoubleClick"/>
                 </Style>
             </ListView.Resources>
@@ -105,15 +125,6 @@
                     </GridViewColumn>
                 </GridView>
             </ListView.View>
-            <ListView.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="録画情報" Click="button_recInfo_Click" />
-                    <MenuItem Header="削除" Click="button_del_Click" />
-                    <MenuItem Header="再生" Click="button_play_Click" />
-                    <MenuItem Header="自動予約登録" Click="autoadd_Click" />
-                    <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" />
-                </ContextMenu>
-            </ListView.ContextMenu>
         </ListView>
         <StackPanel Grid.Column="1" Name="stackPanel_button">
             <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />

@@ -230,6 +230,15 @@ namespace Def {
 		/// </summary>
 		property UInt32 ReserveStatus;
 
+		/// <summary>
+		/// 録画予定ファイル名
+		/// </summary>
+		property List<String^>^ RecFileNameList;
+
+		/// <summary>
+		/// 将来用
+		/// </summary>
+		property UInt32 param1;
 	public:
 		ReserveData(void){
 			Title = gcnew String("");
@@ -248,6 +257,8 @@ namespace Def {
 //			StartTimeEpg = gcnew DateTime();
 			RecSetting = gcnew RecSettingData();
 			ReserveStatus = 0;
+			RecFileNameList = gcnew List<String^>();
+			param1 = 0;
 		};
 	};
 
@@ -896,11 +907,16 @@ namespace Def {
 		/// 録画設定
 		/// </summary>
 		property RecSettingData^ recSetting;
+		/// <summary>
+		/// 予約登録数
+		/// </summary>
+		property UInt32 addCount;
 	public:
 		EpgAutoAddData(void){
 			dataID = 0;
 			searchInfo = gcnew EpgSearchKeyInfo();
 			recSetting = gcnew RecSettingData();
+			addCount = 0;
 		};
 	};
 

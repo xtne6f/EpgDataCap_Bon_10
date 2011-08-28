@@ -9,6 +9,15 @@
         <Style TargetType="{x:Type TextBox}">
             <Setter Property="InputMethod.PreferredImeState" Value="Off" />
         </Style>
+        <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
+            <MenuItem Header="Andキーワード" Name="AndKey" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="Notキーワード" Name="NotKey" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="正規表現" Name="RegExp" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="登録対象数" Name="AddCount" IsCheckable="True" Click="headerSelect_Click" />
+        </ContextMenu>        
     </UserControl.Resources>
     <Grid>
         <Grid>
@@ -16,7 +25,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="130" />
             </Grid.ColumnDefinitions>
-            <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}">
+            <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening">
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
                         <Setter Property="ToolTipService.ShowDuration" Value="20000" />
@@ -54,6 +63,11 @@
                         <GridViewColumn DisplayMemberBinding="{Binding Path=Tuijyu}">
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="追従" Tag="Tuijyu" HorizontalContentAlignment="Left"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=AddCount}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="登録対象数" Tag="AddCount" HorizontalContentAlignment="Left"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                     </GridView>

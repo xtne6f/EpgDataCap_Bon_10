@@ -194,6 +194,18 @@ namespace EpgTimer
                 return view;
             }
         }
+        public List<String> RecFileName
+        {
+            get
+            {
+                List<String> list = new List<string>();
+                if (ReserveInfo != null)
+                {
+                    list = ReserveInfo.RecFileNameList;
+                }
+                return list;
+            }
+        }
         public SolidColorBrush BackColor
         {
             get

@@ -1,6 +1,7 @@
 ﻿#include "StdAfx.h"
 #include "EpgTimerSrvMain.h"
 #include "HTMLManager.h"
+#include "RestApiManager.h"
 
 #include "../../Common/CommonDef.h"
 #include "../../Common/CtrlCmdDef.h"
@@ -624,6 +625,8 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 	BOOL chgRecEnd = FALSE;
 	map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itrKey;
 	for( itrKey = this->epgAutoAdd.dataIDMap.begin(); itrKey != this->epgAutoAdd.dataIDMap.end(); itrKey++ ){
+		itrKey->second->addCount = 0;
+
 		vector<CEpgDBManager::SEARCH_RESULT_EVENT> resultList;
 		this->epgDB.SearchEpg(&itrKey->second->searchInfo, &resultList);
 		for( size_t i=0; i<resultList.size(); i++ ){
@@ -640,6 +643,8 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 				//対象期間外
 				continue;
 			}
+
+			itrKey->second->addCount++;
 
 			if(this->reserveManager.IsFindReserve(
 				result->original_network_id,
@@ -747,6 +752,7 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 	}else if(chgRecEnd == TRUE){
 		this->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
 	}
+	this->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
 
 
 	return ret;
@@ -2553,6 +2559,15 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 		string url = "";
 		Separate(httpHeader, " ", url, httpHeader);
 		OutputDebugStringA(url.c_str());
+		if(url.find("/api/") == 0 ){
+			string param = "";
+			if( recvParam->dataSize > 0 ){
+				param.append((char*)recvParam->data, 0, recvParam->dataSize);
+			}
+
+			CRestApiManager restApi;
+			restApi.AnalyzeCmd(verb, url, param, sendParam, &sys->epgDB);
+		}else
 		if( CompareNoCase(verb, "GET") == 0 ){
 			if( url.compare("/") == 0 || url.compare("/index.html") == 0 ){
 				htmlManager.GetIndexPage(sendParam);
@@ -2767,5 +2782,4 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 	}
 	return 0;
 }
-
 

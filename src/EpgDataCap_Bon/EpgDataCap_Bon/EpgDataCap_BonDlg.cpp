@@ -118,6 +118,8 @@ BEGIN_MESSAGE_MAP(CEpgDataCap_BonDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CHECK_REC_SET, &CEpgDataCap_BonDlg::OnBnClickedCheckRecSet)
 	ON_BN_CLICKED(IDC_CHECK_NEXTPG, &CEpgDataCap_BonDlg::OnBnClickedCheckNextpg)
 	ON_BN_CLICKED(IDC_BUTTON_TIMESHIFT, &CEpgDataCap_BonDlg::OnBnClickedButtonTimeshift)
+	ON_WM_QUERYENDSESSION()
+	ON_WM_ENDSESSION()
 END_MESSAGE_MAP()
 
 
@@ -1259,4 +1261,31 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonTimeshift()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	this->main.StartTimeShift();
+}
+
+
+BOOL CEpgDataCap_BonDlg::OnQueryEndSession()
+{
+	if (!CDialogEx::OnQueryEndSession())
+		return FALSE;
+
+	// TODO:  ここに特定なクエリの終了セッション コードを追加してください。
+	if( this->main.IsRec() == TRUE ){
+		return FALSE;
+	}
+	return TRUE;
+}
+
+
+void CEpgDataCap_BonDlg::OnEndSession(BOOL bEnding)
+{
+	CDialogEx::OnEndSession(bEnding);
+
+	// TODO: ここにメッセージ ハンドラー コードを追加します。
+	if( bEnding == TRUE ){
+		if( this->main.IsRec() == TRUE ){
+			this->main.StopReserveRec();
+			this->main.StopRec();
+		}
+	}
 }

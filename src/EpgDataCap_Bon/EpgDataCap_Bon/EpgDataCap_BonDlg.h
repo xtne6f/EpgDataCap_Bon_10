@@ -131,4 +131,6 @@ public:
 	afx_msg void OnBnClickedCheckNextpg();
 	CButton btnTimeShift;
 	afx_msg void OnBnClickedButtonTimeshift();
+	afx_msg BOOL OnQueryEndSession();
+	afx_msg void OnEndSession(BOOL bEnding);
 };

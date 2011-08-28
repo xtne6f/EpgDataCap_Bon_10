@@ -97,6 +97,9 @@ typedef struct _RESERVE_DATA{
 	SYSTEMTIME startTimeEpg;		//予約時の開始時間
 	REC_SETTING_DATA recSetting;	//録画設定
 	DWORD reserveStatus;			//予約追加状態 内部で使用
+	//CMD_VER 5以降
+	vector<wstring> recFileNameList;	//録画予定ファイル名
+	DWORD param1;					//将来用
 	//=オペレーターの処理
 	_RESERVE_DATA(void){
 		title=L"";
@@ -658,10 +661,12 @@ typedef struct _EPG_AUTO_ADD_DATA{
 	DWORD dataID;
 	EPGDB_SEARCH_KEY_INFO searchInfo;	//検索キー
 	REC_SETTING_DATA recSetting;	//録画設定
+	DWORD addCount;		//予約登録数
 	_EPG_AUTO_ADD_DATA & operator= (const _EPG_AUTO_ADD_DATA & o) {
 		dataID = o.dataID;
 		searchInfo = o.searchInfo;
 		recSetting = o.recSetting;
+		addCount = o.addCount;
 		return *this;
 	};
 } EPG_AUTO_ADD_DATA;

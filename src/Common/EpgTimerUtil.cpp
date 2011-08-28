@@ -707,3 +707,142 @@ void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name)
 		name = itr->second;
 	}
 }
+
+void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo)
+{
+	destInfo->event_id = srcInfo->event_id;
+	destInfo->StartTimeFlag = srcInfo->StartTimeFlag;
+	destInfo->start_time = srcInfo->start_time;
+	destInfo->DurationFlag = srcInfo->DurationFlag;
+	destInfo->durationSec = srcInfo->durationSec;
+	destInfo->freeCAFlag = srcInfo->freeCAFlag;
+
+	if( srcInfo->shortInfo != NULL ){
+		EPG_SHORT_EVENT_INFO* item = new EPG_SHORT_EVENT_INFO;
+		destInfo->shortInfo = item;
+
+		item->event_nameLength = (WORD)srcInfo->shortInfo->event_name.size();
+		item->event_name = new WCHAR[item->event_nameLength+1];
+		ZeroMemory(item->event_name, sizeof(WCHAR)*(item->event_nameLength+1));
+		if( item->event_nameLength > 0 ){
+			wcscpy_s(item->event_name, item->event_nameLength+1, srcInfo->shortInfo->event_name.c_str());
+		}
+
+		item->text_charLength = (WORD)srcInfo->shortInfo->text_char.size();
+		item->text_char = new WCHAR[item->text_charLength+1];
+		ZeroMemory(item->text_char, sizeof(WCHAR)*(item->text_charLength+1));
+		if( item->text_charLength > 0 ){
+			wcscpy_s(item->text_char, item->text_charLength+1, srcInfo->shortInfo->text_char.c_str());
+		}
+	}
+
+	if( srcInfo->extInfo != NULL ){
+		EPG_EXTENDED_EVENT_INFO* item = new EPG_EXTENDED_EVENT_INFO;
+		destInfo->extInfo = item;
+
+		item->text_charLength = (WORD)srcInfo->extInfo->text_char.size();
+		item->text_char = new WCHAR[item->text_charLength+1];
+		ZeroMemory(item->text_char, sizeof(WCHAR)*(item->text_charLength+1));
+		if( item->text_charLength > 0 ){
+			wcscpy_s(item->text_char, item->text_charLength+1, srcInfo->extInfo->text_char.c_str());
+		}
+	}
+
+	if( srcInfo->contentInfo != NULL ){
+		EPG_CONTEN_INFO* item = new EPG_CONTEN_INFO;
+		destInfo->contentInfo = item;
+
+		item->listSize = (WORD)srcInfo->contentInfo->nibbleList.size();
+		if( item->listSize > 0 ){
+			item->nibbleList = new EPG_CONTENT[item->listSize];
+			for( WORD i=0; i<item->listSize; i++ ){
+				item->nibbleList[i].content_nibble_level_1 = srcInfo->contentInfo->nibbleList[i].content_nibble_level_1;
+				item->nibbleList[i].content_nibble_level_2 = srcInfo->contentInfo->nibbleList[i].content_nibble_level_2;
+				item->nibbleList[i].user_nibble_1 = srcInfo->contentInfo->nibbleList[i].user_nibble_1;
+				item->nibbleList[i].user_nibble_2 = srcInfo->contentInfo->nibbleList[i].user_nibble_2;
+			}
+		}
+	}
+
+	if( srcInfo->componentInfo != NULL ){
+		EPG_COMPONENT_INFO* item = new EPG_COMPONENT_INFO;
+		destInfo->componentInfo = item;
+
+		item->stream_content = srcInfo->componentInfo->stream_content;
+		item->component_type = srcInfo->componentInfo->component_type;
+		item->component_tag = srcInfo->componentInfo->component_tag;
+
+		item->text_charLength = (WORD)srcInfo->componentInfo->text_char.size();
+		item->text_char = new WCHAR[item->text_charLength+1];
+		ZeroMemory(item->text_char, sizeof(WCHAR)*(item->text_charLength+1));
+		if( item->text_charLength > 0 ){
+			wcscpy_s(item->text_char, item->text_charLength+1, srcInfo->componentInfo->text_char.c_str());
+		}
+	}
+
+	if( srcInfo->audioInfo != NULL ){
+		EPG_AUDIO_COMPONENT_INFO* item = new EPG_AUDIO_COMPONENT_INFO;
+		destInfo->audioInfo = item;
+		item->listSize = (WORD)srcInfo->audioInfo->componentList.size();
+		if( item->listSize > 0 ){
+			item->audioList = new EPG_AUDIO_COMPONENT_INFO_DATA[item->listSize];
+			for( WORD i=0; i<item->listSize; i++ ){
+				item->audioList[i].stream_content = srcInfo->audioInfo->componentList[i].stream_content;
+				item->audioList[i].component_type = srcInfo->audioInfo->componentList[i].component_type;
+				item->audioList[i].component_tag = srcInfo->audioInfo->componentList[i].component_tag;
+				item->audioList[i].stream_type = srcInfo->audioInfo->componentList[i].stream_type;
+				item->audioList[i].simulcast_group_tag = srcInfo->audioInfo->componentList[i].simulcast_group_tag;
+				item->audioList[i].ES_multi_lingual_flag = srcInfo->audioInfo->componentList[i].ES_multi_lingual_flag;
+				item->audioList[i].main_component_flag = srcInfo->audioInfo->componentList[i].main_component_flag;
+				item->audioList[i].quality_indicator = srcInfo->audioInfo->componentList[i].quality_indicator;
+				item->audioList[i].sampling_rate = srcInfo->audioInfo->componentList[i].sampling_rate;
+
+				item->audioList[i].text_charLength = (WORD)srcInfo->audioInfo->componentList[i].text_char.size();
+				item->audioList[i].text_char = new WCHAR[item->audioList[i].text_charLength+1];
+				ZeroMemory(item->audioList[i].text_char, sizeof(WCHAR)*(item->audioList[i].text_charLength+1));
+				if( item->audioList[i].text_charLength > 0 ){
+					wcscpy_s(item->audioList[i].text_char, item->audioList[i].text_charLength+1, srcInfo->audioInfo->componentList[i].text_char.c_str());
+				}
+			}
+		}
+	}
+
+	if( srcInfo->eventGroupInfo != NULL ){
+		EPG_EVENTGROUP_INFO* item = new EPG_EVENTGROUP_INFO;
+		destInfo->eventGroupInfo = item;
+
+		item->group_type = srcInfo->eventGroupInfo->group_type;
+		item->event_count = (BYTE)srcInfo->eventGroupInfo->eventDataList.size();
+
+		if( item->event_count > 0 ){
+			item->eventDataList = new EPG_EVENT_DATA[item->event_count];
+			for( BYTE i=0; i<item->event_count; i++ ){
+				item->eventDataList[i].original_network_id = srcInfo->eventGroupInfo->eventDataList[i].original_network_id;
+				item->eventDataList[i].transport_stream_id = srcInfo->eventGroupInfo->eventDataList[i].transport_stream_id;
+				item->eventDataList[i].service_id = srcInfo->eventGroupInfo->eventDataList[i].service_id;
+				item->eventDataList[i].event_id = srcInfo->eventGroupInfo->eventDataList[i].event_id;
+			}
+		}
+	}
+
+	if( srcInfo->eventRelayInfo != NULL ){
+		EPG_EVENTGROUP_INFO* item = new EPG_EVENTGROUP_INFO;
+		destInfo->eventRelayInfo = item;
+
+		item->group_type = srcInfo->eventRelayInfo->group_type;
+		//他チャンネルのときevent_countは０になっている
+		//item->event_count = srcInfo->eventGroupInfo->event_count;
+		item->event_count = (BYTE)srcInfo->eventRelayInfo->eventDataList.size();
+
+		if( item->event_count > 0 ){
+			item->eventDataList = new EPG_EVENT_DATA[item->event_count];
+			for( BYTE i=0; i<item->event_count; i++ ){
+				item->eventDataList[i].original_network_id = srcInfo->eventRelayInfo->eventDataList[i].original_network_id;
+				item->eventDataList[i].transport_stream_id = srcInfo->eventRelayInfo->eventDataList[i].transport_stream_id;
+				item->eventDataList[i].service_id = srcInfo->eventRelayInfo->eventDataList[i].service_id;
+				item->eventDataList[i].event_id = srcInfo->eventRelayInfo->eventDataList[i].event_id;
+			}
+		}
+	}
+
+}

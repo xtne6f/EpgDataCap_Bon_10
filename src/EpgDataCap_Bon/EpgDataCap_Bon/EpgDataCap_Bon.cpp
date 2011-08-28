@@ -50,6 +50,7 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 
 	CWinApp::InitInstance();
 
+	SetProcessShutdownParameters(0x300, 0);
 
 	AfxEnableControlContainer();
 

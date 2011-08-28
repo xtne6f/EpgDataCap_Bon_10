@@ -333,38 +333,39 @@ namespace EpgTimer
                 }
             }
         }
-
+        
         private void recmode_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                MenuItem menuItem = sender as MenuItem;
                 List<ReserveData> list = new List<ReserveData>();
                 foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
                     ReserveData reserveInfo = item.ReserveInfo;
 
                     byte recMode = 0;
-                    if (sender == recmode_all)
+                    if (menuItem.Name.CompareTo("recmode_all") == 0)
                     {
                         recMode = 0;
                     }
-                    else if (sender == recmode_only)
+                    else if (menuItem.Name.CompareTo("recmode_only") == 0)
                     {
                         recMode = 1;
                     }
-                    else if (sender == recmode_all_nodec)
+                    else if (menuItem.Name.CompareTo("recmode_all_nodec") == 0)
                     {
                         recMode = 2;
                     }
-                    else if (sender == recmode_only_nodec)
+                    else if (menuItem.Name.CompareTo("recmode_only_nodec") == 0)
                     {
                         recMode = 3;
                     }
-                    else if (sender == recmode_view)
+                    else if (menuItem.Name.CompareTo("recmode_view") == 0)
                     {
                         recMode = 4;
                     }
-                    else if (sender == recmode_no)
+                    else if (menuItem.Name.CompareTo("recmode_no") == 0)
                     {
                         recMode = 5;
                     }
@@ -398,7 +399,7 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
+        
         private void button_no_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -434,34 +435,35 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
+        
         private void priority_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                MenuItem menuItem = sender as MenuItem;
                 List<ReserveData> list = new List<ReserveData>();
                 foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
                     ReserveData reserveInfo = item.ReserveInfo;
 
                     byte priority = 1;
-                    if (sender == priority_1)
+                    if (menuItem.Name.CompareTo("priority_1") == 0)
                     {
                         priority = 1;
                     }
-                    else if (sender == priority_2)
+                    else if (menuItem.Name.CompareTo("priority_2") == 0)
                     {
                         priority = 2;
                     }
-                    else if (sender == priority_3)
+                    else if (menuItem.Name.CompareTo("priority_3") == 0)
                     {
                         priority = 3;
                     }
-                    else if (sender == priority_4)
+                    else if (menuItem.Name.CompareTo("priority_4") == 0)
                     {
                         priority = 4;
                     }
-                    else if (sender == priority_5)
+                    else if (menuItem.Name.CompareTo("priority_5") == 0)
                     {
                         priority = 5;
                     }
@@ -495,7 +497,7 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
+        
         private void autoadd_Click(object sender, RoutedEventArgs e)
         {
             if (listView_reserve.SelectedItem != null)
@@ -578,6 +580,63 @@ namespace EpgTimer
                 }
             }
         }
+
+        private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            try
+            {
+                foreach (MenuItem item in listView_reserve.ContextMenu.Items)
+                {
+                    item.IsChecked = false;
+                    foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
+                    {
+                        if (info.Tag.CompareTo(item.Name) == 0)
+                        {
+                            item.IsChecked = true;
+                            break;
+                        }
+                    }
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void headerSelect_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                MenuItem menuItem = sender as MenuItem;
+                if (menuItem.IsChecked == true)
+                {
+
+                    Settings.Instance.ReserveListColumn.Add(new ListColumnInfo(menuItem.Name, Double.NaN));
+                    gridView_reserve.Columns.Add(columnList[menuItem.Name]);
+                }
+                else
+                {
+                    foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
+                    {
+                        if (info.Tag.CompareTo(menuItem.Name) == 0)
+                        {
+                            Settings.Instance.ReserveListColumn.Remove(info);
+                            gridView_reserve.Columns.Remove(columnList[menuItem.Name]);
+                            break;
+                        }
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
 
     }
 }

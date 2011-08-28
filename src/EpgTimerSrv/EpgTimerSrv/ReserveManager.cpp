@@ -3,8 +3,10 @@
 #include <process.h>
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/SendCtrlCmd.h"
-#include "CheckRecFile.h"
+#include "../../Common/ReNamePlugInUtil.h"
+#include "../../Common/EpgTimerUtil.h"
 
+#include "CheckRecFile.h"
 #include <tlhelp32.h> 
 #include <shlwapi.h>
 #include <algorithm>
@@ -12,7 +14,6 @@
 
 #include <LM.h>
 #pragma comment (lib, "netapi32.lib")
-
 
 CReserveManager::CReserveManager(void)
 {
@@ -90,6 +91,7 @@ CReserveManager::CReserveManager(void)
 	this->chgText.ParseReserveText(textPath.c_str() );
 
 	this->ngShareFile = FALSE;
+	this->epgDBManager = NULL;
 
 	ReloadSetting();
 }
@@ -269,6 +271,7 @@ void CReserveManager::SetEpgDBManager(CEpgDBManager* epgDBManager)
 {
 	if( Lock(L"CReserveManager::SetEpgDBManager") == FALSE ) return;
 
+	this->epgDBManager = epgDBManager;
 	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
 		itrCtrl->second->SetEpgDBManager(epgDBManager);
@@ -562,6 +565,13 @@ void CReserveManager::ReloadSetting()
 
 	this->recEndTweetErr = GetPrivateProfileInt(L"SET", L"RecEndTweetErr", 0, iniAppPath.c_str());
 	this->recEndTweetDrop = GetPrivateProfileInt(L"SET", L"RecEndTweetDrop", 0, iniAppPath.c_str());
+
+	this->useRecNamePlugIn = GetPrivateProfileInt(L"SET", L"RecNamePlugIn", 0, iniAppPath.c_str());
+	GetPrivateProfileString(L"SET", L"RecNamePlugInFile", L"RecName_Macro.dll", buff, 512, iniAppPath.c_str());
+
+	GetModuleFolderPath(this->recNamePlugInFilePath);
+	this->recNamePlugInFilePath += L"\\RecName\\";
+	this->recNamePlugInFilePath += buff;
 
 	IsFindShareTSFile();
 	UnLock();
@@ -1096,10 +1106,123 @@ BOOL CReserveManager::GetReserveDataAll(
 	if( Lock(L"GetReserveDataAll") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
+	map<DWORD, TUNER_RESERVE_INFO> tunerResMap;
+	map<DWORD, BANK_INFO*>::iterator itrBank;
+	for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++ ){
+		TUNER_RESERVE_INFO item;
+		item.tunerID = itrBank->second->tunerID;
+		this->tunerManager.GetBonFileName(item.tunerID, item.tunerName);
+
+		map<DWORD, BANK_WORK_INFO*>::iterator itrInfo;
+		for( itrInfo = itrBank->second->reserveList.begin(); itrInfo != itrBank->second->reserveList.end(); itrInfo++){
+			tunerResMap.insert(pair<DWORD, TUNER_RESERVE_INFO>(itrInfo->second->reserveID, item));
+		}
+	}
+
+	TUNER_RESERVE_INFO itemNg;
+	itemNg.tunerID = 0xFFFFFFFF;
+	itemNg.tunerName = L"チューナー不足";
+	map<DWORD, BANK_WORK_INFO*>::iterator itrNg;
+	for( itrNg = this->NGReserveMap.begin(); itrNg != this->NGReserveMap.end(); itrNg++ ){
+		tunerResMap.insert(pair<DWORD, TUNER_RESERVE_INFO>(itrNg->second->reserveID, itemNg));
+	}
+
+
 	map<DWORD, CReserveInfo*>::iterator itr;
 	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
 		RESERVE_DATA* item = new RESERVE_DATA;
 		itr->second->GetData(item);
+
+		map<DWORD, TUNER_RESERVE_INFO>::iterator itrTune;
+		itrTune = tunerResMap.find(item->reserveID);
+		if( itrTune != tunerResMap.end() ){
+			wstring defName = L"";
+
+			PLUGIN_RESERVE_INFO info;
+
+			info.startTime = item->startTime;
+			info.durationSec = item->durationSecond;
+			wcscpy_s(info.eventName, 512, item->title.c_str());
+			info.ONID = item->originalNetworkID;
+			info.TSID = item->transportStreamID;
+			info.SID = item->serviceID;
+			info.EventID = item->eventID;
+			wcscpy_s(info.serviceName, 256, item->stationName.c_str());
+			wcscpy_s(info.bonDriverName, 256, itrTune->second.tunerName.c_str());
+			info.bonDriverID = (itrTune->second.tunerID & 0xFFFF0000)>>16;
+			info.tunerID = itrTune->second.tunerID & 0x0000FFFF;
+
+			EPG_EVENT_INFO* epgInfo = NULL;
+			EPGDB_EVENT_INFO* epgDBInfo;
+			if( this->epgDBManager != NULL && info.EventID != 0xFFFF ){
+				if( this->epgDBManager->SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
+					epgInfo = new EPG_EVENT_INFO;
+					CopyEpgInfo(epgInfo, epgDBInfo);
+				}
+			}
+
+			if( this->useRecNamePlugIn == TRUE ){
+				CReNamePlugInUtil plugIn;
+				if( plugIn.Initialize(this->recNamePlugInFilePath.c_str()) == TRUE ){
+					WCHAR name[512] = L"";
+					DWORD size = 512;
+
+					if( epgInfo != NULL ){
+						if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
+							defName = name;
+						}
+						SAFE_DELETE(epgInfo);
+					}else{
+						if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
+							defName = name;
+						}
+					}
+				}
+			}
+			if( defName.size() ==0 ){
+				Format(defName, L"%04d%02d%02d%02d%02d%02X%02X%02d-%s.ts",
+					item->startTime.wYear,
+					item->startTime.wMonth,
+					item->startTime.wDay,
+					item->startTime.wHour,
+					item->startTime.wMinute,
+					((itrTune->second.tunerID & 0xFFFF0000)>>16),
+					(itrTune->second.tunerID & 0x0000FFFF),
+					0,
+					item->title.c_str()
+					);
+			}
+			if( item->recSetting.recFolderList.size() == 0 ){
+				item->recFileNameList.push_back(defName);
+			}else{
+				for( size_t i=0; i<item->recSetting.recFolderList.size(); i++ ){
+					if( item->recSetting.recFolderList[i].recNamePlugIn.size() > 0){
+						CReNamePlugInUtil plugIn;
+						wstring plugInPath = L"";
+						GetModuleFolderPath(plugInPath);
+						plugInPath += L"\\RecName\\";
+						plugInPath += item->recSetting.recFolderList[i].recNamePlugIn;
+						if( plugIn.Initialize(plugInPath.c_str()) == TRUE ){
+							WCHAR name[512] = L"";
+							DWORD size = 512;
+
+							if( epgInfo != NULL ){
+								if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
+									item->recFileNameList.push_back(name);
+								}
+								SAFE_DELETE(epgInfo);
+							}else{
+								if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
+									item->recFileNameList.push_back(name);
+								}
+							}
+						}
+					}else{
+						item->recFileNameList.push_back(defName);
+					}
+				}
+			}
+		}
 		reserveList->push_back(item);
 	}
 
@@ -4335,6 +4458,7 @@ BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 
 					addItem.recSetting = data->recSetting;
 					addItem.reserveStatus = ADD_RESERVE_RELAY;
+					addItem.recSetting.tunerID = 0;
 					_AddReserveData(&addItem);
 					add = TRUE;
 					OutputDebugString(L"★イベントリレー追加");

@@ -241,6 +241,18 @@ namespace EpgTimer
                 return view;
             }
         }
+        public String AddCount
+        {
+            get
+            {
+                String view = "0";
+                if (EpgAutoAddInfo != null)
+                {
+                    view = EpgAutoAddInfo.addCount.ToString();
+                }
+                return view;
+            }
+        }
         public TextBlock ToolTipView
         {
             get

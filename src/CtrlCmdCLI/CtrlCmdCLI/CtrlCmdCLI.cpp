@@ -307,6 +307,13 @@ void CtrlCmdUtil::CopyData(Def::ReserveData^ src, RESERVE_DATA* dest)
 	CopyData(src->StartTimeEpg, &dest->startTimeEpg);
 	CopyData(src->RecSetting, &dest->recSetting);
 	dest->reserveStatus = src->ReserveStatus;
+
+	for( int i=0; i<src->RecFileNameList->Count; i++){
+		pin_ptr<const wchar_t> namePin = PtrToStringChars(src->RecFileNameList[i]);
+
+		dest->recFileNameList.push_back(namePin);
+	}
+	dest->param1 = src->param1;
 }
 
 void CtrlCmdUtil::CopyData(RESERVE_DATA* src, Def::ReserveData^% dest)
@@ -329,6 +336,12 @@ void CtrlCmdUtil::CopyData(RESERVE_DATA* src, Def::ReserveData^% dest)
 //	CopyData(&src->startTimeEpg, dest->StartTimeEpg);
 	CopyData(&src->recSetting, dest->RecSetting);
 	dest->ReserveStatus = src->reserveStatus;
+
+	for( size_t i=0; i<src->recFileNameList.size(); i++){
+		dest->RecFileNameList->Add( gcnew String(src->recFileNameList[i].c_str()) );
+	}
+	dest->param1 = src->param1;
+
 }
 
 void CtrlCmdUtil::CopyData(Def::RecSettingData^ src, REC_SETTING_DATA* dest)
@@ -884,6 +897,7 @@ void CtrlCmdUtil::CopyData(Def::EpgAutoAddData^ src, EPG_AUTO_ADD_DATA* dest)
 	dest->dataID = src->dataID;
 	CopyData(src->searchInfo, &dest->searchInfo);
 	CopyData(src->recSetting, &dest->recSetting);
+	dest->addCount = src->addCount;
 }
 
 void CtrlCmdUtil::CopyData(EPG_AUTO_ADD_DATA* src, Def::EpgAutoAddData^% dest)
@@ -891,6 +905,8 @@ void CtrlCmdUtil::CopyData(EPG_AUTO_ADD_DATA* src, Def::EpgAutoAddData^% dest)
 	dest->dataID = src->dataID;
 	CopyData(&src->searchInfo, dest->searchInfo);
 	CopyData(&src->recSetting, dest->recSetting);
+	dest->addCount = src->addCount;
+	
 }
 
 void CtrlCmdUtil::CopyData(Def::ManualAutoAddData^ src, MANUAL_AUTO_ADD_DATA* dest)

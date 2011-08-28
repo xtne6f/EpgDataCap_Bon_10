@@ -1215,7 +1215,15 @@ DWORD GetVALUESize2(WORD ver, RESERVE_DATA* val )
 	size += GetVALUESize2(ver,&val->startTimeEpg);
 	size += GetVALUESize2(ver,&val->recSetting);
 	size += GetVALUESize2(ver,val->reserveStatus);
-	if( ver>=2 ){
+
+	if( ver<=4 ){
+		goto CMD_END;
+	}
+
+	size += GetVALUESize2(ver,&val->recFileNameList);
+	size += GetVALUESize2(ver,val->param1);
+
+	if( ver>=5 ){
 		goto CMD_END;
 	}
 
@@ -1302,7 +1310,21 @@ BOOL WriteVALUE2(WORD ver, RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD*
 			return FALSE;
 		}
 		pos += size;
-		if( ver>=2 ){
+
+		if( ver<=4 ){
+			goto CMD_END;
+		}
+
+		if( WriteVALUE2(ver, &val->recFileNameList, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( WriteVALUE2(ver, val->param1, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=5 ){
 			goto CMD_END;
 		}
 	}
@@ -1396,6 +1418,20 @@ BOOL ReadVALUE2(WORD ver, RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* 
 			return FALSE;
 		}
 		pos += size;
+
+		if( ver<=4 ){
+			goto CMD_END;
+		}
+
+		if( ReadVALUE2(ver, &val->recFileNameList, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+		if( ReadVALUE2(ver, &val->param1, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
 		if( ver>=2 ){
 			goto CMD_END;
 		}
@@ -2400,7 +2436,14 @@ DWORD GetVALUESize2(WORD ver, EPG_AUTO_ADD_DATA* val )
 	size += GetVALUESize2(ver,val->dataID);
 	size += GetVALUESize2(ver,&val->searchInfo);
 	size += GetVALUESize2(ver,&val->recSetting);
-	if( ver>=2 ){
+
+	if( ver<=4 ){
+		goto CMD_END;
+	}
+
+	size += GetVALUESize2(ver,val->addCount);
+
+	if( ver>=5 ){
 		goto CMD_END;
 	}
 
@@ -2435,7 +2478,17 @@ BOOL WriteVALUE2(WORD ver, EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, D
 			return FALSE;
 		}
 		pos += size;
-		if( ver>=2 ){
+
+		if( ver<=4 ){
+			goto CMD_END;
+		}
+
+		if( WriteVALUE2(ver, val->addCount, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=5 ){
 			goto CMD_END;
 		}
 	}
@@ -2478,7 +2531,16 @@ BOOL ReadVALUE2(WORD ver, EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DW
 		}
 		pos += size;
 
-		if( ver>=2 ){
+		if( ver<=4 ){
+			goto CMD_END;
+		}
+
+		if( ReadVALUE2(ver, &val->addCount, buff + pos, buffSize - pos, &size ) == FALSE ){
+			return FALSE;
+		}
+		pos += size;
+
+		if( ver>=5 ){
 			goto CMD_END;
 		}
 	}

@@ -2183,7 +2183,7 @@ BOOL CTunerBankCtrl::GetRecFilePath(
 
 	return ret;
 }
-
+/*
 void CTunerBankCtrl::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo)
 {
 	destInfo->event_id = srcInfo->event_id;
@@ -2322,3 +2322,4 @@ void CTunerBankCtrl::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* src
 	}
 
 }
+*/

@@ -244,6 +244,8 @@ protected:
 	CNWCoopManager nwCoopManager;
 	CRecInfoDBManager recInfoManager;
 
+	CEpgDBManager* epgDBManager;
+
 	typedef struct _BANK_WORK_INFO{
 		CReserveInfo* reserveInfo;
 		LONGLONG startTime;//マイナス値マージン考慮した開始時間
@@ -331,6 +333,8 @@ protected:
 	BOOL errEndBatRun;
 
 	int reloadBankMapAlgo;
+	BOOL useRecNamePlugIn;
+	wstring recNamePlugInFilePath;
 protected:
 	//PublicAPI排他制御用
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);

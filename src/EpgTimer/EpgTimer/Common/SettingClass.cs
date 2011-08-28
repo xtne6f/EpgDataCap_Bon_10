@@ -1034,6 +1034,7 @@ namespace EpgTimer
                     Instance.reserveListColumn.Add(new ListColumnInfo("Priority", double.NaN));
                     Instance.reserveListColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
                     Instance.reserveListColumn.Add(new ListColumnInfo("Comment", double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo("RecFileName", double.NaN));
                 }
                 if (Instance.recInfoListColumn.Count == 0)
                 {

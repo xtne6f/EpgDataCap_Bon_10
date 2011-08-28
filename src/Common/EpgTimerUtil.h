@@ -3,6 +3,7 @@
 
 #include "Util.h"
 #include "StructDef.h"
+#include "EpgDataCap3Def.h"
 
 //チャンネルを__int64としてキーにする
 LONGLONG _Create64Key( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID );
@@ -32,5 +33,7 @@ void _ConvertEpgInfoText2(EPGDB_EVENT_INFO* info, wstring& text, wstring service
 void GetChkDrivePath(wstring directoryPath, wstring& mountPath);
 
 void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name);
+
+void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo);
 
 #endif

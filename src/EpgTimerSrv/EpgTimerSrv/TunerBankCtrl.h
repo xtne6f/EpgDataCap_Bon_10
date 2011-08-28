@@ -249,6 +249,6 @@ protected:
 	BOOL IsFindContinueReserve(RESERVE_WORK* reserve, DWORD* continueSec);
 
 	void SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, BYTE mode, BOOL addMode = FALSE);
-	void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo);
+	//void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo);
 };
 
