@@ -992,6 +992,7 @@ $Title2F$	$Title2$と同内容でファイル名に使用できない記号が�
 $Genre$		番組のジャンル（EPGデータ存在時のみ）（RecName_Macro.dllのみ）
 $Genre2$	番組の詳細ジャンル（EPGデータ存在時のみ）（RecName_Macro.dllのみ）
 $AddKey$	EPG自動予約で登録されたキーワード（バッチのみ）
+$SubTitle$	サブタイトル（EPGデータ存在時のみ）（RecName_Macro.dllのみ）
 
 ■追従の仕様■
 　追従処理には大きく2種類あります。

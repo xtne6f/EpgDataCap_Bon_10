@@ -2564,9 +2564,16 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 			if( recvParam->dataSize > 0 ){
 				param.append((char*)recvParam->data, 0, recvParam->dataSize);
 			}
+			vector<RESERVE_DATA*> list;
+			sys->reserveManager.GetReserveDataAll(&list);
 
 			CRestApiManager restApi;
-			restApi.AnalyzeCmd(verb, url, param, sendParam, &sys->epgDB);
+			restApi.AnalyzeCmd(verb, url, param, sendParam, &sys->epgDB, &list, &sys->reserveManager);
+
+			for( size_t i=0; i<list.size(); i++ ){
+				SAFE_DELETE(list[i]);
+			}
+			list.clear();
 		}else
 		if( CompareNoCase(verb, "GET") == 0 ){
 			if( url.compare("/") == 0 || url.compare("/index.html") == 0 ){

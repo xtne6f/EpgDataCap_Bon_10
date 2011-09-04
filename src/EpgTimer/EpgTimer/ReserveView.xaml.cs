@@ -213,7 +213,8 @@ namespace EpgTimer
                     bool sort = false;
                     foreach (GridViewColumn info in gridView_reserve.Columns)
                     {
-                        string header = ((Binding)info.DisplayMemberBinding).Path.Path;
+                        GridViewColumnHeader columnHeader = info.Header as GridViewColumnHeader;
+                        string header = columnHeader.Tag as string;
                         if (String.Compare(header, Settings.Instance.ResColumnHead, true) == 0)
                         {
                             Sort(header, Settings.Instance.ResSortDirection);
@@ -227,7 +228,9 @@ namespace EpgTimer
                     }
                     if (gridView_reserve.Columns.Count > 0 && sort == false)
                     {
-                        string header = ((Binding)gridView_reserve.Columns[0].DisplayMemberBinding).Path.Path;
+                        GridViewColumnHeader columnHeader = gridView_reserve.Columns[0].Header as GridViewColumnHeader;
+                        string header = columnHeader.Tag as string;
+
                         Sort(header, _lastDirection);
                         _lastHeaderClicked = header;
                     }
@@ -283,7 +286,7 @@ namespace EpgTimer
             {
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
-                    string header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
+                    string header = headerClicked.Tag as string;
                     if (String.Compare( header, _lastHeaderClicked) != 0 )
                     {
                         direction = ListSortDirection.Ascending;

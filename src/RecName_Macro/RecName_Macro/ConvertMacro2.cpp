@@ -80,6 +80,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	wstring strTitle2=L"";
 	wstring strGenre=L"";
 	wstring strGenre2=L"";
+	wstring strSubTitle=L"";
 
 	strTitle = info->eventName;
 
@@ -187,6 +188,9 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 				GetGenreName(epgInfo->contentInfo->nibbleList[0].content_nibble_level_1, epgInfo->contentInfo->nibbleList[0].content_nibble_level_2, strGenre2);
 			}
 		}
+		if( epgInfo->shortInfo != NULL ){
+			strSubTitle = epgInfo->shortInfo->text_char;
+		}
 	}
 
 	Replace(convert, L"$Title$", strTitle);
@@ -252,6 +256,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	Replace(convert, L"$Title2$", strTitle2);
 	Replace(convert, L"$Genre$", strGenre);
 	Replace(convert, L"$Genre2$", strGenre2);
+	Replace(convert, L"$SubTitle$", strSubTitle);
 
 	return TRUE;
 }

@@ -321,3 +321,14 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこと�
 　エラーログなどの数値はファイル出力処理を行う前までのTSデータに対しての数値にな
 　ります。
 
+■予約録画時に強制的に起動時のサービス指定を行う■
+　この設定はEpgDataCap_Bon.exeが予約録画用に起動したときのみ、有効な設定にな
+　ります。
+　EpgDataCap_Bon.iniにBonDriverのファイル名（拡張子含む）のセクションを追加し、
+　以下のものを追加することで起動時のサービスを指定できます。
+　　OpenFix：1で機能を有効、0で機能を無効
+　　FixONID：OriginalNetworkIDの10進数（デフォルト値:-1）
+　　FixTSID：TransportStreamIDの10進数（デフォルト値:-1）
+　　FixSID：ServiceIDの10進数（デフォルト値:-1）
+　　OpenWait：チューナーオープン後のWait(msec単位)（デフォルト値:0）
+　　ChgWait：チャンネル切換後のWait(msec単位)（デフォルト値:0）

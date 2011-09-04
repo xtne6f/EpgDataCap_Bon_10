@@ -69,6 +69,8 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg(CWnd* pParent /*=NULL*/)
 			this->iniBonDriver = L"";
 		}
 	}
+	this->initOpenWait = 0;
+	this->initChgWait = 0;
 }
 
 void CEpgDataCap_BonDlg::DoDataExchange(CDataExchange* pDX)
@@ -124,6 +126,19 @@ END_MESSAGE_MAP()
 
 
 // CEpgDataCap_BonDlg メッセージ ハンドラー
+void CEpgDataCap_BonDlg::SetInitBon(CString bonFile)
+{
+	iniBonDriver = bonFile;
+	if( GetPrivateProfileInt( iniBonDriver.GetBuffer(0), L"OpenFix", 0, this->moduleIniPath ) == 1){
+		OutputDebugString(L"強制サービス指定 設定値ロード");
+		this->initONID = GetPrivateProfileInt( iniBonDriver.GetBuffer(0), L"FixONID", -1, this->moduleIniPath );
+		this->initTSID = GetPrivateProfileInt( iniBonDriver.GetBuffer(0), L"FixTSID", -1, this->moduleIniPath );
+		this->initSID = GetPrivateProfileInt( iniBonDriver.GetBuffer(0), L"FixSID", -1, this->moduleIniPath );
+		this->initOpenWait = GetPrivateProfileInt( iniBonDriver.GetBuffer(0), L"OpenWait", 0, this->moduleIniPath );
+		this->initChgWait = GetPrivateProfileInt( iniBonDriver.GetBuffer(0), L"ChgWait", 0, this->moduleIniPath );
+		_OutputDebugString(L"%d,%d,%d,%d,%d",initONID,initTSID,initSID,initOpenWait,initChgWait );
+	}
+}
 
 BOOL CEpgDataCap_BonDlg::OnInitDialog()
 {
@@ -159,7 +174,8 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	//BonDriverのオープン
 	DWORD err = NO_ERR;
 	if( this->iniBonDriver.IsEmpty() == false ){
-		err = SelectBonDriver(this->iniBonDriver.GetBuffer(0));
+		err = SelectBonDriver(this->iniBonDriver.GetBuffer(0), TRUE);
+		Sleep(this->initOpenWait);
 	}else{
 		map<int, wstring>::iterator itr;
 		itr = this->bonList.begin();
@@ -175,6 +191,10 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		//チャンネル変更
 		if( this->initONID != -1 && this->initTSID != -1 && this->initSID != -1 ){
 			SelectService(this->initONID, this->initTSID, this->initSID);
+			this->initONID = -1;
+			this->initTSID = -1;
+			this->initSID = -1;
+			Sleep(this->initChgWait);
 		}else{
 			int sel = this->combService.GetCurSel();
 			if( sel != CB_ERR ){
@@ -1060,7 +1080,7 @@ void CEpgDataCap_BonDlg::ReloadBonDriver()
 	}
 }
 
-void CEpgDataCap_BonDlg::ReloadServiceList()
+void CEpgDataCap_BonDlg::ReloadServiceList(BOOL ini)
 {
 	this->serviceList.clear();
 	this->combService.ResetContent();
@@ -1078,9 +1098,11 @@ void CEpgDataCap_BonDlg::ReloadServiceList()
 				if( this->serviceList[i].originalNetworkID == this->initONID &&
 					this->serviceList[i].transportStreamID == this->initTSID &&
 					this->serviceList[i].serviceID == this->initSID ){
-						this->initONID = -1;
-						this->initTSID = -1;
-						this->initSID = -1;
+						if( ini == FALSE ){
+							this->initONID = -1;
+							this->initTSID = -1;
+							this->initSID = -1;
+						}
 						selectSel = index;
 				}
 			}
@@ -1093,7 +1115,7 @@ void CEpgDataCap_BonDlg::ReloadServiceList()
 
 }
 
-DWORD CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName)
+DWORD CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName, BOOL ini)
 {
 	this->main.CloseBonDriver();
 	DWORD err = this->main.OpenBonDriver(fileName);
@@ -1106,7 +1128,7 @@ DWORD CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName)
 		SetDlgItemText(IDC_EDIT_LOG, this->log);
 		BtnUpdate(GUI_NORMAL);
 	}
-	ReloadServiceList();
+	ReloadServiceList(ini);
 	return err;
 }
 
@@ -1271,6 +1293,7 @@ BOOL CEpgDataCap_BonDlg::OnQueryEndSession()
 
 	// TODO:  ここに特定なクエリの終了セッション コードを追加してください。
 	if( this->main.IsRec() == TRUE ){
+		ShowWindow(SW_SHOW);
 		return FALSE;
 	}
 	return TRUE;

@@ -18,12 +18,7 @@ public:
 
 
 	void UnInit();
-	void SetInitBon(CString bonFile){
-		iniBonDriver = bonFile;
-		initONID = -1;
-		initTSID = -1;
-		initSID = -1;
-	};
+	void SetInitBon(CString bonFile);
 	void SetIniMin(BOOL minFlag){ iniMin = minFlag; };
 	void SetIniNW(BOOL networkFlag){ iniNetwork = networkFlag; };
 	void SetIniView(BOOL viewFlag){ iniView = viewFlag; };
@@ -48,9 +43,9 @@ protected:
 	void ChgIconStatus();
 
 	void ReloadBonDriver();
-	void ReloadServiceList();
+	void ReloadServiceList(BOOL ini = FALSE);
 	void ReloadNWSet();
-	DWORD SelectBonDriver(LPCWSTR fileName);
+	DWORD SelectBonDriver(LPCWSTR fileName, BOOL ini = FALSE);
 	DWORD SelectService(WORD ONID, WORD TSID, WORD SID);
 	DWORD SelectService(WORD ONID, WORD TSID, WORD SID,	DWORD space, DWORD ch);
 // 実装
@@ -72,6 +67,8 @@ protected:
 	int initONID;
 	int initTSID;
 	int initSID;
+	int initOpenWait;
+	int initChgWait;
 	BOOL iniMin;
 	BOOL iniView;
 	BOOL iniNetwork;
