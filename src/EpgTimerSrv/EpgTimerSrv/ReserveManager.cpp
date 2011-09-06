@@ -1222,6 +1222,7 @@ BOOL CReserveManager::GetReserveDataAll(
 					}
 				}
 			}
+			SAFE_DELETE(epgInfo);
 		}
 		reserveList->push_back(item);
 	}

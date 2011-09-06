@@ -17,7 +17,6 @@ CStreamCtrlDlg::CStreamCtrlDlg(void)
 	this->timeShiftMode = FALSE;
 }
 
-
 CStreamCtrlDlg::~CStreamCtrlDlg(void)
 {
 }
@@ -152,13 +151,23 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 		case WM_TIMER:
 			{
 				if( wp == 1010 ){
-					RECT rc;
-					GetWindowRect(GetDesktopWindow(), &rc);
+					WINDOWPLACEMENT info;
+					info.length = sizeof(WINDOWPLACEMENT);
+
+					GetWindowPlacement(sys->parentHwnd, &info);
+					RECT rcWnd = info.rcNormalPosition;
+
+					HMONITOR hMonitor = MonitorFromRect(&rcWnd, MONITOR_DEFAULTTONEAREST);
+					MONITORINFO mi;
+					mi.cbSize = sizeof(MONITORINFO);
+					GetMonitorInfo(hMonitor, &mi);
+
+					RECT rc = mi.rcMonitor;
 
 					POINT pos;
 					GetCursorPos(&pos);
 
-					if( pos.y > rc.bottom - 65 ){
+					if( pos.y > rc.bottom - 65 && rc.left < pos.x && pos.x < rc.right){
 						int x = rc.left;
 						int y = rc.bottom-65;
 						int cx = rc.right - rc.left;

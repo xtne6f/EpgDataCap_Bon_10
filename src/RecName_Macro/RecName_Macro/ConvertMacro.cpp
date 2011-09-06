@@ -238,6 +238,9 @@ BOOL CConvertMacro::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, wstring& c
 	Replace(convert, L"$DUSS$", strDUSS);
 	Replace(convert, L"$DUS$", strDUS);
 	Replace(convert, L"$Title2$", strTitle2);
+	Replace(convert, L"$Genre$", L"");
+	Replace(convert, L"$Genre2$", L"");
+	Replace(convert, L"$SubTitle$", L"");
 
 	return TRUE;
 }

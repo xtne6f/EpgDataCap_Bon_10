@@ -257,6 +257,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	Replace(convert, L"$Genre$", strGenre);
 	Replace(convert, L"$Genre2$", strGenre2);
 	Replace(convert, L"$SubTitle$", strSubTitle);
+	Replace(convert, L"\r\n", L"");
 
 	return TRUE;
 }

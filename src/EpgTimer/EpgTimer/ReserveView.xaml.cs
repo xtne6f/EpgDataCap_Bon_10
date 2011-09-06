@@ -206,7 +206,11 @@ namespace EpgTimer
                 if (_lastHeaderClicked != null)
                 {
                     //string header = ((Binding)_lastHeaderClicked.DisplayMemberBinding).Path.Path;
-                    Sort(_lastHeaderClicked, _lastDirection);
+                    if (String.Compare(_lastHeaderClicked, "RecFileName") != 0)
+                    {
+                        Sort(_lastHeaderClicked, _lastDirection);
+                    }
+
                 }
                 else
                 {
@@ -217,11 +221,14 @@ namespace EpgTimer
                         string header = columnHeader.Tag as string;
                         if (String.Compare(header, Settings.Instance.ResColumnHead, true) == 0)
                         {
-                            Sort(header, Settings.Instance.ResSortDirection);
+                            if (String.Compare(header, "RecFileName") != 0)
+                            {
+                                Sort(header, Settings.Instance.ResSortDirection);
 
-                            _lastHeaderClicked = header;
-                            _lastDirection = Settings.Instance.ResSortDirection;
+                                _lastHeaderClicked = header;
+                                _lastDirection = Settings.Instance.ResSortDirection;
 
+                            }
                             sort = true;
                             break;
                         }
@@ -230,9 +237,11 @@ namespace EpgTimer
                     {
                         GridViewColumnHeader columnHeader = gridView_reserve.Columns[0].Header as GridViewColumnHeader;
                         string header = columnHeader.Tag as string;
-
-                        Sort(header, _lastDirection);
-                        _lastHeaderClicked = header;
+                        if (String.Compare(header, "RecFileName") != 0)
+                        {
+                            Sort(header, _lastDirection);
+                            _lastHeaderClicked = header;
+                        }
                     }
                 }
             }
@@ -287,6 +296,11 @@ namespace EpgTimer
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
                     string header = headerClicked.Tag as string;
+                    if (String.Compare(header, "RecFileName") == 0)
+                    {
+                        return;
+                    }
+
                     if (String.Compare( header, _lastHeaderClicked) != 0 )
                     {
                         direction = ListSortDirection.Ascending;
