@@ -5,13 +5,24 @@
 #include "../../Common/TimeUtil.h"
 #include "../../Common/EpgTimerUtil.h"
 
+
 CConvertMacro2::CConvertMacro2(void)
 {
+	::CoInitialize( NULL );
+	HRESULT hr=regExp.CreateInstance(CLSID_RegExp);
+	if(FAILED(hr)){
+		regExp = NULL;
+	}
 }
 
 
 CConvertMacro2::~CConvertMacro2(void)
 {
+	if( regExp != NULL ){
+		regExp.Release();
+	}
+
+	::CoUninitialize();
 }
 
 BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* epgInfo, wstring& convert)
@@ -81,6 +92,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	wstring strGenre=L"";
 	wstring strGenre2=L"";
 	wstring strSubTitle=L"";
+	wstring strSubTitle2=L"";
 
 	strTitle = info->eventName;
 
@@ -190,6 +202,12 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 		}
 		if( epgInfo->shortInfo != NULL ){
 			strSubTitle = epgInfo->shortInfo->text_char;
+			strSubTitle2 = epgInfo->shortInfo->text_char;
+			wstring r;
+			Separate(strSubTitle2, L"\r\n", strSubTitle2, r);
+			if( IsFindKey(strSubTitle2, L"^[#＃第][0-9０１２３４５６７８９]") == FALSE ){
+				strSubTitle2 = L"";
+			}
 		}
 	}
 
@@ -257,7 +275,31 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	Replace(convert, L"$Genre$", strGenre);
 	Replace(convert, L"$Genre2$", strGenre2);
 	Replace(convert, L"$SubTitle$", strSubTitle);
+	Replace(convert, L"$SubTitle2$", strSubTitle2);
 	Replace(convert, L"\r\n", L"");
 
 	return TRUE;
 }
+
+BOOL CConvertMacro2::IsFindKey(wstring src, wstring key)
+{
+	//正規表現モード
+	if( this->regExp != NULL && src.size() > 0 && key.size() > 0 ){
+		try{
+			_bstr_t target( src.c_str() );
+			_bstr_t pattern( key.c_str() );
+
+			this->regExp->PutGlobal( VARIANT_TRUE );
+			this->regExp->PutPattern( pattern );
+
+			IMatchCollectionPtr pMatchCol( this->regExp->Execute( target ) );
+
+			if( pMatchCol->Count > 0 ){
+				return TRUE;
+			}
+		}catch(...){
+		}
+	}
+	return FALSE;
+}
+

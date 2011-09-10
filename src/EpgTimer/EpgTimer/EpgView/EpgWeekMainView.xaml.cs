@@ -191,21 +191,28 @@ namespace EpgTimer
                 if (sender.GetType() == typeof(ProgramView))
                 {
                     ProgramView view = sender as ProgramView;
-                    if (e.Delta < 0)
+                    if (Settings.Instance.MouseScrollAuto == true)
                     {
-                        //下方向
-                        view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset + Settings.Instance.ScrollSize);
+                        view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - e.Delta);
                     }
                     else
                     {
-                        //上方向
-                        if (view.scrollViewer.VerticalOffset < Settings.Instance.ScrollSize)
+                        if (e.Delta < 0)
                         {
-                            view.scrollViewer.ScrollToVerticalOffset(0);
+                            //下方向
+                            view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset + Settings.Instance.ScrollSize);
                         }
                         else
                         {
-                            view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - Settings.Instance.ScrollSize);
+                            //上方向
+                            if (view.scrollViewer.VerticalOffset < Settings.Instance.ScrollSize)
+                            {
+                                view.scrollViewer.ScrollToVerticalOffset(0);
+                            }
+                            else
+                            {
+                                view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - Settings.Instance.ScrollSize);
+                            }
                         }
                     }
                 }

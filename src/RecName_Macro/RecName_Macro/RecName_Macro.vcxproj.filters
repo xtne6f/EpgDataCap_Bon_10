@@ -25,6 +25,9 @@
     <None Include="RecName_PlugIn.def">
       <Filter>ソース ファイル</Filter>
     </None>
+    <None Include="RegExp.tlb">
+      <Filter>ソース ファイル</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

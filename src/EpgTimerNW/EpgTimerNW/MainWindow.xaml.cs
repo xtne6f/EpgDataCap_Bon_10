@@ -658,6 +658,7 @@ namespace EpgTimer
             }
             if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
             {
+                this.Visibility = System.Windows.Visibility.Visible;
                 taskTray.LastViewState = this.WindowState;
                 Settings.Instance.LastWindowState = this.WindowState;
             }

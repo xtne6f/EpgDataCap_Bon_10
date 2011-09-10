@@ -39,7 +39,7 @@ BOOL CEpgDataCap3Util::LoadDll(void)
 	module = ::LoadLibrary(L"EpgDataCap3.dll");
 
 	if( module == NULL ){
-		OutputDebugString(L"EpgDataCap3.dlのロードに失敗しました\r\n");
+		OutputDebugString(L"EpgDataCap3.dllのロードに失敗しました\r\n");
 		return FALSE;
 	}
 

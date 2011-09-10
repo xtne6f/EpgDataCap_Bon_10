@@ -22,4 +22,5 @@ private:
 	DWORD GetEnumRecPresetInfo(string param, HTTP_STREAM* sendParam);
 	DWORD GetReserveDataEPG(string param, CEpgDBManager* epgDB, RESERVE_DATA* reserveData);
 	DWORD GetReserveAddResponse(BOOL err, HTTP_STREAM* sendParam);
+	DWORD GetSearchEvent(string param, HTTP_STREAM* sendParam, CEpgDBManager* epgDB);
 };

@@ -141,6 +141,7 @@
   <ItemGroup>
     <None Include="ReadMe.txt" />
     <None Include="RecName_PlugIn.def" />
+    <None Include="RegExp.tlb" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />

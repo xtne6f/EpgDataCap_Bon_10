@@ -224,6 +224,7 @@ namespace EpgTimer
         private double searchWndHeight;
         private short autoSaveNotifyLog;
         private bool minHide;
+        private bool mouseScrollAuto;
 
         public bool UseCustomEpgView
         {
@@ -825,6 +826,11 @@ namespace EpgTimer
             get { return minHide; }
             set { minHide = value; }
         }
+        public bool MouseScrollAuto
+        {
+            get { return mouseScrollAuto; }
+            set { mouseScrollAuto = value; }
+        }
         
         public Settings()
         {
@@ -932,6 +938,7 @@ namespace EpgTimer
             searchWndHeight = 0;
             autoSaveNotifyLog = 0;
             minHide = true;
+            mouseScrollAuto = false;
         }
 
         [NonSerialized()]

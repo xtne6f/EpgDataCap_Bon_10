@@ -242,6 +242,8 @@ namespace EpgTimer.Setting
                 {
                     checkBox_openInfo.IsChecked = true;
                 }
+
+                checkBox_scrollAuto.IsChecked = Settings.Instance.MouseScrollAuto;
             }
             catch (Exception ex)
             {
@@ -374,6 +376,15 @@ namespace EpgTimer.Setting
                 else
                 {
                     Settings.Instance.EpgInfoOpenMode = 0;
+                }
+
+                if (checkBox_scrollAuto.IsChecked == true)
+                {
+                    Settings.Instance.MouseScrollAuto = true;
+                }
+                else
+                {
+                    Settings.Instance.MouseScrollAuto = false;
                 }
             }
             catch (Exception ex)

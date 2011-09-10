@@ -63,6 +63,9 @@ DWORD CRestApiManager::AnalyzeCmd(string verb, string url, string param, HTTP_ST
 			}
 			GetReserveAddResponse(ret, sendParam);
 		}
+	}else
+	if(url.find("/api/SearchEvent") == 0 ){
+		ret = GetSearchEvent(urlParam, sendParam, epgDB);
 	}
 
 	return ret;
@@ -872,6 +875,316 @@ DWORD CRestApiManager::GetReserveAddResponse(BOOL err, HTTP_STREAM* sendParam)
 	}else{
 		xml += L"<?xml version=\"1.0\" encoding=\"UTF-8\" ?><entry>";
 		xml += L"<err>予約の追加に失敗しました</err>";
+		xml += L"</entry>";
+	}
+
+	WtoUTF8(xml, utf8);
+
+	sendParam->dataSize = (DWORD)utf8.size();
+	sendParam->data = new BYTE[sendParam->dataSize];
+	memcpy(sendParam->data, utf8.c_str(), sendParam->dataSize);
+	if( sendParam->dataSize > 0 ){
+		Format(sendParam->httpHeader, "HTTP/1.0 200 OK\r\nContent-Type: text/xml\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", sendParam->dataSize);
+	}else{
+		sendParam->httpHeader = "HTTP/1.0 400 Bad Request\r\nConnection: close\r\n\r\n";
+	}
+
+	return ret;
+}
+
+DWORD CRestApiManager::GetSearchEvent(string param, HTTP_STREAM* sendParam, CEpgDBManager* epgDB)
+{
+	DWORD ret = NO_ERR;
+
+	map<string,string> paramMap;
+	while(param.size()>0){
+		string buff;
+		Separate(param, "&", buff, param);
+		if(buff.size()>0){
+			string key;
+			string val;
+			Separate(buff, "=", key, val);
+			paramMap.insert(pair<string,string>(key, val));
+		}
+	}
+
+	map<string,string>::iterator itr;
+	WORD network = 0xFFFF;
+	itr = paramMap.find("network");
+	if( itr != paramMap.end() ){
+		network = (WORD)atoi(itr->second.c_str());
+	}
+	WORD days = 0;
+	itr = paramMap.find("days");
+	if( itr != paramMap.end() ){
+		days = (WORD)atoi(itr->second.c_str());
+	}
+
+	wstring andkey;
+	itr = paramMap.find("andkey");
+	if( itr != paramMap.end() ){
+		AtoW(itr->second.c_str(), andkey);
+	}
+	wstring notkey;
+	itr = paramMap.find("notkey");
+	if( itr != paramMap.end() ){
+		AtoW(itr->second.c_str(), notkey);
+	}
+	vector<DWORD> genru;
+	itr = paramMap.find("genru");
+	if( itr != paramMap.end() ){
+		string val = itr->second;
+		string id;
+		while(val.size() > 0 ){
+			Separate(val, "-", id, val);
+			genru.push_back((DWORD)atoi(id.c_str()));
+		}
+	}
+
+	DWORD index = 0;
+	itr = paramMap.find("index");
+	if( itr != paramMap.end() ){
+		index = (DWORD)atoi(itr->second.c_str());
+	}
+	DWORD count = 200;
+	itr = paramMap.find("count");
+	if( itr != paramMap.end() ){
+		count = (DWORD)atoi(itr->second.c_str());
+	}
+	WORD basicOnly = 1;
+	itr = paramMap.find("basic");
+	if( itr != paramMap.end() ){
+		basicOnly = (WORD)atoi(itr->second.c_str());
+	}
+
+	//検索条件
+	EPGDB_SEARCH_KEY_INFO searchKey;
+	searchKey.andKey = andkey;
+	searchKey.notKey = notkey;
+	for( size_t i=0; i<genru.size(); i++){
+		EPGDB_CONTENT_DATA item;
+		item.content_nibble_level_1 = (BYTE)(genru[i]>>8);
+		item.content_nibble_level_2 = (BYTE)(genru[i]&0x00FF);
+		searchKey.contentList.push_back(item);
+	}
+	//対象サービス
+	vector<EPGDB_SERVICE_INFO> list;
+	if( epgDB->GetServiceList(&list) == TRUE ){
+		if( network != 0xFFFF ){
+			for( size_t i=0; i<list.size(); i++ ){
+				__int64 key = _Create64Key(list[i].ONID,list[i].TSID, list[i].SID);
+
+				if( 0x7880 <= list[i].ONID && list[i].ONID<= 0x7FE8 ){
+					//地デジ
+					if( (network & 0x0001) > 0 ){
+						searchKey.serviceList.push_back(key);
+					}
+				}else
+				if( list[i].ONID == 0x0004 ){
+					//BS
+					if( (network & 0x0002) > 0 ){
+						searchKey.serviceList.push_back(key);
+					}
+				}else
+				if( list[i].ONID == 0x0006 || list[i].ONID == 0x0007 ){
+					//CS
+					if( (network & 0x0004) > 0 ){
+						searchKey.serviceList.push_back(key);
+					}
+				}else{
+					//その他
+					if( (network & 0x0008) > 0 ){
+						searchKey.serviceList.push_back(key);
+					}
+				}
+			}
+		}
+	}
+
+	//対象期間
+	__int64 chkTime = 0;
+	if( days > 0 ){
+		SYSTEMTIME now;
+		GetLocalTime(&now);
+		now.wHour = 0;
+		now.wMinute = 0;
+		now.wSecond = 0;
+		now.wMilliseconds = 0;
+
+		chkTime = ConvertI64Time(now);
+		chkTime += days*(29*60*60*I64_1SEC);
+	}
+
+	vector<EPGDB_SEARCH_KEY_INFO> keyList;
+	keyList.push_back(searchKey);
+	vector<EPGDB_EVENT_INFO*> resultList;
+	wstring xml = L"";
+	string utf8 = "";
+	epgDB->SearchEpg(&keyList, &resultList);
+	map<__int64, __int64> addID;
+	map<__int64, __int64>::iterator itrAdd;
+	if ( resultList.size() > 0 ){
+		xml += L"<?xml version=\"1.0\" encoding=\"UTF-8\" ?><entry>";
+		DWORD total = 0;
+		DWORD findCount = 0;
+
+		wstring serviceinfo = L"<items>";
+		wstring buff;
+		for( size_t i = 0; i<resultList.size(); i++){
+			if( days > 0 ){
+				if( chkTime < ConvertI64Time(resultList[i]->start_time)){
+					continue;
+				}
+			}
+			if( resultList[i]->eventGroupInfo != NULL ){
+				BOOL find = FALSE;
+				for( size_t j=0; j<resultList[i]->eventGroupInfo->eventDataList.size(); j++ ){
+					__int64 evid = _Create64Key2(resultList[i]->eventGroupInfo->eventDataList[j].original_network_id,
+						resultList[i]->eventGroupInfo->eventDataList[j].transport_stream_id,
+						resultList[i]->eventGroupInfo->eventDataList[j].service_id,
+						resultList[i]->eventGroupInfo->eventDataList[j].event_id);
+					itrAdd = addID.find(evid);
+					if( itrAdd != addID.end() ){
+						find = TRUE;
+					}
+				}
+				if( find == TRUE ){
+					continue;
+				}
+			}
+			__int64 evid = _Create64Key2(resultList[i]->original_network_id,
+				resultList[i]->transport_stream_id,
+				resultList[i]->service_id,
+				resultList[i]->event_id);
+			addID.insert(pair<__int64, __int64>(evid,evid));
+			if( total < index ){
+				total++;
+				continue;
+			}
+			if( index + count <= total ){
+				total++;
+				continue;
+			}
+			total++;
+			findCount++;
+
+			EPGDB_EVENT_INFO* eventInfo = resultList[i];
+
+			serviceinfo += L"<eventinfo>";
+			Format(buff, L"<ONID>%d</ONID>", eventInfo->original_network_id);
+			serviceinfo += buff;
+			Format(buff, L"<TSID>%d</TSID>", eventInfo->transport_stream_id);
+			serviceinfo += buff;
+			Format(buff, L"<SID>%d</SID>", eventInfo->service_id);
+			serviceinfo += buff;
+			Format(buff, L"<eventID>%d</eventID>", eventInfo->event_id);
+			serviceinfo += buff;
+			if( eventInfo->StartTimeFlag == 1 ){
+				Format(buff, L"<startDate>%04d/%02d/%02d</startDate>", eventInfo->start_time.wYear, eventInfo->start_time.wMonth, eventInfo->start_time.wDay);
+				serviceinfo += buff;
+				Format(buff, L"<startTime>%02d:%02d:%02d</startTime>", eventInfo->start_time.wHour, eventInfo->start_time.wMinute, eventInfo->start_time.wSecond);
+				serviceinfo += buff;
+				Format(buff, L"<startDayOfWeek>%d</startDayOfWeek>", eventInfo->start_time.wDayOfWeek);
+				serviceinfo += buff;
+			}
+			if( eventInfo->DurationFlag == 1 ){
+				Format(buff, L"<duration>%d</duration>", eventInfo->durationSec);
+				serviceinfo += buff;
+			}
+			if( eventInfo->shortInfo != NULL ){
+				wstring chk = eventInfo->shortInfo->event_name;
+				CheckXMLChar(chk);
+				Format(buff, L"<event_name>%s</event_name>", chk.c_str());
+				serviceinfo += buff;
+
+				chk = eventInfo->shortInfo->text_char;
+				CheckXMLChar(chk);
+				Format(buff, L"<event_text>%s</event_text>", chk.c_str());
+				serviceinfo += buff;
+			}
+			if( eventInfo->contentInfo != NULL ){
+				serviceinfo += L"";
+				for( size_t k=0; k<eventInfo->contentInfo->nibbleList.size(); k++){
+					wstring nibble = L"";
+					Format(nibble,L"<contentInfo><nibble1>%d</nibble1><nibble2>%d</nibble2></contentInfo>", 
+						eventInfo->contentInfo->nibbleList[k].content_nibble_level_1,
+						eventInfo->contentInfo->nibbleList[k].content_nibble_level_2);
+					serviceinfo += nibble;
+				}
+			}
+			if( eventInfo->eventGroupInfo != NULL ){
+				for( size_t k=0; k<eventInfo->eventGroupInfo->eventDataList.size(); k++){
+					wstring group = L"";
+					Format(group,L"<groupInfo><ONID>%d</ONID><TSID>%d</TSID><SID>%d</SID><eventID>%d</eventID></groupInfo>", 
+						eventInfo->eventGroupInfo->eventDataList[k].original_network_id,
+						eventInfo->eventGroupInfo->eventDataList[k].transport_stream_id,
+						eventInfo->eventGroupInfo->eventDataList[k].service_id,
+						eventInfo->eventGroupInfo->eventDataList[k].event_id
+						);
+					serviceinfo += group;
+				}
+			}
+
+			Format(buff, L"<freeCAFlag>%d</freeCAFlag>", eventInfo->freeCAFlag);
+			serviceinfo += buff;
+
+			if( basicOnly == 0 ){
+				if( eventInfo->extInfo != NULL ){
+					wstring chk = eventInfo->extInfo->text_char;
+					CheckXMLChar(chk);
+					Format(buff, L"<event_ext_text>%s</event_ext_text>", chk.c_str());
+					serviceinfo += buff;
+				}
+				if( eventInfo->componentInfo != NULL ){
+					Format(buff, L"<videoInfo><stream_content>%d</stream_content><component_type>%d</component_type><component_tag>%d</component_tag><text>%s</text></videoInfo>", 
+						eventInfo->componentInfo->stream_content,
+						eventInfo->componentInfo->component_type,
+						eventInfo->componentInfo->component_tag,
+						eventInfo->componentInfo->text_char.c_str()
+						);
+					serviceinfo += buff;
+				}
+				if( eventInfo->audioInfo != NULL ){
+					for( size_t k=0; k<eventInfo->audioInfo->componentList.size(); k++ ){
+						Format(buff, L"<audioInfo><stream_content>%d</stream_content><component_type>%d</component_type><component_tag>%d</component_tag><stream_type>%d</stream_type><simulcast_group_tag>%d</simulcast_group_tag><ES_multi_lingual_flag>%d</ES_multi_lingual_flag><main_component_flag>%d</main_component_flag><quality_indicator>%d</quality_indicator><sampling_rate>%d</sampling_rate><text>%s</text></audioInfo>", 
+							eventInfo->audioInfo->componentList[k].stream_content,
+							eventInfo->audioInfo->componentList[k].component_type,
+							eventInfo->audioInfo->componentList[k].component_tag,
+							eventInfo->audioInfo->componentList[k].stream_type,
+							eventInfo->audioInfo->componentList[k].simulcast_group_tag,
+							eventInfo->audioInfo->componentList[k].ES_multi_lingual_flag,
+							eventInfo->audioInfo->componentList[k].main_component_flag,
+							eventInfo->audioInfo->componentList[k].quality_indicator,
+							eventInfo->audioInfo->componentList[k].sampling_rate,
+							eventInfo->audioInfo->componentList[k].text_char.c_str()
+							);
+						serviceinfo += buff;
+					}
+				}
+				if( eventInfo->eventRelayInfo != NULL ){
+					for( size_t k=0; k<eventInfo->eventRelayInfo->eventDataList.size(); k++){
+						wstring group = L"";
+						Format(group,L"<relayInfo><ONID>%d</ONID><TSID>%d</TSID><SID>%d</SID><eventID>%d</eventID></relayInfo>", 
+							eventInfo->eventRelayInfo->eventDataList[k].original_network_id,
+							eventInfo->eventRelayInfo->eventDataList[k].transport_stream_id,
+							eventInfo->eventRelayInfo->eventDataList[k].service_id,
+							eventInfo->eventRelayInfo->eventDataList[k].event_id
+							);
+						serviceinfo += group;
+					}
+				}
+			}
+			serviceinfo += L"</eventinfo>";
+		}
+		serviceinfo += L"</items>";
+
+		Format(buff, L"<total>%d</total><index>%d</index><count>%d</count>", total, index, findCount);
+		xml += buff;
+		xml += serviceinfo;
+		xml += L"</entry>";
+	}else{
+		xml += L"<?xml version=\"1.0\" encoding=\"UTF-8\" ?><entry>";
+		xml += L"<err>EPGデータを読み込み中、または存在しません</err>";
 		xml += L"</entry>";
 	}
 
