@@ -923,12 +923,16 @@ DWORD CRestApiManager::GetSearchEvent(string param, HTTP_STREAM* sendParam, CEpg
 	wstring andkey;
 	itr = paramMap.find("andkey");
 	if( itr != paramMap.end() ){
-		AtoW(itr->second.c_str(), andkey);
+		string utf8;
+		UrlDecode(itr->second.c_str(), itr->second.size(), utf8);
+		UTF8toW(utf8, andkey);
 	}
 	wstring notkey;
 	itr = paramMap.find("notkey");
 	if( itr != paramMap.end() ){
-		AtoW(itr->second.c_str(), notkey);
+		string utf8;
+		UrlDecode(itr->second.c_str(), itr->second.size(), utf8);
+		UTF8toW(utf8, notkey);
 	}
 	vector<DWORD> genru;
 	itr = paramMap.find("genru");

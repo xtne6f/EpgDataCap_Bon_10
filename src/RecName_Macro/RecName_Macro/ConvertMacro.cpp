@@ -241,6 +241,8 @@ BOOL CConvertMacro::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, wstring& c
 	Replace(convert, L"$Genre$", L"");
 	Replace(convert, L"$Genre2$", L"");
 	Replace(convert, L"$SubTitle$", L"");
+	Replace(convert, L"$SubTitle2$", L"");
+	Replace(convert, L"\r\n", L"");
 
 	return TRUE;
 }

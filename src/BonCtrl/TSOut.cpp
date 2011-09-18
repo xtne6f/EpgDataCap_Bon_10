@@ -598,7 +598,7 @@ void CTSOut::CheckNeedPID()
 					item2.PMTPID = itrPmt->first;
 					item2.SID = itrPmt->second->program_number;
 					PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item2.PMTPID,item2));
-
+					//_OutputDebugString(L"0x%04x, 0x%04x", itrPmt->first,itrPmt->second->program_number);
 					//PMT記載のPIDを登録
 					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->first, 0));
 					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->second->PCR_PID, 0));

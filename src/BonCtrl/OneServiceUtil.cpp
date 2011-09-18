@@ -244,7 +244,17 @@ BOOL COneServiceUtil::AddTSBuff(
 						if( createPmt.GetPacket(&pmtBuff, &pmtBuffSize) == TRUE ){
 							memcpy(this->buff + this->buffWriteSize, pmtBuff, pmtBuffSize);
 							this->buffWriteSize+=pmtBuffSize;
+						}else{
+							_OutputDebugString(L"createPmt.GetPacket Err");
+							//そのまま
+							memcpy(this->buff + this->buffWriteSize, data+i, 188);
+							this->buffWriteSize+=188;
 						}
+					}else if( err == FALSE ){
+						_OutputDebugString(L"createPmt.AddData Err");
+						//そのまま
+						memcpy(this->buff + this->buffWriteSize, data+i, 188);
+						this->buffWriteSize+=188;
 					}
 				}else{
 					//その他
@@ -333,6 +343,7 @@ void COneServiceUtil::SetPmtPID(
 	)
 {
 	if( this->pmtPID != pmtPID && this->SID != 0xFFFF){
+		_OutputDebugString(L"COneServiceUtil::SetPmtPID 0x%04x => 0x%04x", this->pmtPID, pmtPID);
 		map<WORD, CCreatePATPacket::PROGRAM_PID_INFO> PIDMap;
 
 		CCreatePATPacket::PROGRAM_PID_INFO item;

@@ -67,14 +67,17 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 
 	if( section_syntax_indicator != 1 ){
 		//固定値がおかしい
+		_OutputDebugString(L"CPMTUtil::section_syntax_indicator Err");
 		return FALSE;
 	}
 	if( table_id != 0x02 ){
 		//table_idがおかしい
+		_OutputDebugString(L"CPMTUtil::table_id Err");
 		return FALSE;
 	}
 	if( readSize+section_length > dataSize && section_length > 3){
 		//サイズ異常
+		_OutputDebugString(L"CPMTUtil::section_length %d Err", section_length);
 		return FALSE;
 	}
 	//CRCチェック
@@ -83,6 +86,7 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 		((DWORD)data[3+section_length-2])<<8 |
 		data[3+section_length-1];
 	if( crc32 != _Crc32(3+section_length-4, data) ){
+		_OutputDebugString(L"CPMTUtil::crc32 Err");
 		return FALSE;
 	}
 

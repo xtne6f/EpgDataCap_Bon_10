@@ -2240,6 +2240,10 @@ BOOL CHTMLManager::GetEpgInfoPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* r
 	if( reserveInfo == NULL ){
 		Format(buff, "<form method=\"POST\" action=\"reserveadd.html?onid=%d&tsid=%d&sid=%d&evid=%d\">\r\n", onid, tsid, sid, evid);
 		html+=buff;
+		if( preset == 0xFFFF ){
+			//予約ないのに予約時はおかしい
+			preset = 0;
+		}
 		Format(buff, "<input type=hidden name=\"presetID\" value=\"%d\">\r\n", preset);
 		html+=buff;
 
@@ -2248,8 +2252,6 @@ BOOL CHTMLManager::GetEpgInfoPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* r
 			REC_SETTING_DATA recSetData;
 			LoadRecSetData(preset, &recSetData);
 			CreateRecSetForm(&recSetData, tunerList, paramText);
-		}else{
-			CreateRecSetForm(&reserveInfo->recSetting, tunerList, paramText);
 		}
 		html+=paramText;
 		Format(buff, "<input type=hidden name=\"onid\" value=\"%d\">\r\n", onid);

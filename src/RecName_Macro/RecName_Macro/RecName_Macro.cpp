@@ -132,7 +132,6 @@ BOOL WINAPI ConvertRecName2(
 	DWORD* recNamesize
 	)
 {
-	OutputDebugString(L"ConvertRecName2");
 	if( recNamesize == NULL ){
 		return FALSE;
 	}

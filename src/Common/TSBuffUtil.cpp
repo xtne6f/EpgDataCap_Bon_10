@@ -222,6 +222,11 @@ DWORD CTSBuffUtil::AddSectionBuff(CTSPacketUtil* tsPacket)
 					SAFE_DELETE(creatingBuff);
 				}
 			}
+		}else{
+			if( creatingBuff != NULL ){
+				SAFE_DELETE(creatingBuff);
+				creatingBuff = NULL;
+			}
 		}
 		readSize+=pointer_field;
 
@@ -238,7 +243,9 @@ DWORD CTSBuffUtil::AddSectionBuff(CTSPacketUtil* tsPacket)
 
 		//マルチセクションチェック
 		while( readSize+3 < tsPacket->data_byteSize ){
-			if( tsPacket->data_byte[readSize] == 0xFF && tsPacket->data_byte[readSize+1] == 0xFF && tsPacket->data_byte[readSize+2] == 0xFF){
+			if( tsPacket->data_byte[readSize] == 0xFF &&
+				tsPacket->data_byte[readSize+1] == 0xFF &&
+				tsPacket->data_byte[readSize+2] == 0xFF){
 				//残りはスタッフィングバイト
 				break;
 			}

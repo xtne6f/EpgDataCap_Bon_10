@@ -27,6 +27,7 @@ public:
 
 	BOOL GetLoadStatus(wstring& loadErrDll);
 
+	void Reset();
 protected:
 	wstring currentDll;
 	wstring loadDll;

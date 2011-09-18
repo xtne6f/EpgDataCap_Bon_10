@@ -65,7 +65,8 @@ DWORD CCreatePMTPacket::AddData(
 		return ERR_FALSE;
 	}
 	DWORD ret = ERR_NEED_NEXT_PACKET;
-	if( buffUtil.Add188TS(packet) == TRUE ){
+	ret = buffUtil.Add188TS(packet);
+	if( ret == TRUE ){
 		this->lastPmtPID = packet->PID;
 
 		BYTE* section = NULL;
@@ -73,8 +74,6 @@ DWORD CCreatePMTPacket::AddData(
 		while( buffUtil.GetSectionBuff( &section, &sectionSize ) == TRUE ){
 			ret = DecodePMT(section, sectionSize);
 		}
-	}else{
-		return ERR_FALSE;
 	}
 	return ret;
 }
@@ -112,14 +111,17 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 
 	if( section_syntax_indicator != 1 ){
 		//固定値がおかしい
+		_OutputDebugString(L"CCreatePMTPacket::section_syntax_indicator Err");
 		return ERR_FALSE;
 	}
 	if( table_id != 0x02 ){
 		//table_idがおかしい
+		_OutputDebugString(L"CCreatePMTPacket::table_id Err");
 		return ERR_FALSE;
 	}
 	if( readSize+section_length > dataSize && section_length > 3){
 		//サイズ異常
+		_OutputDebugString(L"CCreatePMTPacket::section_length Err");
 		return ERR_FALSE;
 	}
 	//CRCチェック
@@ -128,10 +130,12 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 		((DWORD)data[3+section_length-2])<<8 |
 		data[3+section_length-1];
 	if( crc32 != _Crc32(3+section_length-4, data) ){
+		_OutputDebugString(L"CCreatePMTPacket::CRC Err");
 		return ERR_FALSE;
 	}
 
 	if( section_length < 8 ){
+		_OutputDebugString(L"CCreatePMTPacket::section_length %d Err2", section_length);
 		return ERR_FALSE;
 	}
 

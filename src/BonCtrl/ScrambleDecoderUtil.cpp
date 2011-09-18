@@ -140,6 +140,15 @@ BOOL CScrambleDecoderUtil::Decode(BYTE* src, DWORD srcSize, BYTE** dest, DWORD* 
 	return this->decodeIF->Decode(src, srcSize, dest, destSize);
 }
 
+void CScrambleDecoderUtil::Reset()
+{
+	if( this->decodeIF == NULL ){
+		return ;
+	}
+	this->decodeIF->Reset();
+}
+
+
 BOOL CScrambleDecoderUtil::SetEmm(BOOL enable)
 {
 	if( this->decodeIF2 == NULL ){

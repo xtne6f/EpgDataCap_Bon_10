@@ -1171,7 +1171,6 @@ BOOL CReserveManager::GetReserveDataAll(
 						if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
 							defName = name;
 						}
-						SAFE_DELETE(epgInfo);
 					}else{
 						if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
 							defName = name;
@@ -1210,7 +1209,6 @@ BOOL CReserveManager::GetReserveDataAll(
 								if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
 									item->recFileNameList.push_back(name);
 								}
-								SAFE_DELETE(epgInfo);
 							}else{
 								if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
 									item->recFileNameList.push_back(name);
