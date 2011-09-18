@@ -56,6 +56,34 @@ public:
 		);
 
 protected:
+	typedef struct _NIT_SECTION_INFO{
+		WORD network_id;
+		BYTE version_number;
+		BYTE last_section_number;
+		map<BYTE, CNITTable*> nitSection;
+		~_NIT_SECTION_INFO(void){
+			map<BYTE, CNITTable*>::iterator itr;
+			for( itr=nitSection.begin(); itr != nitSection.end(); itr++ ){
+				SAFE_DELETE(itr->second);
+			}
+			nitSection.clear();
+		};
+	}NIT_SECTION_INFO;
+	typedef struct _SDT_SECTION_INFO{
+		WORD original_network_id;
+		WORD transport_stream_id;
+		BYTE version_number;
+		BYTE last_section_number;
+		map<BYTE, CSDTTable*> sdtSection;
+		~_SDT_SECTION_INFO(void){
+			map<BYTE, CSDTTable*>::iterator itr;
+			for( itr=sdtSection.begin(); itr != sdtSection.end(); itr++ ){
+				SAFE_DELETE(itr->second);
+			}
+			sdtSection.clear();
+		};
+	}SDT_SECTION_INFO;
+
 	CEpgDBUtil* epgDBUtil;
 
 	//PID毎のバッファリング
@@ -65,9 +93,9 @@ protected:
 	CPATTable* patInfo;
 	CCATTable* catInfo;
 	map<WORD, CPMTTable*> pmtMap;
-	CNITTable* nitActualInfo;
-	CSDTTable* sdtActualInfo;
-	map<DWORD, CSDTTable*> sdtOtherMap;
+	NIT_SECTION_INFO* nitActualInfo;
+	SDT_SECTION_INFO* sdtActualInfo;
+	map<DWORD, SDT_SECTION_INFO*> sdtOtherMap;
 	CTOTTable* totInfo;
 	CTDTTable* tdtInfo;
 	CBITTable* bitInfo;
@@ -96,6 +124,8 @@ protected:
 	BOOL CheckSDTT(WORD PID, CSDTTTable* sdtt);
 	BOOL CheckBIT(WORD PID, CBITTable* bit);
 	BOOL CheckSIT(WORD PID, CSITTable* sit);
+	BOOL CheckEIT_SD(WORD PID, CEITTable_SD* eit);
+	BOOL CheckEIT_SD2(WORD PID, CEITTable_SD2* eit);
 
 	//自ストリームのサービス一覧をSITから取得する
 	//戻り値：

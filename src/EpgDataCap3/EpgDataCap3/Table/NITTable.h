@@ -143,4 +143,5 @@ public:
 protected:
 	void Clear();
 
+	BOOL SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* descriptorList, DWORD* decodeReadSize );
 };

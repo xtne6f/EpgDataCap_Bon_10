@@ -89,6 +89,11 @@ void CEpgDBUtil::Clear()
 		SAFE_DELETE(itr->second);
 	}
 	this->serviceEventMap.clear();
+
+	for( itr = this->serviceEventMapSD.begin(); itr != this->serviceEventMapSD.end(); itr++ ){
+		SAFE_DELETE(itr->second);
+	}
+	this->serviceEventMapSD.clear();
 }
 
 void CEpgDBUtil::SetStreamChangeEvent()
@@ -132,7 +137,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 
 		if( eitEventInfo->running_status == 1 || eitEventInfo->running_status == 3 ){
 			//非実行中または停止中
-			_OutputDebugString(L"★非実行中または停止中イベント ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x %04d/%02d/%02d %02:%02",
+			_OutputDebugString(L"★非実行中または停止中イベント ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x %04d/%02d/%02d %02d:%02d",
 				eit->original_network_id,  eit->transport_stream_id, eit->service_id, eitEventInfo->event_id,
 				eitEventInfo->start_time.wYear, eitEventInfo->start_time.wMonth, eitEventInfo->start_time.wDay, eitEventInfo->start_time.wHour, eitEventInfo->start_time.wMinute
 				);
@@ -142,6 +147,9 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 		itrEvent = serviceInfo->eventMap.find(eitEventInfo->event_id);
 		if( itrEvent == serviceInfo->eventMap.end() ){
 			eventInfo = new EVENT_INFO;
+			eventInfo->ONID = eit->original_network_id;
+			eventInfo->TSID = eit->transport_stream_id;
+			eventInfo->SID = eit->service_id;
 			eventInfo->event_id = eitEventInfo->event_id;
 			eventInfo->StartTimeFlag = eitEventInfo->StartTimeFlag;
 			eventInfo->start_time = eitEventInfo->start_time;
@@ -211,6 +219,12 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 				}
 			}
 		}
+	}
+
+	if( eit->original_network_id == 0x0003 ){
+		UnLock();
+
+		return TRUE;
 	}
 	
 	//セクションステータス
@@ -327,6 +341,223 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 	return TRUE;
 }
 
+BOOL CEpgDBUtil::AddEIT_SD(WORD PID, CEITTable_SD* eit)
+{
+	if( eit == NULL ){
+		return FALSE;
+	}
+	if( Lock() == FALSE ) return FALSE;
+
+	if( eit->original_network_id == 0x0003 && eit->table_id != 0x4E && eit->table_id != 0x4F){
+		BOOL ret = AddSDEventMap(eit);
+		UnLock();
+		return ret;
+	}
+
+	ULONGLONG key = _Create64Key(eit->original_network_id, eit->transport_stream_id, eit->service_id);
+
+	//サービスのmapを取得
+	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
+	SERVICE_EVENT_INFO* serviceInfo = NULL;
+
+	itr = serviceEventMap.find(key);
+	if( itr == serviceEventMap.end() ){
+		serviceInfo = new SERVICE_EVENT_INFO;
+		serviceEventMap.insert(pair<ULONGLONG, SERVICE_EVENT_INFO*>(key, serviceInfo));
+	}else{
+		serviceInfo = itr->second;
+	}
+
+	//イベントごとに更新必要が判定
+	for( size_t i=0; i<eit->eventInfoList.size(); i++ ){
+		CEITTable_SD::EVENT_INFO_DATA* eitEventInfo = eit->eventInfoList[i];
+		map<WORD, EVENT_INFO*>::iterator itrEvent;
+		EVENT_INFO* eventInfo = NULL;
+
+		if( eitEventInfo->running_status != 0 && eitEventInfo->running_status != 2 && eitEventInfo->running_status != 4 ){
+			//非実行中または停止中
+			_OutputDebugString(L"★非実行中または停止中イベント ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x %04d/%02d/%02d %02d:%02d\r\n",
+				eit->original_network_id,  eit->transport_stream_id, eit->service_id, eitEventInfo->event_id,
+				eitEventInfo->start_time.wYear, eitEventInfo->start_time.wMonth, eitEventInfo->start_time.wDay, eitEventInfo->start_time.wHour, eitEventInfo->start_time.wMinute
+				);
+			continue;
+		}
+
+		itrEvent = serviceInfo->eventMap.find(eitEventInfo->event_id);
+		if( itrEvent == serviceInfo->eventMap.end() ){
+			eventInfo = new EVENT_INFO;
+			eventInfo->ONID = eit->original_network_id;
+			eventInfo->TSID = eit->transport_stream_id;
+			eventInfo->SID = eit->service_id;
+			eventInfo->event_id = eitEventInfo->event_id;
+			eventInfo->StartTimeFlag = eitEventInfo->StartTimeFlag;
+			eventInfo->start_time = eitEventInfo->start_time;
+			eventInfo->DurationFlag = eitEventInfo->DurationFlag;
+			eventInfo->durationSec = eitEventInfo->durationHH*60*60 +
+				eitEventInfo->durationMM*60 +
+				eitEventInfo->durationSS;
+			eventInfo->freeCAFlag = eitEventInfo->free_CA_mode;
+			serviceInfo->eventMap.insert(pair<WORD, EVENT_INFO*>(eventInfo->event_id, eventInfo));
+		}else{
+			eventInfo = itrEvent->second;
+		}
+		if( 0xA0 <= eit->table_id && eit->table_id <= 0xAF ){
+			if( serviceInfo->nowEvent != NULL && serviceInfo->nextEvent != NULL ){
+				if( serviceInfo->nowEvent->event_id != eitEventInfo->event_id &&
+					serviceInfo->nextEvent->event_id != eitEventInfo->event_id &&
+					eventInfo->pfFlag == FALSE){
+					//自ストリームでp/fじゃないなら時間更新
+					eventInfo->StartTimeFlag = eitEventInfo->StartTimeFlag;
+					eventInfo->start_time = eitEventInfo->start_time;
+					eventInfo->DurationFlag = eitEventInfo->DurationFlag;
+					eventInfo->durationSec = eitEventInfo->durationHH*60*60 +
+						eitEventInfo->durationMM*60 +
+						eitEventInfo->durationSS;
+				}
+			}
+		}
+
+		//ExtendedEventは複数あるので1度だけチェックする
+		BOOL checkExtFlag = FALSE;
+		BOOL checkAudioFlag = FALSE;
+		for( size_t j=0; j<eitEventInfo->descriptorList.size(); j++ ){
+			if( eitEventInfo->descriptorList[j]->shortEvent != NULL ){
+				AddShortEvent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->shortEvent );
+			}else if( eitEventInfo->descriptorList[j]->extendedEvent != NULL && checkExtFlag == FALSE){
+				AddExtEvent_SD(eit, eventInfo, &eitEventInfo->descriptorList );
+				checkExtFlag = TRUE;
+			}else if( eitEventInfo->descriptorList[j]->content != NULL ){
+				AddContent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->content );
+			}else if( eitEventInfo->descriptorList[j]->component != NULL ){
+				AddComponent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->component );
+			}else if( eitEventInfo->descriptorList[j]->audioComponent != NULL && checkAudioFlag == FALSE ){
+				AddAudioComponent_SD( eit, eventInfo, &eitEventInfo->descriptorList );
+				checkAudioFlag = TRUE;
+			//}else if( eitEventInfo->descriptorList[j]->eventGroup != NULL ){
+			//	if( eitEventInfo->descriptorList[j]->eventGroup->group_type == 0x01 ){
+			//		AddEventGroup( eit, eventInfo, eitEventInfo->descriptorList[j]->eventGroup );
+			//	}else if( eitEventInfo->descriptorList[j]->eventGroup->group_type == 0x02 ||
+			//		eitEventInfo->descriptorList[j]->eventGroup->group_type == 0x04){
+			//		AddEventRelay( eit, eventInfo, eitEventInfo->descriptorList[j]->eventGroup );
+			//	}
+			}
+		}
+	}
+	
+	//セクションステータス
+	//map<ULONGLONG, SECTION_STATUS_INFO*>::iterator itrSec;
+	//SECTION_STATUS_INFO* sectionInfo = NULL;
+	//itrSec = this->sectionMap.find(key);
+	//if( itrSec == this->sectionMap.end() ){
+	//	sectionInfo = new SECTION_STATUS_INFO;
+	//	this->sectionMap.insert(pair<ULONGLONG, SECTION_STATUS_INFO*>(key, sectionInfo));
+	//}else{
+	//	sectionInfo = itrSec->second;
+	//}
+
+	//if( PID == 0x0027 ){
+	//	//L-EIT
+	//	sectionInfo->HEITFlag = FALSE;
+	//	sectionInfo->last_table_idBasic = eit->last_table_id;
+	//	sectionInfo->last_section_numberBasic = eit->last_section_number;
+
+	//	DWORD sectionNo = eit->section_number;
+	//	map<WORD, SECTION_FLAG_INFO>::iterator itrFlag;
+	//	itrFlag = sectionInfo->sectionBasicMap.find(eit->table_id);
+	//	if( itrFlag == sectionInfo->sectionBasicMap.end() ){
+	//		DWORD maxFlag = 0;
+	//		for( DWORD i=0; i<=eit->last_section_number; i++ ){
+	//			maxFlag |= 1<<i;
+	//		}
+	//		SECTION_FLAG_INFO item;
+	//		item.maxFlag = maxFlag;
+	//		item.sectionFlag = 1<<sectionNo;
+	//		sectionInfo->sectionBasicMap.insert(pair<WORD, SECTION_FLAG_INFO>(eit->table_id, item));
+	//	}else{
+	//		itrFlag->second.sectionFlag |= 1<<sectionNo;
+	//	}
+
+	//}else{
+	//	//H-EIT
+	//	sectionInfo->HEITFlag = TRUE;
+	//	if( eit->section_number == eit->segment_last_section_number ){
+	//		if( 0x50 <= eit->table_id && eit->table_id <= 0x57 ||
+	//			0x60 <= eit->table_id && eit->table_id <= 0x67){
+	//			sectionInfo->last_table_idBasic = eit->last_table_id;
+	//			sectionInfo->last_section_numberBasic = eit->last_section_number;
+
+	//			DWORD sectionNo = eit->section_number >> 3;
+	//			map<WORD, SECTION_FLAG_INFO>::iterator itrFlag;
+	//			itrFlag = sectionInfo->sectionBasicMap.find(eit->table_id);
+	//			if( itrFlag == sectionInfo->sectionBasicMap.end() ){
+	//				DWORD maxFlag = 0;
+	//				for( DWORD i=0; i<=((DWORD)eit->last_section_number)>>3; i++ ){
+	//					maxFlag |= 1<<i;
+	//				}
+	//				SECTION_FLAG_INFO item;
+	//				item.maxFlag = maxFlag;
+	//				item.sectionFlag = 1<<sectionNo;
+	//				sectionInfo->sectionBasicMap.insert(pair<WORD, SECTION_FLAG_INFO>(eit->table_id, item));
+	//			}else{
+	//				itrFlag->second.sectionFlag |= (DWORD)1<<sectionNo;
+	//			}
+	//		}
+	//		if( 0x58 <= eit->table_id && eit->table_id <= 0x5F ||
+	//			0x68 <= eit->table_id && eit->table_id <= 0x6F){
+	//			sectionInfo->last_table_idExt = eit->last_table_id;
+	//			sectionInfo->last_section_numberExt = eit->last_section_number;
+
+	//			DWORD sectionNo = eit->section_number >> 3;
+	//			map<WORD, SECTION_FLAG_INFO>::iterator itrFlag;
+	//			itrFlag = sectionInfo->sectionExtMap.find(eit->table_id);
+	//			if( itrFlag == sectionInfo->sectionExtMap.end() ){
+	//				DWORD maxFlag = 0;
+	//				for( DWORD i=0; i<=((DWORD)eit->last_section_number)>>3; i++ ){
+	//					maxFlag |= 1<<i;
+	//				}
+	//				SECTION_FLAG_INFO item;
+	//				item.maxFlag = maxFlag;
+	//				item.sectionFlag = 1<<sectionNo;
+	//				sectionInfo->sectionExtMap.insert(pair<WORD, SECTION_FLAG_INFO>(eit->table_id, item));
+	//			}else{
+	//				itrFlag->second.sectionFlag |= (DWORD)1<<sectionNo;
+	//			}
+	//		}
+	//	}
+	//	if( eit->table_id == 0x4E && eit->section_number == 0){
+	//		//現在の番組のはずなので、そこまでのセクションはすでに放送済み
+	//		if(eit->eventInfoList.size() > 0){
+	//			if( eit->eventInfoList[0]->StartTimeFlag == TRUE ){
+	//				WORD sectionNo = 0;
+	//				if( eit->eventInfoList[0]->DurationFlag == FALSE ){
+	//					sectionNo = eit->eventInfoList[0]->start_time.wHour / 3;
+	//				}else{
+	//					SYSTEMTIME endTime;
+	//					int DureSec = eit->eventInfoList[0]->durationHH*60*60 + eit->eventInfoList[0]->durationMM*60 + eit->eventInfoList[0]->durationSS;
+	//					GetSumTime(eit->eventInfoList[0]->start_time, DureSec, &endTime);
+	//					if( eit->eventInfoList[0]->start_time.wDay != endTime.wDay ){
+	//						//日付変わってるので今日の分は全部終わってるはず
+	//						sectionNo = 7;
+	//					}else{
+	//						sectionNo = endTime.wHour / 3;
+	//					}
+	//				}
+	//				DWORD flag = 0;
+	//				for( WORD i=0; i<=sectionNo; i++ ){
+	//					flag |= 1<<i;
+	//				}
+	//				if(	this->sectionNowFlag != flag ){
+	//					this->sectionNowFlag = flag;
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
+	UnLock();
+
+	return TRUE;
+}
+
 BOOL CEpgDBUtil::AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, CShortEventDesc* shortEvent)
 {
 	BOOL updateFlag = FALSE;
@@ -335,6 +566,33 @@ BOOL CEpgDBUtil::AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, CShortEven
 		updateFlag = TRUE;
 	}else{
 		updateFlag = CheckUpdate(eit, eventInfo->shortInfo->tableID, eventInfo->shortInfo->version);
+	}
+	if( updateFlag == TRUE ){
+		//更新必要
+		eventInfo->shortInfo->tableID = eit->table_id;
+		eventInfo->shortInfo->version = eit->version_number;
+
+		CARIB8CharDecode arib;
+		string event_name = "";
+		string text_char = "";
+		arib.PSISI((const BYTE*)shortEvent->event_name_char, shortEvent->event_name_length, &event_name);
+		arib.PSISI((const BYTE*)shortEvent->text_char, shortEvent->text_length, &text_char);
+
+		AtoW(event_name, eventInfo->shortInfo->event_name);
+		AtoW(text_char, eventInfo->shortInfo->text_char);
+	}
+
+	return updateFlag;
+}
+
+BOOL CEpgDBUtil::AddShortEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CShortEventDesc* shortEvent)
+{
+	BOOL updateFlag = FALSE;
+	if( eventInfo->shortInfo == NULL ){
+		eventInfo->shortInfo = new SHORT_EVENT_INFO;
+		updateFlag = TRUE;
+	}else{
+		updateFlag = CheckUpdate_SD(eit, eventInfo->shortInfo->tableID, eventInfo->shortInfo->version);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
@@ -468,6 +726,120 @@ BOOL CEpgDBUtil::AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCR
 	return updateFlag;
 }
 
+BOOL CEpgDBUtil::AddExtEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList)
+{
+	BOOL updateFlag = FALSE;
+	if( eventInfo->extInfo == NULL ){
+		eventInfo->extInfo = new EXTENDED_EVENT_INFO;
+
+		updateFlag = TRUE;
+	}else{
+		updateFlag = CheckUpdate_SD(eit, eventInfo->extInfo->tableID, eventInfo->extInfo->version);
+	}
+
+	if( updateFlag == TRUE ){
+		//更新必要
+		eventInfo->extInfo->tableID = eit->table_id;
+		eventInfo->extInfo->version = eit->version_number;
+
+		CARIB8CharDecode arib;
+		string extendText = "";
+		string itemDescBuff = "";
+		string itemBuff = "";
+		//text_lengthは0で運用される
+//		string textBuff = "";
+
+		for( size_t i=0; i<descriptorList->size(); i++ ){
+			if( (*descriptorList)[i]->extendedEvent != NULL ){
+				CExtendedEventDesc* extEvent = (*descriptorList)[i]->extendedEvent;
+				for( size_t j=0; j<extEvent->itemList.size(); j++ ){
+					CExtendedEventDesc::ITEM_DATA* item = extEvent->itemList[j];
+					if( item->item_description_length > 0 ){
+						//if( textBuff.size() > 0 ){
+						//	string buff = "";
+						//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
+						//	buff += "\r\n";
+						//	extendText += buff;
+						//	textBuff = "";
+						//}
+						if( itemBuff.size() > 0 ){
+							string buff = "";
+							arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
+							buff += "\r\n";
+							extendText += buff;
+							itemBuff = "";
+						}
+
+						itemDescBuff += item->item_description_char;
+					}
+					if( item->item_length > 0 ){
+						//if( textBuff.size() > 0 ){
+						//	string buff = "";
+						//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
+						//	buff += "\r\n";
+						//	extendText += buff;
+						//	textBuff = "";
+						//}
+						if( itemDescBuff.size() > 0 ){
+							string buff = "";
+							arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
+							buff += "\r\n";
+							extendText += buff;
+							itemDescBuff = "";
+						}
+
+						itemBuff += item->item_char;
+					}
+				}
+				//if( extEvent->text_length > 0 ){
+				//	if( itemDescBuff.size() > 0 ){
+				//		string buff = "";
+				//		arib.PSISI((const BYTE*)itemDescBuff.c_str(), itemDescBuff.length(), &buff);
+				//		buff += "\r\n";
+				//		extendText += buff;
+				//		itemDescBuff = "";
+				//	}
+				//	if( itemBuff.size() > 0 ){
+				//		string buff = "";
+				//		arib.PSISI((const BYTE*)itemBuff.c_str(), itemBuff.length(), &buff);
+				//		buff += "\r\n";
+				//		extendText += buff;
+				//		itemBuff = "";
+				//	}
+
+				//	textBuff += extEvent->text_char;
+				//}
+			}
+		}
+
+		if( itemDescBuff.size() > 0 ){
+			string buff = "";
+			arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
+			buff += "\r\n";
+			extendText += buff;
+			itemDescBuff = "";
+		}
+		if( itemBuff.size() > 0 ){
+			string buff = "";
+			arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
+			buff += "\r\n";
+			extendText += buff;
+			itemBuff = "";
+		}
+		//if( textBuff.size() > 0 ){
+		//	string buff = "";
+		//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
+		//	buff += "\r\n";
+		//	extendText += buff;
+		//	textBuff = "";
+		//}
+
+		AtoW(extendText, eventInfo->extInfo->text_char);
+	}
+
+	return updateFlag;
+}
+
 BOOL CEpgDBUtil::AddContent(CEITTable* eit, EVENT_INFO* eventInfo, CContentDesc* content)
 {
 	BOOL updateFlag = FALSE;
@@ -476,6 +848,26 @@ BOOL CEpgDBUtil::AddContent(CEITTable* eit, EVENT_INFO* eventInfo, CContentDesc*
 		updateFlag = TRUE;
 	}else{
 		updateFlag = CheckUpdate(eit, eventInfo->contentInfo->tableID, eventInfo->contentInfo->version);
+	}
+	if( updateFlag == TRUE ){
+		//更新必要
+		eventInfo->contentInfo->tableID = eit->table_id;
+		eventInfo->contentInfo->version = eit->version_number;
+
+		eventInfo->contentInfo->nibbleList = content->nibbleList;
+	}
+
+	return updateFlag;
+}
+
+BOOL CEpgDBUtil::AddContent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CContentDesc* content)
+{
+	BOOL updateFlag = FALSE;
+	if( eventInfo->contentInfo == NULL ){
+		eventInfo->contentInfo = new CONTEN_INFO;
+		updateFlag = TRUE;
+	}else{
+		updateFlag = CheckUpdate_SD(eit, eventInfo->contentInfo->tableID, eventInfo->contentInfo->version);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
@@ -519,6 +911,37 @@ BOOL CEpgDBUtil::AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, CComponentD
 	return updateFlag;
 }
 
+BOOL CEpgDBUtil::AddComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CComponentDesc* component)
+{
+	BOOL updateFlag = FALSE;
+	if( eventInfo->componentInfo == NULL ){
+		eventInfo->componentInfo = new COMPONENT_INFO;
+		updateFlag = TRUE;
+	}else{
+		updateFlag = CheckUpdate_SD(eit, eventInfo->componentInfo->tableID, eventInfo->componentInfo->version);
+	}
+	if( updateFlag == TRUE ){
+		//更新必要
+		eventInfo->componentInfo->tableID = eit->table_id;
+		eventInfo->componentInfo->version = eit->version_number;
+
+		eventInfo->componentInfo->stream_content = component->stream_content;
+		eventInfo->componentInfo->component_type = component->component_type;
+		eventInfo->componentInfo->component_tag = component->component_tag;
+
+		CARIB8CharDecode arib;
+		string text_char = "";
+		if( component->text_charLength > 0 ){
+			arib.PSISI((const BYTE*)component->text_char, component->text_charLength, &text_char);
+
+			AtoW(text_char, eventInfo->componentInfo->text_char);
+		}
+
+	}
+
+	return updateFlag;
+}
+
 BOOL CEpgDBUtil::AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList)
 {
 	BOOL updateFlag = FALSE;
@@ -527,6 +950,55 @@ BOOL CEpgDBUtil::AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector
 		updateFlag = TRUE;
 	}else{
 		updateFlag = CheckUpdate(eit, eventInfo->audioInfo->tableID, eventInfo->audioInfo->version);
+	}
+	if( updateFlag == TRUE ){
+		//更新必要
+		eventInfo->audioInfo->tableID = eit->table_id;
+		eventInfo->audioInfo->version = eit->version_number;
+		eventInfo->audioInfo->componentList.clear();
+
+		for( size_t i=0; i<descriptorList->size(); i++ ){
+			if( (*descriptorList)[i]->audioComponent != NULL ){
+				CAudioComponentDesc* audioComponent = (*descriptorList)[i]->audioComponent;
+				AUDIO_COMPONENT_INFO_DATA item;
+
+				item.stream_content = audioComponent->stream_content;
+				item.component_type = audioComponent->component_type;
+				item.component_tag = audioComponent->component_tag;
+
+				item.stream_type = audioComponent->stream_type;
+				item.simulcast_group_tag = audioComponent->simulcast_group_tag;
+				item.ES_multi_lingual_flag = audioComponent->ES_multi_lingual_flag;
+				item.main_component_flag = audioComponent->main_component_flag;
+				item.quality_indicator = audioComponent->quality_indicator;
+				item.sampling_rate = audioComponent->sampling_rate;
+
+
+				CARIB8CharDecode arib;
+				string text_char = "";
+				if( audioComponent->text_charLength > 0 ){
+					arib.PSISI((const BYTE*)audioComponent->text_char, audioComponent->text_charLength, &text_char);
+
+					AtoW(text_char, item.text_char);
+				}
+
+				eventInfo->audioInfo->componentList.push_back(item);
+
+			}
+		}
+	}
+
+	return updateFlag;
+}
+
+BOOL CEpgDBUtil::AddAudioComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList)
+{
+	BOOL updateFlag = FALSE;
+	if( eventInfo->audioInfo == NULL ){
+		eventInfo->audioInfo = new AUDIO_COMPONENT_INFO;
+		updateFlag = TRUE;
+	}else{
+		updateFlag = CheckUpdate_SD(eit, eventInfo->audioInfo->tableID, eventInfo->audioInfo->version);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
@@ -699,6 +1171,29 @@ BOOL CEpgDBUtil::CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version)
 			}
 		}else{
 			//[p/f]か自ストリームなので更新の必要なし
+		}
+	}
+	return changeFlag;
+}
+
+BOOL CEpgDBUtil::CheckUpdate_SD(CEITTable_SD* eit, BYTE tableID, BYTE version)
+{
+	BOOL changeFlag = FALSE;
+	if( 0xA0 <= eit->table_id && eit->table_id <= 0xAF ){
+		if( 0xA0 <= tableID && tableID <= 0xAF ){
+			if( tableID == eit->table_id ){
+				if( version != eit->version_number ){
+					//バージョン変わったので更新
+					changeFlag = TRUE;
+				}else{
+					//バージョン変わっていないので更新の必要なし
+				}
+			}else{
+				//テーブルが変わったので更新
+				changeFlag = TRUE;
+			}
+		}else{
+			//[p/f]が最新のはずなので更新しない
 		}
 	}
 	return changeFlag;
@@ -998,6 +1493,37 @@ BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
 			info->serviceList.insert(pair<WORD,DB_SERVICE_INFO*>(item->service_id, item));
 		}
 		this->serviceInfoList.insert(pair<DWORD, DB_TS_INFO*>(key, info));
+	}else{
+		for(size_t i=0; i<sdt->serviceInfoList.size(); i++ ){
+			map<WORD,DB_SERVICE_INFO*>::iterator itrS;
+			itrS = itrTS->second->serviceList.find(sdt->serviceInfoList[i]->service_id);
+			if( itrS == itrTS->second->serviceList.end()){
+				DB_SERVICE_INFO* item = new DB_SERVICE_INFO;
+				item->original_network_id = sdt->original_network_id;
+				item->transport_stream_id = sdt->transport_stream_id;
+				item->service_id = sdt->serviceInfoList[i]->service_id;
+
+				for( size_t j=0; j<sdt->serviceInfoList[i]->descriptorList.size(); j++ ){
+					if( sdt->serviceInfoList[i]->descriptorList[j]->service != NULL ){
+						CServiceDesc* service = sdt->serviceInfoList[i]->descriptorList[j]->service;
+						CARIB8CharDecode arib;
+						string service_provider_name = "";
+						string service_name = "";
+						if( service->service_provider_name_length > 0 ){
+							arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+						}
+						if( service->service_name_length > 0 ){
+							arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+						}
+						AtoW(service_provider_name, item->service_provider_name);
+						AtoW(service_name, item->service_name);
+
+						item->service_type = service->service_type;
+					}
+				}
+				itrTS->second->serviceList.insert(pair<WORD,DB_SERVICE_INFO*>(item->service_id, item));
+			}
+		}
 	}
 
 	UnLock();
@@ -1462,3 +1988,179 @@ Err_End:
 	return NO_ERR;
 }
 
+BOOL CEpgDBUtil::AddSDEventMap(CEITTable_SD* eit)
+{
+	if( eit == NULL ){
+		return FALSE;
+	}
+
+	ULONGLONG key = _Create64Key(eit->original_network_id, 0, eit->service_id);
+
+	//サービスのmapを取得
+	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
+	SERVICE_EVENT_INFO* serviceInfo = NULL;
+
+	itr = serviceEventMapSD.find(key);
+	if( itr == serviceEventMapSD.end() ){
+		serviceInfo = new SERVICE_EVENT_INFO;
+		serviceEventMapSD.insert(pair<ULONGLONG, SERVICE_EVENT_INFO*>(key, serviceInfo));
+	}else{
+		serviceInfo = itr->second;
+	}
+
+	//イベントごとに更新必要が判定
+	for( size_t i=0; i<eit->eventInfoList.size(); i++ ){
+		CEITTable_SD::EVENT_INFO_DATA* eitEventInfo = eit->eventInfoList[i];
+		map<WORD, EVENT_INFO*>::iterator itrEvent;
+		EVENT_INFO* eventInfo = NULL;
+
+		if( eitEventInfo->running_status != 0 && eitEventInfo->running_status != 2 && eitEventInfo->running_status != 4 ){
+			//非実行中または停止中
+			_OutputDebugString(L"★非実行中または停止中イベント ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x %04d/%02d/%02d %02d:%02d\r\n",
+				eit->original_network_id,  eit->transport_stream_id, eit->service_id, eitEventInfo->event_id,
+				eitEventInfo->start_time.wYear, eitEventInfo->start_time.wMonth, eitEventInfo->start_time.wDay, eitEventInfo->start_time.wHour, eitEventInfo->start_time.wMinute
+				);
+			continue;
+		}
+
+		itrEvent = serviceInfo->eventMap.find(eitEventInfo->event_id);
+		if( itrEvent == serviceInfo->eventMap.end() ){
+			eventInfo = new EVENT_INFO;
+			eventInfo->ONID = eit->original_network_id;
+			eventInfo->TSID = eit->transport_stream_id;
+			eventInfo->SID = eit->service_id;
+			eventInfo->event_id = eitEventInfo->event_id;
+			eventInfo->StartTimeFlag = eitEventInfo->StartTimeFlag;
+			eventInfo->start_time = eitEventInfo->start_time;
+			eventInfo->DurationFlag = eitEventInfo->DurationFlag;
+			eventInfo->durationSec = eitEventInfo->durationHH*60*60 +
+				eitEventInfo->durationMM*60 +
+				eitEventInfo->durationSS;
+			eventInfo->freeCAFlag = eitEventInfo->free_CA_mode;
+			serviceInfo->eventMap.insert(pair<WORD, EVENT_INFO*>(eventInfo->event_id, eventInfo));
+		}else{
+			eventInfo = itrEvent->second;
+
+			eventInfo->StartTimeFlag = eitEventInfo->StartTimeFlag;
+			eventInfo->start_time = eitEventInfo->start_time;
+			eventInfo->DurationFlag = eitEventInfo->DurationFlag;
+			eventInfo->durationSec = eitEventInfo->durationHH*60*60 +
+				eitEventInfo->durationMM*60 +
+				eitEventInfo->durationSS;
+		}
+
+		//ExtendedEventは複数あるので1度だけチェックする
+		BOOL checkExtFlag = FALSE;
+		BOOL checkAudioFlag = FALSE;
+		for( size_t j=0; j<eitEventInfo->descriptorList.size(); j++ ){
+			if( eitEventInfo->descriptorList[j]->shortEvent != NULL ){
+				AddShortEvent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->shortEvent );
+			}else if( eitEventInfo->descriptorList[j]->extendedEvent != NULL && checkExtFlag == FALSE){
+				AddExtEvent_SD(eit, eventInfo, &eitEventInfo->descriptorList );
+				checkExtFlag = TRUE;
+			}else if( eitEventInfo->descriptorList[j]->content != NULL ){
+				AddContent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->content );
+			}else if( eitEventInfo->descriptorList[j]->component != NULL ){
+				AddComponent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->component );
+			}else if( eitEventInfo->descriptorList[j]->audioComponent != NULL && checkAudioFlag == FALSE ){
+				AddAudioComponent_SD( eit, eventInfo, &eitEventInfo->descriptorList );
+				checkAudioFlag = TRUE;
+			}
+		}
+	}
+
+	return TRUE;
+}
+
+BOOL CEpgDBUtil::AddEIT_SD2(WORD PID, CEITTable_SD2* eit)
+{
+	if( eit == NULL ){
+		return FALSE;
+	}
+	if( Lock() == FALSE ) return FALSE;
+
+	ULONGLONG key = _Create64Key(eit->original_network_id, 0, eit->service_id2);
+/*
+	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itrMainDB;
+	SERVICE_EVENT_INFO* mainServiceInfo = NULL;
+	itrMainDB = serviceEventMap.find(key);
+	if( itrMainDB == serviceEventMap.end() ){
+		mainServiceInfo = new SERVICE_EVENT_INFO;
+		serviceEventMap.insert(pair<ULONGLONG, SERVICE_EVENT_INFO*>(key, mainServiceInfo));
+	}else{
+		mainServiceInfo = itrMainDB->second;
+	}
+*/
+	//サービスのmapを取得
+	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
+	SERVICE_EVENT_INFO* serviceInfo = NULL;
+
+	itr = serviceEventMapSD.find(key);
+	if( itr != serviceEventMapSD.end() ){
+		serviceInfo = itr->second;
+		for( size_t i=0; i<eit->eventMapList.size(); i++ ){
+			for( size_t j=0; j<eit->eventMapList[i]->eventList.size(); j++ ){
+				map<WORD, EVENT_INFO*>::iterator itrEvent;
+				itrEvent = serviceInfo->eventMap.find(eit->eventMapList[i]->eventList[j].a4table_eventID);
+				if( itrEvent != serviceInfo->eventMap.end() ){
+					ULONGLONG key2 = _Create64Key(itrEvent->second->ONID, itrEvent->second->TSID, eit->service_id);
+					map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itrMainDB;
+					SERVICE_EVENT_INFO* mainServiceInfo = NULL;
+					itrMainDB = serviceEventMap.find(key2);
+					if( itrMainDB == serviceEventMap.end() ){
+						mainServiceInfo = new SERVICE_EVENT_INFO;
+						serviceEventMap.insert(pair<ULONGLONG, SERVICE_EVENT_INFO*>(key2, mainServiceInfo));
+					}else{
+						mainServiceInfo = itrMainDB->second;
+					}
+					EVENT_INFO* eventInfo = NULL;
+					map<WORD, EVENT_INFO*>::iterator itrMainEvent;
+					itrMainEvent = mainServiceInfo->eventMap.find(eit->eventMapList[i]->eventList[j].event_id);
+					if( itrMainEvent == mainServiceInfo->eventMap.end()){
+						eventInfo = new EVENT_INFO;
+						mainServiceInfo->eventMap.insert(pair<WORD, EVENT_INFO*>(eventInfo->event_id, eventInfo));
+					}else{
+						eventInfo = itrMainEvent->second;
+					}
+
+					eventInfo->ONID = itrEvent->second->ONID;
+					eventInfo->TSID = itrEvent->second->TSID;
+					eventInfo->SID = eit->service_id;
+					eventInfo->event_id = eit->eventMapList[i]->eventList[j].event_id;
+					eventInfo->StartTimeFlag = itrEvent->second->StartTimeFlag;
+					eventInfo->start_time = eit->eventMapList[i]->start_day;
+					eventInfo->start_time.wHour = eit->eventMapList[i]->eventList[j].hour;
+					eventInfo->start_time.wMinute = eit->eventMapList[i]->eventList[j].minute;
+					eventInfo->DurationFlag = itrEvent->second->DurationFlag;
+					eventInfo->durationSec = itrEvent->second->durationSec;
+					eventInfo->freeCAFlag = itrEvent->second->freeCAFlag;
+
+					if(itrEvent->second->shortInfo != NULL && eventInfo->shortInfo == NULL){
+						eventInfo->shortInfo = new SHORT_EVENT_INFO;
+						*eventInfo->shortInfo = *itrEvent->second->shortInfo;
+					}
+					if(itrEvent->second->extInfo != NULL && eventInfo->extInfo == NULL ){
+						eventInfo->extInfo = new EXTENDED_EVENT_INFO;
+						*eventInfo->extInfo = *itrEvent->second->extInfo;
+					}
+					if(itrEvent->second->contentInfo != NULL && eventInfo->contentInfo == NULL ){
+						eventInfo->contentInfo = new CONTEN_INFO;
+						*eventInfo->contentInfo = *itrEvent->second->contentInfo;
+					}
+					if(itrEvent->second->componentInfo != NULL && eventInfo->componentInfo == NULL ){
+						eventInfo->componentInfo = new COMPONENT_INFO;
+						*eventInfo->componentInfo = *itrEvent->second->componentInfo;
+					}
+					if(itrEvent->second->audioInfo != NULL && eventInfo->audioInfo == NULL ){
+						eventInfo->audioInfo = new AUDIO_COMPONENT_INFO;
+						*eventInfo->audioInfo = *itrEvent->second->audioInfo;
+					}
+
+				}
+			}
+		}
+	}
+
+	UnLock();
+	return NO_ERR;
+}

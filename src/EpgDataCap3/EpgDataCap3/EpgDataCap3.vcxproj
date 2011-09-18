@@ -224,6 +224,8 @@
     <ClInclude Include="Table\CATTable.h" />
     <ClInclude Include="Table\CDTTable.h" />
     <ClInclude Include="Table\EITTable.h" />
+    <ClInclude Include="Table\EITTable_SD.h" />
+    <ClInclude Include="Table\EITTable_SD2.h" />
     <ClInclude Include="Table\NITTable.h" />
     <ClInclude Include="Table\PATTable.h" />
     <ClInclude Include="Table\PMTTable.h" />
@@ -329,6 +331,8 @@
     <ClCompile Include="Table\CATTable.cpp" />
     <ClCompile Include="Table\CDTTable.cpp" />
     <ClCompile Include="Table\EITTable.cpp" />
+    <ClCompile Include="Table\EITTable_SD.cpp" />
+    <ClCompile Include="Table\EITTable_SD2.cpp" />
     <ClCompile Include="Table\NITTable.cpp" />
     <ClCompile Include="Table\PATTable.cpp" />
     <ClCompile Include="Table\PMTTable.cpp" />

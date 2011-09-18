@@ -1,19 +1,19 @@
 ﻿#include "StdAfx.h"
-#include "EITTable.h"
+#include "EITTable_SD.h"
 
 #include "../../../Common/EpgTimerUtil.h"
 #include "../Descriptor/Descriptor.h"
 
-CEITTable::CEITTable(void)
+CEITTable_SD::CEITTable_SD(void)
 {
 }
 
-CEITTable::~CEITTable(void)
+CEITTable_SD::~CEITTable_SD(void)
 {
 	Clear();
 }
 
-void CEITTable::Clear()
+void CEITTable_SD::Clear()
 {
 	for( size_t i=0 ;i<eventInfoList.size(); i++ ){
 		SAFE_DELETE(eventInfoList[i]);
@@ -21,7 +21,7 @@ void CEITTable::Clear()
 	eventInfoList.clear();
 }
 
-BOOL CEITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
+BOOL CEITTable_SD::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 {
 	if( data == NULL ){
 		return FALSE;
@@ -46,17 +46,17 @@ BOOL CEITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 
 	if( section_syntax_indicator != 1 ){
 		//固定値がおかしい
-		_OutputDebugString( L"++CEITTable:: section_syntax err" );
+		_OutputDebugString( L"++CEITTable_SD:: section_syntax err" );
 		return FALSE;
 	}
-	if( table_id < 0x4E || table_id > 0x6F ){
+	if( table_id != 0xA4 && table_id != 0xA7 ){
 		//table_idがおかしい
-		_OutputDebugString( L"++CEITTable:: table_id err 0x%02X", table_id );
+		_OutputDebugString( L"++CEITTable_SD:: table_id err 0x%02X", table_id );
 		return FALSE;
 	}
 	if( readSize+section_length > dataSize && section_length > 3){
 		//サイズ異常
-		_OutputDebugString( L"++CEITTable:: size err %d > %d", readSize+section_length, dataSize );
+		_OutputDebugString( L"++CEITTable_SD:: size err %d > %d", readSize+section_length, dataSize );
 		return FALSE;
 	}
 	//CRCチェック
@@ -65,7 +65,7 @@ BOOL CEITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		((DWORD)data[3+section_length-2])<<8 |
 		data[3+section_length-1];
 	if( crc32 != _Crc32(3+section_length-4, data) ){
-		_OutputDebugString( L"++CEITTable:: CRC err" );
+		_OutputDebugString( L"++CEITTable_SD:: CRC err" );
 		return FALSE;
 	}
 
@@ -77,9 +77,8 @@ BOOL CEITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		last_section_number = data[readSize+4];
 		transport_stream_id = ((WORD)data[readSize+5])<<8 | data[readSize+6];
 		original_network_id = ((WORD)data[readSize+7])<<8 | data[readSize+8];
-		segment_last_section_number = data[readSize+9];
-		last_table_id = data[readSize+10];
-		readSize += 11;
+
+		readSize += 9;
 		while( readSize < (DWORD)section_length+3-4 ){
 			EVENT_INFO_DATA* item = new EVENT_INFO_DATA;
 			item->event_id = ((WORD)data[readSize])<<8 | data[readSize+1];
@@ -116,7 +115,7 @@ BOOL CEITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 				}else{
 					CDescriptor descriptor;
 					if( descriptor.Decode( data+readSize, item->descriptors_loop_length, &(item->descriptorList), NULL ) == FALSE ){
-						_OutputDebugString( L"++CEITTable:: descriptor2 err" );
+						_OutputDebugString( L"++CEITTable_SD:: descriptor2 err" );
 						return FALSE;
 					}
 				}
@@ -138,7 +137,7 @@ BOOL CEITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 	return TRUE;
 }
 
-BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* descriptorList, DWORD* decodeReadSize )
+BOOL CEITTable_SD::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* descriptorList, DWORD* decodeReadSize )
 {
 	BOOL ret = TRUE;
 	if( data == NULL || dataSize == 0 || descriptorList == NULL ){
@@ -146,17 +145,15 @@ BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* 
 	}
 	DWORD decodeSize = 0;
 
-	DESCRIPTOR_DATA* extItem = NULL;
 	DESCRIPTOR_DATA* shortItem = NULL;
+	DESCRIPTOR_DATA* extItem = NULL;
 
 	while( decodeSize < dataSize ){
 		BYTE* readPos = data+decodeSize;
-
 		if( readPos[0] == 0x54 ){
 			DESCRIPTOR_DATA* item = new DESCRIPTOR_DATA;
 			item->content = new CContentDesc;
 			item->content->Decode(readPos, readPos[1]+2, NULL);
-
 
 			for( size_t i=0; i<item->content->nibbleList.size(); i++ ){
 				switch(item->content->nibbleList[i].user_nibble_1){

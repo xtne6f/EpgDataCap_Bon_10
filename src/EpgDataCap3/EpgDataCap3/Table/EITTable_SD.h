@@ -125,7 +125,7 @@ CRC_32（CRC）：これは付録B で定義するデコーダにおいて、セ
 #include "../../../Common/Util.h"
 #include "../Descriptor/DescriptorDef.h"
 
-class CEITTable
+class CEITTable_SD
 {
 public:
 	typedef struct _EVENT_INFO_DATA{
@@ -157,14 +157,12 @@ public:
 	BYTE last_section_number;
 	WORD transport_stream_id;
 	WORD original_network_id;
-	BYTE segment_last_section_number;
-	BYTE last_table_id;
 	vector<EVENT_INFO_DATA*> eventInfoList;
 	DWORD crc32;
 
 public:
-	CEITTable(void);
-	~CEITTable(void);
+	CEITTable_SD(void);
+	~CEITTable_SD(void);
 
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 protected:

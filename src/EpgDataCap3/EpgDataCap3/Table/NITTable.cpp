@@ -82,10 +82,14 @@ BOOL CNITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		network_descriptors_length = ((WORD)data[readSize+5]&0x0F)<<8 | data[readSize+6];
 		readSize += 7;
 		if( readSize+network_descriptors_length <= (DWORD)section_length+3-4 && network_descriptors_length > 0){
-			CDescriptor descriptor;
-			if( descriptor.Decode( data+readSize, network_descriptors_length, &descriptorList, NULL ) == FALSE ){
-				_OutputDebugString( L"++CNITTable:: descriptor err" );
-				return FALSE;
+			if( network_id == 0x0001 || network_id == 0x0003 ){
+				SDDecode( data+readSize, network_descriptors_length, &descriptorList, NULL );
+			}else{
+				CDescriptor descriptor;
+				if( descriptor.Decode( data+readSize, network_descriptors_length, &descriptorList, NULL ) == FALSE ){
+					_OutputDebugString( L"++CNITTable:: descriptor err" );
+					return FALSE;
+				}
 			}
 			readSize+=network_descriptors_length;
 		}
@@ -121,4 +125,43 @@ BOOL CNITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 	}
 
 	return TRUE;
+}
+
+BOOL CNITTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* descriptorList, DWORD* decodeReadSize )
+{
+	BOOL ret = TRUE;
+	if( data == NULL || dataSize == 0 || descriptorList == NULL ){
+		return FALSE;
+	}
+	DWORD decodeSize = 0;
+
+	DESCRIPTOR_DATA* item = new DESCRIPTOR_DATA;
+	item->networkName = new CNetworkNameDesc;
+
+	while( decodeSize < dataSize ){
+		BYTE* readPos = data+decodeSize;
+		if( readPos[0] == 0x82 ){
+			//サービス名
+			if( readPos[2] == 0x01 ){
+				//日本語版？
+				item->networkName->char_nameLength = readPos[1]-1;
+				item->networkName->char_name = new CHAR[item->networkName->char_nameLength];
+				memcpy(item->networkName->char_name, readPos+3, item->networkName->char_nameLength);
+			}
+			decodeSize += readPos[1]+2;
+		}else{
+			decodeSize += readPos[1]+2;
+		}
+	}
+	if( item->networkName->char_nameLength == 0 ){
+		SAFE_DELETE(item);
+		ret = FALSE;
+	}else{
+		descriptorList->push_back(item);
+	}
+
+	if( decodeReadSize != NULL ){
+		*decodeReadSize = dataSize;
+	}
+	return ret;
 }

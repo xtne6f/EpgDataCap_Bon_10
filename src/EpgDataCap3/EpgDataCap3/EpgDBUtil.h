@@ -60,6 +60,9 @@ typedef struct _EVENTGROUP_INFO{
 } EVENTGROUP_INFO;
 
 typedef struct _EVENT_INFO{
+	WORD ONID;
+	WORD TSID;
+	WORD SID;
 	WORD event_id;
 	BYTE StartTimeFlag;	//start_timeの値が有効かどうか
 	SYSTEMTIME start_time;
@@ -147,6 +150,8 @@ public:
 	~CEpgDBUtil(void);
 
 	BOOL AddEIT(WORD PID, CEITTable* eit);
+	BOOL AddEIT_SD(WORD PID, CEITTable_SD* eit);
+	BOOL AddEIT_SD2(WORD PID, CEITTable_SD2* eit);
 
 	BOOL AddServiceList(CNITTable* nit);
 	BOOL AddServiceList(WORD TSID, CSITTable* sit);
@@ -238,6 +243,9 @@ protected:
 	map<ULONGLONG, SECTION_STATUS_INFO*> sectionMap;
 	map<ULONGLONG, BYTE> serviceList;
 
+	map<ULONGLONG, SERVICE_EVENT_INFO*> serviceEventMapSD;
+
+
 	typedef struct _DB_SERVICE_INFO{
 		WORD original_network_id;	//original_network_id
 		WORD transport_stream_id;	//transport_stream_id
@@ -306,6 +314,15 @@ protected:
 	BOOL AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, CEventGroupDesc* eventGroup);
 	BOOL AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, CEventGroupDesc* eventGroup);
 	BOOL CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version);
+
+	BOOL AddShortEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CShortEventDesc* shortEvent);
+	BOOL AddExtEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList);
+	BOOL AddContent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CContentDesc* content);
+	BOOL AddComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CComponentDesc* component);
+	BOOL AddAudioComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList);
+	BOOL CheckUpdate_SD(CEITTable_SD* eit, BYTE tableID, BYTE version);
+
+	BOOL AddSDEventMap(CEITTable_SD* eit);
 
 	BOOL CheckSectionAll(map<WORD, SECTION_FLAG_INFO>* sectionMap, BOOL leitFlag = FALSE);
 

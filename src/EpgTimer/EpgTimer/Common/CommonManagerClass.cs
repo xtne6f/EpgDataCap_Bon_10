@@ -782,19 +782,24 @@ namespace EpgTimer
                 {
                     foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
                     {
+                        String content = "";
                         int nibble1 = info.content_nibble_level_1;
                         int nibble2 = info.content_nibble_level_2;
                         UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
                         UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
                         if (ContentKindDictionary.ContainsKey(contentKey1) == true)
                         {
-                            extInfo += ContentKindDictionary[contentKey1];
+                            content += ContentKindDictionary[contentKey1];
                         }
                         if (ContentKindDictionary.ContainsKey(contentKey2) == true)
                         {
-                            extInfo += " - " + ContentKindDictionary[contentKey2];
+                            content += " - " + ContentKindDictionary[contentKey2];
                         }
-                        extInfo += "\r\n";
+                        if (content.Length == 0 || nibble1 == 0x0F)
+                        {
+                            content += "(0x" + nibble1.ToString("X2") + nibble2.ToString("X2") + ")" + "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
+                        }
+                        extInfo += content+"\r\n";
                     }
                 }
                 extInfo += "\r\n";

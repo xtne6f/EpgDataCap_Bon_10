@@ -54,7 +54,7 @@ void CDecodeUtil::Clear()
 
 	SAFE_DELETE(this->nitActualInfo);
 	SAFE_DELETE(this->sdtActualInfo);
-	map<DWORD, CSDTTable*>::iterator itrSdt;
+	map<DWORD, SDT_SECTION_INFO*>::iterator itrSdt;
 	for( itrSdt = this->sdtOtherMap.begin(); itrSdt != this->sdtOtherMap.end(); itrSdt++ ){
 		SAFE_DELETE(itrSdt->second);
 	}
@@ -103,7 +103,7 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 
 	SAFE_DELETE(this->nitActualInfo);
 	SAFE_DELETE(this->sdtActualInfo);
-	map<DWORD, CSDTTable*>::iterator itrSdt;
+	map<DWORD, SDT_SECTION_INFO*>::iterator itrSdt;
 	for( itrSdt = this->sdtOtherMap.begin(); itrSdt != this->sdtOtherMap.end(); itrSdt++ ){
 		SAFE_DELETE(itrSdt->second);
 	}
@@ -207,6 +207,14 @@ DWORD CDecodeUtil::AddTSData(BYTE* data, DWORD dataSize)
 							}else if( tableList[j]->SITTable != NULL ){
 								if( CheckSIT(tsPacket.PID, tableList[j]->SITTable) == TRUE ){
 									tableList[j]->SITTable = NULL;
+								}
+							}else if( tableList[j]->EITTable_SD != NULL ){
+								if( CheckEIT_SD(tsPacket.PID, tableList[j]->EITTable_SD) == TRUE ){
+									tableList[j]->EITTable_SD = NULL;
+								}
+							}else if( tableList[j]->EITTable_SD2 != NULL ){
+								if( CheckEIT_SD2(tsPacket.PID, tableList[j]->EITTable_SD2) == TRUE ){
+									tableList[j]->EITTable_SD2 = NULL;
 								}
 							}
 							SAFE_DELETE(tableList[j]);
@@ -312,34 +320,84 @@ BOOL CDecodeUtil::CheckNIT(WORD PID, CNITTable* nit)
 		//自ネットワーク
 		if( this->nitActualInfo == NULL ){
 			//初回
-			this->nitActualInfo = nit;
+			this->nitActualInfo = new NIT_SECTION_INFO;
+			this->nitActualInfo->network_id = nit->network_id;
+			this->nitActualInfo->version_number = nit->version_number;
+			this->nitActualInfo->last_section_number = nit->last_section_number;
+			this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
 		}else{
 			if( this->nitActualInfo->network_id != nit->network_id ){
 				//NID変わったのでネットワーク変わった
 				ChangeTSIDClear(PID);
-				this->nitActualInfo = nit;
+				SAFE_DELETE(this->nitActualInfo);
+				this->nitActualInfo = new NIT_SECTION_INFO;
+				this->nitActualInfo->network_id = nit->network_id;
+				this->nitActualInfo->version_number = nit->version_number;
+				this->nitActualInfo->last_section_number = nit->last_section_number;
+				this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
 			}else if(this->nitActualInfo->version_number != nit->version_number){
 				//バージョン変わった
 				SAFE_DELETE(this->nitActualInfo);
-				this->nitActualInfo = nit;
+				this->nitActualInfo = new NIT_SECTION_INFO;
+				this->nitActualInfo->network_id = nit->network_id;
+				this->nitActualInfo->version_number = nit->version_number;
+				this->nitActualInfo->last_section_number = nit->last_section_number;
+				this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
 			}else{
-				if( this->nitActualInfo->TSInfoList.size() != 0 || nit->TSInfoList.size() != 0 ){
-					if( this->nitActualInfo->TSInfoList[0]->original_network_id != nit->TSInfoList[0]->original_network_id ){
-						//ONID変わったのでネットワーク変わった
-						ChangeTSIDClear(PID);
-						this->nitActualInfo = nit;
-					}else{
-						if( this->nitActualInfo->TSInfoList[0]->transport_stream_id != nit->TSInfoList[0]->transport_stream_id ){
-							//TSID変わったのでネットワーク変わった
+				map<BYTE, CNITTable*>::iterator itr;
+				itr = this->nitActualInfo->nitSection.find(0);
+				if( itr != this->nitActualInfo->nitSection.end() ){
+					if( (itr->second->TSInfoList.size() != 0 && nit->TSInfoList.size() != 0) &&
+						(itr->first == nit->section_number)
+						){
+						if( itr->second->TSInfoList[0]->original_network_id != nit->TSInfoList[0]->original_network_id ){
+							//ONID変わったのでネットワーク変わった
 							ChangeTSIDClear(PID);
-							this->nitActualInfo = nit;
+							SAFE_DELETE(this->nitActualInfo);
+							this->nitActualInfo = new NIT_SECTION_INFO;
+							this->nitActualInfo->network_id = nit->network_id;
+							this->nitActualInfo->version_number = nit->version_number;
+							this->nitActualInfo->last_section_number = nit->last_section_number;
+							this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
 						}else{
-							//変化なし
-							return FALSE;
+							if( itr->second->TSInfoList[0]->transport_stream_id != nit->TSInfoList[0]->transport_stream_id ){
+								//TSID変わったのでネットワーク変わった
+								ChangeTSIDClear(PID);
+								SAFE_DELETE(this->nitActualInfo);
+								this->nitActualInfo = new NIT_SECTION_INFO;
+								this->nitActualInfo->network_id = nit->network_id;
+								this->nitActualInfo->version_number = nit->version_number;
+								this->nitActualInfo->last_section_number = nit->last_section_number;
+								this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
+							}else{
+								//変化なし
+								map<BYTE, CNITTable*>::iterator itr;
+								itr = this->nitActualInfo->nitSection.find(nit->section_number);
+								if( itr == this->nitActualInfo->nitSection.end() ){
+									this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
+									return TRUE;
+								}
+								return FALSE;
+							}
 						}
+					}else{
+						//変化なし
+						map<BYTE, CNITTable*>::iterator itr;
+						itr = this->nitActualInfo->nitSection.find(nit->section_number);
+						if( itr == this->nitActualInfo->nitSection.end() ){
+							this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
+							return TRUE;
+						}
+						return FALSE;
 					}
 				}else{
 					//変化なし
+					map<BYTE, CNITTable*>::iterator itr;
+					itr = this->nitActualInfo->nitSection.find(nit->section_number);
+					if( itr == this->nitActualInfo->nitSection.end() ){
+						this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
+						return TRUE;
+					}
 					return FALSE;
 				}
 			}
@@ -399,50 +457,78 @@ BOOL CDecodeUtil::CheckSDT(WORD PID, CSDTTable* sdt)
 		//自ストリーム
 		if( this->sdtActualInfo == NULL ){
 			//初回
-			this->sdtActualInfo = sdt;
+			this->sdtActualInfo = new SDT_SECTION_INFO;
+			this->sdtActualInfo->original_network_id = sdt->original_network_id;
+			this->sdtActualInfo->transport_stream_id = sdt->transport_stream_id;
+			this->sdtActualInfo->version_number = sdt->version_number;
+			this->sdtActualInfo->last_section_number = sdt->last_section_number;
+			this->sdtActualInfo->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
 		}else{
 			if( this->sdtActualInfo->original_network_id != sdt->original_network_id ){
 				//ONID変わったのでネットワーク変わった
 				ChangeTSIDClear(PID);
-				this->sdtActualInfo = sdt;
+				SAFE_DELETE(this->sdtActualInfo);
+				this->sdtActualInfo = new SDT_SECTION_INFO;
+				this->sdtActualInfo->original_network_id = sdt->original_network_id;
+				this->sdtActualInfo->transport_stream_id = sdt->transport_stream_id;
+				this->sdtActualInfo->version_number = sdt->version_number;
+				this->sdtActualInfo->last_section_number = sdt->last_section_number;
+				this->sdtActualInfo->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
 			}else if( this->sdtActualInfo->transport_stream_id != sdt->transport_stream_id ){
 				//TSID変わったのでチャンネル変わった
 				ChangeTSIDClear(PID);
-				this->sdtActualInfo = sdt;
+				SAFE_DELETE(this->sdtActualInfo);
+				this->sdtActualInfo = new SDT_SECTION_INFO;
+				this->sdtActualInfo->original_network_id = sdt->original_network_id;
+				this->sdtActualInfo->transport_stream_id = sdt->transport_stream_id;
+				this->sdtActualInfo->version_number = sdt->version_number;
+				this->sdtActualInfo->last_section_number = sdt->last_section_number;
+				this->sdtActualInfo->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
 			}else if( this->sdtActualInfo->version_number != sdt->version_number ){
 				//バージョン変わった
 				SAFE_DELETE(this->sdtActualInfo);
-				this->sdtActualInfo = sdt;
+				this->sdtActualInfo = new SDT_SECTION_INFO;
+				this->sdtActualInfo->original_network_id = sdt->original_network_id;
+				this->sdtActualInfo->transport_stream_id = sdt->transport_stream_id;
+				this->sdtActualInfo->version_number = sdt->version_number;
+				this->sdtActualInfo->last_section_number = sdt->last_section_number;
+				this->sdtActualInfo->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
 			}else{
 				//変化なし
+				map<BYTE, CSDTTable*>::iterator itr;
+				itr = this->sdtActualInfo->sdtSection.find(sdt->section_number);
+				if( itr == this->sdtActualInfo->sdtSection.end() ){
+					this->sdtActualInfo->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
+					return TRUE;
+				}
 				return FALSE;
 			}
 		}
-//		_OutputDebugString(L"find SDT\r\n");
-//		_OutputDebugString(L"ONID 0x%04X, TSID 0x%04X\r\n", sdt->original_network_id, sdt->transport_stream_id);
-		for(size_t i=0; i<sdt->serviceInfoList.size(); i++ ){
-//			_OutputDebugString(L"SID 0x%04X\r\n", sdt->serviceInfoList[i]->service_id);
-			for( size_t j=0; j<sdt->serviceInfoList[i]->descriptorList.size(); j++ ){
-				if( sdt->serviceInfoList[i]->descriptorList[j]->service != NULL ){
-					CServiceDesc* service = sdt->serviceInfoList[i]->descriptorList[j]->service;
-					CARIB8CharDecode arib;
-					string service_provider_name = "";
-					string service_name = "";
-					if( service->service_provider_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
-					}
-					if( service->service_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
-					}
-/*					wstring service_provider_nameW = L"";
-					wstring service_nameW = L"";
-					AtoW(service_provider_name, service_provider_nameW);
-					AtoW(service_name, service_nameW);
-					_OutputDebugString(L"type 0x%04X %s %s\r\n", service->service_type, service_provider_nameW.c_str(), service_nameW.c_str());
-*/				}
-				//logo_transmission
-			}
-		}
+////		_OutputDebugString(L"find SDT\r\n");
+////		_OutputDebugString(L"ONID 0x%04X, TSID 0x%04X\r\n", sdt->original_network_id, sdt->transport_stream_id);
+//		for(size_t i=0; i<sdt->serviceInfoList.size(); i++ ){
+////			_OutputDebugString(L"SID 0x%04X\r\n", sdt->serviceInfoList[i]->service_id);
+//			for( size_t j=0; j<sdt->serviceInfoList[i]->descriptorList.size(); j++ ){
+//				if( sdt->serviceInfoList[i]->descriptorList[j]->service != NULL ){
+//					CServiceDesc* service = sdt->serviceInfoList[i]->descriptorList[j]->service;
+//					CARIB8CharDecode arib;
+//					string service_provider_name = "";
+//					string service_name = "";
+//					if( service->service_provider_name_length > 0 ){
+//						arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+//					}
+//					if( service->service_name_length > 0 ){
+//						arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+//					}
+///*					wstring service_provider_nameW = L"";
+//					wstring service_nameW = L"";
+//					AtoW(service_provider_name, service_provider_nameW);
+//					AtoW(service_name, service_nameW);
+//					_OutputDebugString(L"type 0x%04X %s %s\r\n", service->service_type, service_provider_nameW.c_str(), service_nameW.c_str());
+//*/				}
+//				//logo_transmission
+//			}
+//		}
 
 	}else if( sdt->table_id == 0x46 ){
 		//他ストリーム
@@ -473,16 +559,36 @@ BOOL CDecodeUtil::CheckSDT(WORD PID, CSDTTable* sdt)
 		}
 */
 		DWORD key = ((DWORD)sdt->original_network_id)<<16 | sdt->transport_stream_id;
-		map<DWORD, CSDTTable*>::iterator itr;
+		map<DWORD, SDT_SECTION_INFO*>::iterator itr;
 		itr = sdtOtherMap.find(key);
 		if( itr == sdtOtherMap.end() ){
-			sdtOtherMap.insert(pair<DWORD, CSDTTable*>(key,sdt));
+			SDT_SECTION_INFO* info = new SDT_SECTION_INFO;
+			info->original_network_id = sdt->original_network_id;
+			info->transport_stream_id = sdt->transport_stream_id;
+			info->version_number = sdt->version_number;
+			info->last_section_number = sdt->last_section_number;
+			info->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
+			sdtOtherMap.insert(pair<DWORD, SDT_SECTION_INFO*>(key, info));
 		}else{
 			if( itr->second->version_number != sdt->version_number ){
+				sdtOtherMap.erase(itr);
 				SAFE_DELETE(itr->second);
-				itr->second = sdt;
+
+				SDT_SECTION_INFO* info = new SDT_SECTION_INFO;
+				info->original_network_id = sdt->original_network_id;
+				info->transport_stream_id = sdt->transport_stream_id;
+				info->version_number = sdt->version_number;
+				info->last_section_number = sdt->last_section_number;
+				info->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
+				sdtOtherMap.insert(pair<DWORD, SDT_SECTION_INFO*>(key, info));
 			}else{
 				//変化なし
+				map<BYTE, CSDTTable*>::iterator itrTable;
+				itrTable = itr->second->sdtSection.find(sdt->section_number);
+				if( itrTable == itr->second->sdtSection.end() ){
+					itr->second->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
+					return TRUE;
+				}
 				return FALSE;
 			}
 		}
@@ -554,6 +660,30 @@ BOOL CDecodeUtil::CheckEIT(WORD PID, CEITTable* eit)
 	
 	if( epgDBUtil != NULL ){
 		epgDBUtil->AddEIT(PID, eit);
+	}
+	return FALSE;
+}
+
+BOOL CDecodeUtil::CheckEIT_SD(WORD PID, CEITTable_SD* eit)
+{
+	if( eit == NULL ){
+		return FALSE;
+	}
+	
+	if( epgDBUtil != NULL ){
+		epgDBUtil->AddEIT_SD(PID, eit);
+	}
+	return FALSE;
+}
+
+BOOL CDecodeUtil::CheckEIT_SD2(WORD PID, CEITTable_SD2* eit)
+{
+	if( eit == NULL ){
+		return FALSE;
+	}
+	
+	if( epgDBUtil != NULL ){
+		epgDBUtil->AddEIT_SD2(PID, eit);
 	}
 	return FALSE;
 }
@@ -713,9 +843,17 @@ DWORD CDecodeUtil::GetServiceListActual(
 		}else{
 			return NO_ERR;
 		}
+	}else{
+		if( this->nitActualInfo->last_section_number+1 != this->nitActualInfo->nitSection.size() ||
+			this->sdtActualInfo->last_section_number+1 != this->sdtActualInfo->sdtSection.size() ){
+			return ERR_FALSE;
+		}
 	}
 
-	this->serviceListSize = (DWORD)this->sdtActualInfo->serviceInfoList.size();
+	map<BYTE, CSDTTable*>::iterator itrSdt;
+	for(itrSdt = this->sdtActualInfo->sdtSection.begin(); itrSdt != this->sdtActualInfo->sdtSection.end(); itrSdt++){
+		this->serviceListSize += (DWORD)itrSdt->second->serviceInfoList.size();
+	}
 	this->serviceList = new SERVICE_INFO[this->serviceListSize];
 
 
@@ -724,87 +862,94 @@ DWORD CDecodeUtil::GetServiceListActual(
 	BYTE remote_control_key_id = 0;
 	vector<WORD> partialServiceList;
 
-	for( size_t i=0; i<this->nitActualInfo->descriptorList.size(); i++ ){
-		if( this->nitActualInfo->descriptorList[i]->networkName != NULL ){
-			CNetworkNameDesc* networkName = this->nitActualInfo->descriptorList[i]->networkName;
-			if( networkName->char_nameLength > 0 ){
-				CARIB8CharDecode arib;
-				string network_name = "";
-				arib.PSISI((const BYTE*)networkName->char_name, networkName->char_nameLength, &network_name);
-				AtoW(network_name, network_nameW);
-			}
-		}
-	}
-	for( size_t i=0; i<this->nitActualInfo->TSInfoList.size(); i++ ){
-		for( size_t j=0; j<this->nitActualInfo->TSInfoList[i]->descriptorList.size(); j++ ){
-			if( this->nitActualInfo->TSInfoList[i]->descriptorList[j]->TSInfo != NULL ){
-				CTSInfoDesc* TSInfo = this->nitActualInfo->TSInfoList[i]->descriptorList[j]->TSInfo;
-				if( TSInfo->length_of_ts_name > 0 ){
+	map<BYTE, CNITTable*>::iterator itrNit;
+	for( itrNit = this->nitActualInfo->nitSection.begin(); itrNit != this->nitActualInfo->nitSection.end(); itrNit++ ){
+		for( size_t i=0; i<itrNit->second->descriptorList.size(); i++ ){
+			if( itrNit->second->descriptorList[i]->networkName != NULL ){
+				CNetworkNameDesc* networkName = itrNit->second->descriptorList[i]->networkName;
+				if( networkName->char_nameLength > 0 ){
 					CARIB8CharDecode arib;
-					string ts_name = "";
-					arib.PSISI((const BYTE*)TSInfo->ts_name_char, TSInfo->length_of_ts_name, &ts_name);
-					AtoW(ts_name, ts_nameW);
+					string network_name = "";
+					arib.PSISI((const BYTE*)networkName->char_name, networkName->char_nameLength, &network_name);
+					AtoW(network_name, network_nameW);
 				}
-				remote_control_key_id = TSInfo->remote_control_key_id;
 			}
-			if( this->nitActualInfo->TSInfoList[i]->descriptorList[j]->partialReception != NULL ){
-				partialServiceList = this->nitActualInfo->TSInfoList[i]->descriptorList[j]->partialReception->service_idList;
+		}
+		for( size_t i=0; i<itrNit->second->TSInfoList.size(); i++ ){
+			for( size_t j=0; j<itrNit->second->TSInfoList[i]->descriptorList.size(); j++ ){
+				if( itrNit->second->TSInfoList[i]->descriptorList[j]->TSInfo != NULL ){
+					CTSInfoDesc* TSInfo = itrNit->second->TSInfoList[i]->descriptorList[j]->TSInfo;
+					if( TSInfo->length_of_ts_name > 0 ){
+						CARIB8CharDecode arib;
+						string ts_name = "";
+						arib.PSISI((const BYTE*)TSInfo->ts_name_char, TSInfo->length_of_ts_name, &ts_name);
+						AtoW(ts_name, ts_nameW);
+					}
+					remote_control_key_id = TSInfo->remote_control_key_id;
+				}
+				if( itrNit->second->TSInfoList[i]->descriptorList[j]->partialReception != NULL ){
+					partialServiceList = itrNit->second->TSInfoList[i]->descriptorList[j]->partialReception->service_idList;
+				}
 			}
 		}
 	}
 
-	for( DWORD i=0; i<this->serviceListSize; i++ ){
-		this->serviceList[i].original_network_id = this->sdtActualInfo->original_network_id;
-		this->serviceList[i].transport_stream_id = this->sdtActualInfo->transport_stream_id;
-		this->serviceList[i].service_id = this->sdtActualInfo->serviceInfoList[i]->service_id;
-		this->serviceList[i].extInfo = new SERVICE_EXT_INFO;
+	DWORD count = 0;
+	for(itrSdt = this->sdtActualInfo->sdtSection.begin(); itrSdt != this->sdtActualInfo->sdtSection.end(); itrSdt++){
+		for( size_t i=0; i<itrSdt->second->serviceInfoList.size(); i++ ){
+			this->serviceList[count].original_network_id = itrSdt->second->original_network_id;
+			this->serviceList[count].transport_stream_id = itrSdt->second->transport_stream_id;
+			this->serviceList[count].service_id = itrSdt->second->serviceInfoList[i]->service_id;
+			this->serviceList[count].extInfo = new SERVICE_EXT_INFO;
 
-		for( size_t j=0; j<this->sdtActualInfo->serviceInfoList[i]->descriptorList.size(); j++ ){
-			if( this->sdtActualInfo->serviceInfoList[i]->descriptorList[j]->service != NULL ){
-				CServiceDesc* service = this->sdtActualInfo->serviceInfoList[i]->descriptorList[j]->service;
-				CARIB8CharDecode arib;
-				string service_provider_name = "";
-				string service_name = "";
-				if( service->service_provider_name_length > 0 ){
-					arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
-				}
-				if( service->service_name_length > 0 ){
-					arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
-				}
-				wstring service_provider_nameW = L"";
-				wstring service_nameW = L"";
-				AtoW(service_provider_name, service_provider_nameW);
-				AtoW(service_name, service_nameW);
+			for( size_t j=0; j<itrSdt->second->serviceInfoList[i]->descriptorList.size(); j++ ){
+				if( itrSdt->second->serviceInfoList[i]->descriptorList[j]->service != NULL ){
+					CServiceDesc* service = itrSdt->second->serviceInfoList[i]->descriptorList[j]->service;
+					CARIB8CharDecode arib;
+					string service_provider_name = "";
+					string service_name = "";
+					if( service->service_provider_name_length > 0 ){
+						arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+					}
+					if( service->service_name_length > 0 ){
+						arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+					}
+					wstring service_provider_nameW = L"";
+					wstring service_nameW = L"";
+					AtoW(service_provider_name, service_provider_nameW);
+					AtoW(service_name, service_nameW);
 
-				this->serviceList[i].extInfo->service_type = service->service_type;
-				if( service_provider_nameW.size() > 0 ){
-					this->serviceList[i].extInfo->service_provider_name = new WCHAR[service_provider_nameW.size()+1];
-					wcscpy_s(this->serviceList[i].extInfo->service_provider_name, service_provider_nameW.size()+1, service_provider_nameW.c_str());
-				}
-				if( service_nameW.size() > 0 ){
-					this->serviceList[i].extInfo->service_name = new WCHAR[service_nameW.size()+1];
-					wcscpy_s(this->serviceList[i].extInfo->service_name, service_nameW.size()+1, service_nameW.c_str());
+					this->serviceList[count].extInfo->service_type = service->service_type;
+					if( service_provider_nameW.size() > 0 ){
+						this->serviceList[count].extInfo->service_provider_name = new WCHAR[service_provider_nameW.size()+1];
+						wcscpy_s(this->serviceList[count].extInfo->service_provider_name, service_provider_nameW.size()+1, service_provider_nameW.c_str());
+					}
+					if( service_nameW.size() > 0 ){
+						this->serviceList[count].extInfo->service_name = new WCHAR[service_nameW.size()+1];
+						wcscpy_s(this->serviceList[count].extInfo->service_name, service_nameW.size()+1, service_nameW.c_str());
+					}
 				}
 			}
-		}
 
-		if( network_nameW.size() > 0 ){
-			this->serviceList[i].extInfo->network_name = new WCHAR[network_nameW.size()+1];
-			wcscpy_s(this->serviceList[i].extInfo->network_name, network_nameW.size()+1, network_nameW.c_str());
-		}
-		if( ts_nameW.size() > 0 ){
-			this->serviceList[i].extInfo->ts_name = new WCHAR[ts_nameW.size()+1];
-			wcscpy_s(this->serviceList[i].extInfo->ts_name, ts_nameW.size()+1, ts_nameW.c_str());
-		}
-		this->serviceList[i].extInfo->remote_control_key_id = remote_control_key_id;
-
-		this->serviceList[i].extInfo->partialReceptionFlag = FALSE;
-		for( size_t j=0; j<partialServiceList.size(); j++ ){
-			if( partialServiceList[j] == this->serviceList[i].service_id ){
-				this->serviceList[i].extInfo->partialReceptionFlag = TRUE;
+			if( network_nameW.size() > 0 ){
+				this->serviceList[count].extInfo->network_name = new WCHAR[network_nameW.size()+1];
+				wcscpy_s(this->serviceList[count].extInfo->network_name, network_nameW.size()+1, network_nameW.c_str());
 			}
-		}
+			if( ts_nameW.size() > 0 ){
+				this->serviceList[count].extInfo->ts_name = new WCHAR[ts_nameW.size()+1];
+				wcscpy_s(this->serviceList[count].extInfo->ts_name, ts_nameW.size()+1, ts_nameW.c_str());
+			}
+			this->serviceList[count].extInfo->remote_control_key_id = remote_control_key_id;
 
+			this->serviceList[count].extInfo->partialReceptionFlag = FALSE;
+			for( size_t j=0; j<partialServiceList.size(); j++ ){
+				if( partialServiceList[j] == this->serviceList[count].service_id ){
+					this->serviceList[count].extInfo->partialReceptionFlag = TRUE;
+				}
+			}
+
+			count++;
+		}
 	}
 
 	*serviceListSize = this->serviceListSize;

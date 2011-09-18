@@ -332,3 +332,14 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこと�
 　　FixSID：ServiceIDの10進数（デフォルト値:-1）
 　　OpenWait：チューナーオープン後のWait(msec単位)（デフォルト値:0）
 　　ChgWait：チャンネル切換後のWait(msec単位)（デフォルト値:0）
+
+■EPG取得のタイムアウト値を変更する■
+　EPG取得時に蓄積判定を行えない場合に、タイムアウトするまでの時間を変更します。
+　BonCtrl.iniのSETにEpgCapTimeOutを追加すること設定可能。
+　　EpgCapTimeOut:10進数で分数（デフォルト:10）
+
+■EPG取得でタイムアウト発生時にファイルを保存する■
+　EPG取得時に蓄積判定を行えずタイムアウトした場合は、異常としてEPGデータの保存を行いません。
+　BonCtrl.iniのSETにEpgCapSaveTimeOutを追加すること設定可能。
+　　EpgCapSaveTimeOut: 0:保存しない、1:保存する
+

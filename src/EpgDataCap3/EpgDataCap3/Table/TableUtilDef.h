@@ -14,6 +14,8 @@
 #include "SDTTTable.h"
 #include "BITTable.h"
 #include "SITTable.h"
+#include "EITTable_SD.h"
+#include "EITTable_SD2.h"
 
 typedef struct _TABLE_DATA{
 	CBATTable* BATTable;
@@ -29,6 +31,8 @@ typedef struct _TABLE_DATA{
 	CSDTTTable* SDTTTable;
 	CBITTable* BITTable;
 	CSITTable* SITTable;
+	CEITTable_SD* EITTable_SD;
+	CEITTable_SD2* EITTable_SD2;
 
 	_TABLE_DATA(void){
 		BATTable = NULL;
@@ -44,6 +48,8 @@ typedef struct _TABLE_DATA{
 		SDTTTable = NULL;
 		BITTable = NULL;
 		SITTable = NULL;
+		EITTable_SD = NULL;
+		EITTable_SD2 = NULL;
 	};
 	~_TABLE_DATA(void){
 		SAFE_DELETE(BATTable);
@@ -59,6 +65,8 @@ typedef struct _TABLE_DATA{
 		SAFE_DELETE(SDTTTable);
 		SAFE_DELETE(BITTable);
 		SAFE_DELETE(SITTable);
+		SAFE_DELETE(EITTable_SD);
+		SAFE_DELETE(EITTable_SD2);
 	};
 }TABLE_DATA;
 

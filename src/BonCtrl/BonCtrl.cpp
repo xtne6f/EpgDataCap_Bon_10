@@ -1451,6 +1451,15 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 	BOOL chkBS = FALSE;
 	BOOL chkCS1 = FALSE;
 	BOOL chkCS2 = FALSE;
+
+	wstring folderPath;
+	GetModuleFolderPath( folderPath );
+	wstring iniPath = folderPath;
+	iniPath += L"\\BonCtrl.ini";
+
+	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 15, iniPath.c_str());
+	BOOL saveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str());
+
 	while(1){
 		if( ::WaitForSingleObject(sys->epgCapStopEvent, wait) != WAIT_TIMEOUT ){
 			//キャンセルされた
@@ -1487,12 +1496,12 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 					chkNext = TRUE;
 				}
 			}else{
-				if( (startTime + chkWait + 15*60 < GetTimeCount()) || chChgErr == TRUE){
+				if( (startTime + chkWait + timeOut*60 < GetTimeCount()) || chChgErr == TRUE){
 					//15分以上かかっているなら停止
-					sys->tsOut.StopSaveEPG(FALSE);
+					sys->tsOut.StopSaveEPG(saveTimeOut);
 					chkNext = TRUE;
 					wait = 0;
-					_OutputDebugString(L"++15分でEPG取得完了せず or Ch変更でエラー");
+					_OutputDebugString(L"++%d分でEPG取得完了せず or Ch変更でエラー", timeOut);
 				}else if(startTime + chkWait < GetTimeCount() ){
 					//切り替えから15秒以上過ぎているので取得処理
 					if( startCap == FALSE ){
@@ -1716,6 +1725,14 @@ void CBonCtrl::StopBackgroundEpgCap()
 
 UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 {
+	wstring folderPath;
+	GetModuleFolderPath( folderPath );
+	wstring iniPath = folderPath;
+	iniPath += L"\\BonCtrl.ini";
+
+	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 15, iniPath.c_str());
+	BOOL saveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str());
+
 	CBonCtrl* sys = (CBonCtrl*)param;
 	if( ::WaitForSingleObject(sys->epgCapBackStopEvent, sys->epgCapBackStartWaitSec*1000) != WAIT_TIMEOUT ){
 		//キャンセルされた
@@ -1776,13 +1793,25 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 				chkNext = TRUE;
 			}
 		}
+
 		if( chkNext == TRUE ){
 			sys->tsOut.StopSaveEPG(TRUE);
 			CSendCtrlCmd cmd;
 			cmd.SetConnectTimeOut(1000);
 			cmd.SendReloadEpg();
 			break;
+		}else{
+			if( (startTime + timeOut*60 < GetTimeCount()) ){
+				//15分以上かかっているなら停止
+				sys->tsOut.StopSaveEPG(saveTimeOut);
+				CSendCtrlCmd cmd;
+				cmd.SetConnectTimeOut(1000);
+				cmd.SendReloadEpg();
+				_OutputDebugString(L"++%d分でEPG取得完了せず or Ch変更でエラー", timeOut);
+				break;
+			}
 		}
+
 		if( ::WaitForSingleObject(sys->epgCapBackStopEvent, 10*1000) != WAIT_TIMEOUT ){
 			//キャンセルされた
 			sys->tsOut.StopSaveEPG(FALSE);

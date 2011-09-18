@@ -146,6 +146,24 @@ BOOL CTableUtil::Decode( BYTE* data, DWORD dataSize, vector<TABLE_DATA*>* tableL
 			}else{
 				tableList->push_back(item);
 			}
+		}else if( 0xA4 == data[decodeSize] || 0xA7 == data[decodeSize]){
+			item->EITTable_SD = new CEITTable_SD;
+			if( item->EITTable_SD->Decode(data + decodeSize, dataSize-decodeSize, &readSize) == FALSE ){
+				SAFE_DELETE(item);
+				Clear(tableList);
+				return FALSE;
+			}else{
+				tableList->push_back(item);
+			}
+		}else if( 0xA3 == data[decodeSize] ){
+			item->EITTable_SD2 = new CEITTable_SD2;
+			if( item->EITTable_SD2->Decode(data + decodeSize, dataSize-decodeSize, &readSize) == FALSE ){
+				SAFE_DELETE(item);
+				Clear(tableList);
+				return FALSE;
+			}else{
+				tableList->push_back(item);
+			}
 		}else if( data[decodeSize] == 0xFF ){
 			//stuffing
 			decodeSize = dataSize;
