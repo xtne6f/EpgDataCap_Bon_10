@@ -303,6 +303,7 @@ BOOL CEITTable_SD::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*
 
 			decodeSize += readPos[1]+2;
 		}else{
+			//_OutputDebugString(L"0x%02x\r\n", readPos[0]);
 			decodeSize += readPos[1]+2;
 		}
 	}

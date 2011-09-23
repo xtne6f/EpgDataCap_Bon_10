@@ -335,11 +335,16 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこと�
 
 ■EPG取得のタイムアウト値を変更する■
 　EPG取得時に蓄積判定を行えない場合に、タイムアウトするまでの時間を変更します。
-　BonCtrl.iniのSETにEpgCapTimeOutを追加すること設定可能。
+　BonCtrl.iniのEPGCAPにEpgCapTimeOutを追加すること設定可能。
 　　EpgCapTimeOut:10進数で分数（デフォルト:10）
 
 ■EPG取得でタイムアウト発生時にファイルを保存する■
 　EPG取得時に蓄積判定を行えずタイムアウトした場合は、異常としてEPGデータの保存を行いません。
-　BonCtrl.iniのSETにEpgCapSaveTimeOutを追加すること設定可能。
+　BonCtrl.iniのEPGCAPにEpgCapSaveTimeOutを追加すること設定可能。
 　　EpgCapSaveTimeOut: 0:保存しない、1:保存する
 
+■チャンネルスキャンのタイムアウト値を変更する■
+　チャンネルスキャン時のタイムアウト値を変更します。
+　BonCtrl.iniのCHSCANにChChgTimeOutとServiceChkTimeOutを追加すること設定可能。
+　　ChChgTimeOut：有効なTSデータが流れてくるまでのチェック秒数（デフォルト:9）
+　　ServiceChkTimeOut：サービスの一覧を確認できるまでのチェック秒数（デフォルト:8）

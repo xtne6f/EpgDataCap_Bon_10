@@ -2080,17 +2080,7 @@ BOOL CEpgDBUtil::AddEIT_SD2(WORD PID, CEITTable_SD2* eit)
 	if( Lock() == FALSE ) return FALSE;
 
 	ULONGLONG key = _Create64Key(eit->original_network_id, 0, eit->service_id2);
-/*
-	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itrMainDB;
-	SERVICE_EVENT_INFO* mainServiceInfo = NULL;
-	itrMainDB = serviceEventMap.find(key);
-	if( itrMainDB == serviceEventMap.end() ){
-		mainServiceInfo = new SERVICE_EVENT_INFO;
-		serviceEventMap.insert(pair<ULONGLONG, SERVICE_EVENT_INFO*>(key, mainServiceInfo));
-	}else{
-		mainServiceInfo = itrMainDB->second;
-	}
-*/
+
 	//サービスのmapを取得
 	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
 	SERVICE_EVENT_INFO* serviceInfo = NULL;
@@ -2118,7 +2108,7 @@ BOOL CEpgDBUtil::AddEIT_SD2(WORD PID, CEITTable_SD2* eit)
 					itrMainEvent = mainServiceInfo->eventMap.find(eit->eventMapList[i]->eventList[j].event_id);
 					if( itrMainEvent == mainServiceInfo->eventMap.end()){
 						eventInfo = new EVENT_INFO;
-						mainServiceInfo->eventMap.insert(pair<WORD, EVENT_INFO*>(eventInfo->event_id, eventInfo));
+						mainServiceInfo->eventMap.insert(pair<WORD, EVENT_INFO*>(eit->eventMapList[i]->eventList[j].event_id, eventInfo));
 					}else{
 						eventInfo = itrMainEvent->second;
 					}
@@ -2132,7 +2122,11 @@ BOOL CEpgDBUtil::AddEIT_SD2(WORD PID, CEITTable_SD2* eit)
 					eventInfo->start_time.wHour = eit->eventMapList[i]->eventList[j].hour;
 					eventInfo->start_time.wMinute = eit->eventMapList[i]->eventList[j].minute;
 					eventInfo->DurationFlag = itrEvent->second->DurationFlag;
-					eventInfo->durationSec = itrEvent->second->durationSec;
+					if( eit->eventMapList[i]->eventList[j].duration == 0 ){
+						eventInfo->durationSec = itrEvent->second->durationSec;
+					}else{
+						eventInfo->durationSec = eit->eventMapList[i]->eventList[j].duration;
+					}
 					eventInfo->freeCAFlag = itrEvent->second->freeCAFlag;
 
 					if(itrEvent->second->shortInfo != NULL && eventInfo->shortInfo == NULL){

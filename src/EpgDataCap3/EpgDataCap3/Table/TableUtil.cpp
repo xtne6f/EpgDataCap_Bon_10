@@ -155,7 +155,7 @@ BOOL CTableUtil::Decode( BYTE* data, DWORD dataSize, vector<TABLE_DATA*>* tableL
 			}else{
 				tableList->push_back(item);
 			}
-		}else if( 0xA3 == data[decodeSize] ){
+		}else if( 0xA2 == data[decodeSize] || 0xA3 == data[decodeSize]){
 			item->EITTable_SD2 = new CEITTable_SD2;
 			if( item->EITTable_SD2->Decode(data + decodeSize, dataSize-decodeSize, &readSize) == FALSE ){
 				SAFE_DELETE(item);
@@ -168,7 +168,7 @@ BOOL CTableUtil::Decode( BYTE* data, DWORD dataSize, vector<TABLE_DATA*>* tableL
 			//stuffing
 			decodeSize = dataSize;
 		}else{
-//			_OutputDebugString(L"++CTableUtil:: err UnknownTable 0x%02X\r\n", data[decodeSize]);
+			//_OutputDebugString(L"++CTableUtil:: err UnknownTable 0x%02X\r\n", data[decodeSize]);
 			SAFE_DELETE(item);
 			Clear(tableList);
 			return FALSE;

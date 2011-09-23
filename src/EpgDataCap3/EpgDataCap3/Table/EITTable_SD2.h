@@ -10,6 +10,7 @@ public:
 		WORD event_id;
 		BYTE hour;
 		BYTE minute;
+		DWORD duration;
 		WORD a4table_eventID;
 	}EVENT_MAP_DATA;
 	typedef struct _EVENT_MAP_INFO{

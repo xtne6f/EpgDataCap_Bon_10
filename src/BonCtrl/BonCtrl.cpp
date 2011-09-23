@@ -1241,6 +1241,15 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 		return 0;
 	}
 
+	wstring folderPath;
+	GetModuleFolderPath( folderPath );
+	wstring iniPath = folderPath;
+	iniPath += L"\\BonCtrl.ini";
+
+	DWORD chChgTimeOut = GetPrivateProfileInt(L"CHSCAN", L"ChChgTimeOut", 9, iniPath.c_str());
+	DWORD serviceChkTimeOut = GetPrivateProfileInt(L"CHSCAN", L"ServiceChkTimeOut", 8, iniPath.c_str());
+
+
 	DWORD wait = 0;
 	BOOL chkNext = TRUE;
 	LONGLONG startTime = 0;
@@ -1266,7 +1275,7 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 			startTime = GetTimeCount();
 			chkNext = FALSE;
 			wait = 1000;
-			chkWait = 9;
+			chkWait = chChgTimeOut;
 		}else{
 			BOOL chChgErr = FALSE;
 			if( sys->tsOut.IsChChanging(&chChgErr) == TRUE ){
@@ -1276,7 +1285,7 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 					chkNext = TRUE;
 				}
 			}else{
-				if( startTime + chkWait+8 < GetTimeCount() || chChgErr == TRUE){
+				if( startTime + chkWait+serviceChkTimeOut < GetTimeCount() || chChgErr == TRUE){
 					//チャンネル切り替え成功したけどサービス一覧とれないので無信号と判断
 					OutputDebugString(L"★AutoScan GetService timeout\r\n");
 					chkNext = TRUE;

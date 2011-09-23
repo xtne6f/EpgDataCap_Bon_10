@@ -49,7 +49,7 @@ BOOL CEITTable_SD2::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		_OutputDebugString( L"++CEITTable_SD2:: section_syntax err" );
 		return FALSE;
 	}
-	if( table_id != 0xA3 ){
+	if( table_id != 0xA3 && table_id != 0xA2 ){
 		//table_idがおかしい
 		_OutputDebugString( L"++CEITTable_SD2:: table_id err 0x%02X", table_id );
 		return FALSE;
@@ -110,8 +110,16 @@ BOOL CEITTable_SD2::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 				dataInfo.hour = data[readSize+readDesc+2]>>3;
 				dataInfo.minute = (data[readSize+readDesc+2]&0x07)*10;
 				dataInfo.minute += data[readSize+readDesc+3]>>4;
+				BYTE length = data[readSize+readDesc+3]&0x0F;
 				dataInfo.a4table_eventID = ((WORD)data[readSize+readDesc+5])<<8 | data[readSize+readDesc+6];
-				readDesc+=7;
+				if( length == 7 ){
+					dataInfo.duration = _BCDtoDWORD(data+readSize+readDesc+8, 1, 2)*60*60;
+					dataInfo.duration += _BCDtoDWORD(data+readSize+readDesc+9, 1, 2)*60;
+					dataInfo.duration += _BCDtoDWORD(data+readSize+readDesc+10, 1, 2);
+				}else{
+					dataInfo.duration = 0;
+				}
+				readDesc+=4+length;
 				item->eventList.push_back(dataInfo);
 			}
 
