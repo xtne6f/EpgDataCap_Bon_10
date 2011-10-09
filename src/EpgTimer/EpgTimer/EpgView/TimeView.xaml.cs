@@ -86,6 +86,10 @@ namespace EpgTimer.EpgView
                         {
                             item.Foreground = Brushes.Red;
                         }
+                        else
+                        {
+                            item.Foreground = Brushes.Black;
+                        }
                     }
 
                     item.Margin = new Thickness(2, 2, 2, 2);

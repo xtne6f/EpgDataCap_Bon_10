@@ -26,6 +26,13 @@ namespace EpgTimer
         public SetAppCancelWindow()
         {
             InitializeComponent();
+
+            if (Settings.Instance.NoStyle == 1)
+            {
+                button_process_del.Style = null;
+                button_process_add.Style = null;
+
+            }
         }
 
         private void button_process_del_Click(object sender, RoutedEventArgs e)

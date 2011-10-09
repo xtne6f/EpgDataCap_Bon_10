@@ -172,7 +172,7 @@ namespace EpgTimer
         {
             get
             {
-                SolidColorBrush color = Brushes.White;
+                SolidColorBrush color = CommonManager.Instance.RecEndDefBackColor;
                 if (RecInfo != null)
                 {
                     if (RecInfo.Scrambles > 0)

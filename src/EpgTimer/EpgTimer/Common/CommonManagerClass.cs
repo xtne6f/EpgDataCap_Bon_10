@@ -156,8 +156,9 @@ namespace EpgTimer
                 ContentKindDictionary.Add(0x0105, new ContentKindInfo("スポーツ", "相撲・格闘技", 0x01, 0x05));
                 ContentKindDictionary.Add(0x0106, new ContentKindInfo("スポーツ", "オリンピック・国際大会", 0x01, 0x06));
                 ContentKindDictionary.Add(0x0107, new ContentKindInfo("スポーツ", "マラソン・陸上・水泳", 0x01, 0x07));
-                ContentKindDictionary.Add(0x0108, new ContentKindInfo("スポーツ", "マリン・ウィンタースポーツ", 0x01, 0x08));
-                ContentKindDictionary.Add(0x0109, new ContentKindInfo("スポーツ", "競馬・公営競技", 0x01, 0x09));
+                ContentKindDictionary.Add(0x0108, new ContentKindInfo("スポーツ", "モータースポーツ", 0x01, 0x08));
+                ContentKindDictionary.Add(0x0109, new ContentKindInfo("スポーツ", "マリン・ウィンタースポーツ", 0x01, 0x09));
+                ContentKindDictionary.Add(0x010A, new ContentKindInfo("スポーツ", "競馬・公営競技", 0x01, 0x0A));
                 ContentKindDictionary.Add(0x010F, new ContentKindInfo("スポーツ", "その他", 0x01, 0x0F));
 
                 ContentKindDictionary.Add(0x02FF, new ContentKindInfo("情報／ワイドショー", "", 0x02, 0xFF));
@@ -1111,6 +1112,84 @@ namespace EpgTimer
             }
         }
 
+
+        private SolidColorBrush resDefBackColor = null;
+        public SolidColorBrush ResDefBackColor
+        {
+            get
+            {
+                if (resDefBackColor == null)
+                {
+                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResDefColorR, Settings.Instance.ResDefColorG, Settings.Instance.ResDefColorB);
+                    resDefBackColor = new SolidColorBrush();
+                    resDefBackColor.Color = item;
+                    resDefBackColor.Freeze();
+                }
+                return resDefBackColor;
+            }
+        }
+        private SolidColorBrush resErrBackColor = null;
+        public SolidColorBrush ResErrBackColor
+        {
+            get
+            {
+                if (resErrBackColor == null)
+                {
+                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResErrColorR, Settings.Instance.ResErrColorG, Settings.Instance.ResErrColorB);
+                    resErrBackColor = new SolidColorBrush();
+                    resErrBackColor.Color = item;
+                    resErrBackColor.Freeze();
+                }
+                return resErrBackColor;
+            }
+        }
+        private SolidColorBrush resWarBackColor = null;
+        public SolidColorBrush ResWarBackColor
+        {
+            get
+            {
+                if (resWarBackColor == null)
+                {
+                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResWarColorR, Settings.Instance.ResWarColorG, Settings.Instance.ResWarColorB);
+                    resWarBackColor = new SolidColorBrush();
+                    resWarBackColor.Color = item;
+                    resWarBackColor.Freeze();
+                }
+                return resWarBackColor;
+            }
+        }
+        private SolidColorBrush resNoBackColor = null;
+        public SolidColorBrush ResNoBackColor
+        {
+            get
+            {
+                if (resNoBackColor == null)
+                {
+                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResNoColorR, Settings.Instance.ResNoColorG, Settings.Instance.ResNoColorB);
+                    resNoBackColor = new SolidColorBrush();
+                    resNoBackColor.Color = item;
+                    resNoBackColor.Freeze();
+                }
+                return resNoBackColor;
+            }
+        }
+
+        private SolidColorBrush recEndDefBackColor = null;
+        public SolidColorBrush RecEndDefBackColor
+        {
+            get
+            {
+                if (recEndDefBackColor == null)
+                {
+                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndDefColorR, Settings.Instance.RecEndDefColorG, Settings.Instance.RecEndDefColorB);
+                    recEndDefBackColor = new SolidColorBrush();
+                    recEndDefBackColor.Color = item;
+                    recEndDefBackColor.Freeze();
+                }
+                return recEndDefBackColor;
+            }
+        }
+        
         private SolidColorBrush recEndErrBackColor = null;
         public SolidColorBrush RecEndErrBackColor
         {

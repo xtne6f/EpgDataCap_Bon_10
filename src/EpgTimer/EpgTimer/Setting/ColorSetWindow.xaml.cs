@@ -24,6 +24,13 @@ namespace EpgTimer
         {
             InitializeComponent();
 
+            if (Settings.Instance.NoStyle == 1)
+            {
+                button_OK.Style = null;
+                button_cancel.Style = null;
+
+            }
+
             slider_R.Value = 0xFF;
             slider_G.Value = 0xFF;
             slider_B.Value = 0xFF;

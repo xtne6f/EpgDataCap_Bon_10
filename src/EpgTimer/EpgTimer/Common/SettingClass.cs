@@ -198,6 +198,21 @@ namespace EpgTimer
         private bool ngAutoEpgLoadNW;
         private Int32 tvTestOpenWait;
         private Int32 tvTestChgBonWait;
+        private byte resDefColorR;
+        private byte resDefColorG;
+        private byte resDefColorB;
+        private byte resErrColorR;
+        private byte resErrColorG;
+        private byte resErrColorB;
+        private byte resWarColorR;
+        private byte resWarColorG;
+        private byte resWarColorB;
+        private byte resNoColorR;
+        private byte resNoColorG;
+        private byte resNoColorB;
+        private byte recEndDefColorR;
+        private byte recEndDefColorG;
+        private byte recEndDefColorB;
         private byte recEndErrColorR;
         private byte recEndErrColorG;
         private byte recEndErrColorB;
@@ -225,6 +240,7 @@ namespace EpgTimer
         private short autoSaveNotifyLog;
         private bool minHide;
         private bool mouseScrollAuto;
+        private int noStyle;
 
         public bool UseCustomEpgView
         {
@@ -696,6 +712,81 @@ namespace EpgTimer
             get { return tvTestChgBonWait; }
             set { tvTestChgBonWait = value; }
         }
+        public byte ResDefColorR
+        {
+            get { return resDefColorR; }
+            set { resDefColorR = value; }
+        }
+        public byte ResDefColorG
+        {
+            get { return resDefColorG; }
+            set { resDefColorG = value; }
+        }
+        public byte ResDefColorB
+        {
+            get { return resDefColorB; }
+            set { resDefColorB = value; }
+        }
+        public byte ResErrColorR
+        {
+            get { return resErrColorR; }
+            set { resErrColorR = value; }
+        }
+        public byte ResErrColorG
+        {
+            get { return resErrColorG; }
+            set { resErrColorG = value; }
+        }
+        public byte ResErrColorB
+        {
+            get { return resErrColorB; }
+            set { resErrColorB = value; }
+        }
+        public byte ResWarColorR
+        {
+            get { return resWarColorR; }
+            set { resWarColorR = value; }
+        }
+        public byte ResWarColorG
+        {
+            get { return resWarColorG; }
+            set { resWarColorG = value; }
+        }
+        public byte ResWarColorB
+        {
+            get { return resWarColorB; }
+            set { resWarColorB = value; }
+        }
+        public byte ResNoColorR
+        {
+            get { return resNoColorR; }
+            set { resNoColorR = value; }
+        }
+        public byte ResNoColorG
+        {
+            get { return resNoColorG; }
+            set { resNoColorG = value; }
+        }
+        public byte ResNoColorB
+        {
+            get { return resNoColorB; }
+            set { resNoColorB = value; }
+        }
+        public byte RecEndDefColorR
+        {
+            get { return recEndDefColorR; }
+            set { recEndDefColorR = value; }
+        }
+        public byte RecEndDefColorG
+        {
+            get { return recEndDefColorG; }
+            set { recEndDefColorG = value; }
+        }
+        public byte RecEndDefColorB
+        {
+            get { return recEndDefColorB; }
+            set { recEndDefColorB = value; }
+        }
         public byte RecEndErrColorR
         {
             get { return recEndErrColorR; }
@@ -831,6 +922,12 @@ namespace EpgTimer
             get { return mouseScrollAuto; }
             set { mouseScrollAuto = value; }
         }
+        public int NoStyle
+        {
+            get { return noStyle; }
+            set { noStyle = value; }
+        }
+        
         
         public Settings()
         {
@@ -912,6 +1009,21 @@ namespace EpgTimer
             ngAutoEpgLoadNW = false;
             tvTestOpenWait = 2000;
             tvTestChgBonWait = 2000;
+            resDefColorR = 0xFF;
+            resDefColorG = 0xFF;
+            resDefColorB = 0xFF;
+            resErrColorR = 0xFF;
+            resErrColorG = 0;
+            resErrColorB = 0;
+            resWarColorR = 0xFF;
+            resWarColorG = 0xFF;
+            resWarColorB = 0;
+            resNoColorR = 0xA9;
+            resNoColorG = 0xA9;
+            resNoColorB = 0xA9;
+            recEndDefColorR = 0xFF;
+            recEndDefColorG = 0xFF;
+            recEndDefColorB = 0xFF;
             recEndErrColorR = 0xFF;
             recEndErrColorG = 0;
             recEndErrColorB = 0;
@@ -939,6 +1051,7 @@ namespace EpgTimer
             autoSaveNotifyLog = 0;
             minHide = true;
             mouseScrollAuto = false;
+            noStyle = 0;
         }
 
         [NonSerialized()]

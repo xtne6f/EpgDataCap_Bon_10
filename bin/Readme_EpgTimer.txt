@@ -920,6 +920,9 @@ EpgTimerNW.exeはEpgTimerのネットワーク版となっており、ローカ�
 ■マクロ■
 　バッチやRecName_Macro.dllで利用できるマクロの一覧です。
 
+　※予約録画の途中でのキャンセルや異常状態時、EPGデータの読み込み中
+　　のタイミングなど、正常に置き換わらない場合もあります。
+
 $FilePath$	ファイルのフルパス（バッチのみ）
 $FolderPath$	ファイルのフォルダパス（最後に\はなし）（バッチのみ）
 $FileName$	ファイル名（拡張子なし）（バッチのみ）
@@ -1501,7 +1504,7 @@ ID　　　：内部で使用するID
 　<TvTestOpenWait>：TVTest起動後のWaitをミリ秒単位（デフォルト 2000）
 　<TvTestChgBonWait>：BonDriver切換後のWaitをミリ秒単位（デフォルト 2000）
 
-■録画済み一覧のDropとScrambleある場合の背景色を変更■
+■録画済み一覧の背景色を変更■
 　DropかScrambleが0以外の場合に表示する背景色をRGBで変更する。
 　EpgTimer.exe.xmlの要素を変更することで可能です。
 （存在しない場合は設定を一度保存しなおしてください）
@@ -1511,6 +1514,26 @@ ID　　　：内部で使用するID
 　<RecEndWarColorR>：Scramble用R（デフォルト 255）
 　<RecEndWarColorG>：Scramble用G（デフォルト 255）
 　<RecEndWarColorB>：Scramble用B（デフォルト 0）
+　<RecEndDefColorR>：デフォルト用R（デフォルト 255）
+　<RecEndDefColorG>：デフォルト用G（デフォルト 255）
+　<RecEndDefColorB>：デフォルト用B（デフォルト 255）
+
+■予約一覧の背景色を変更■
+　チューナー不足、一部のみ実行、無効の場合に表示する背景色をRGBで変更する。
+　EpgTimer.exe.xmlの要素を変更することで可能です。
+（存在しない場合は設定を一度保存しなおしてください）
+　<ResErrColorR>：チューナー不足用R（デフォルト 255）
+　<ResErrColorG>：チューナー不足用G（デフォルト 0）
+　<ResErrColorB>：チューナー不足用B（デフォルト 0）
+　<ResWarColorR>：一部のみ実行用R（デフォルト 255）
+　<ResWarColorG>：一部のみ実行用G（デフォルト 255）
+　<ResWarColorB>：一部のみ実行用B（デフォルト 0）
+　<ResDefColorR>：デフォルト用R（デフォルト 255）
+　<ResDefColorG>：デフォルト用G（デフォルト 255）
+　<ResDefColorB>：デフォルト用B（デフォルト 255）
+　<ResNoColorR>：無効用R（デフォルト 169）
+　<ResNoColorG>：無効用G（デフォルト 169）
+　<ResNoColorB>：無効用B（デフォルト 169）
 
 ■番組表で表示するツールチップの背景色と文字色を変更■
 　番組表で表示するツールチップの背景色と文字色をRGBで変更する。
@@ -1617,4 +1640,11 @@ ID　　　：内部で使用するID
 　EpgTimer.exe.xmlの<AutoSaveNotifyLog>の要素を変更することで可能です。
 　（存在しない場合は設定を一度保存しなおしてください）
 　0:保存しない、1:保存する（デフォルト 0）
+
+■デザインをロードしない■
+　デザインのロードを行わないようにすることができます。
+　OSデフォルトのデザインで表示したい場合に使用してください。
+　EpgTimer.exe.xmlの<NoStyle>の要素を変更することで可能です。
+　（存在しない場合は設定を一度保存しなおしてください）
+　0:ロードする、1:ロードしない（デフォルト 0）
 

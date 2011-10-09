@@ -28,6 +28,12 @@ namespace EpgTimer
 
             try
             {
+                if (Settings.Instance.NoStyle == 1)
+                {
+                    button_andIn.Style = null;
+                    button_notIn.Style = null;
+                }
+
                 foreach (String info in Settings.Instance.AndKeyList)
                 {
                     ComboBox_andKey.Items.Add(info);

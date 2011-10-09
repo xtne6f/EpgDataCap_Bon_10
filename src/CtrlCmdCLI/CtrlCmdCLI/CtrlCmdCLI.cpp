@@ -58,8 +58,9 @@ void CtrlCmdUtil::GetContentKindList(
     list->Add(0x0105, gcnew Def::ContentKind("スポーツ", "相撲・格闘技", 0x01, 0x05));
     list->Add(0x0106, gcnew Def::ContentKind("スポーツ", "オリンピック・国際大会", 0x01, 0x06));
     list->Add(0x0107, gcnew Def::ContentKind("スポーツ", "マラソン・陸上・水泳", 0x01, 0x07));
-    list->Add(0x0108, gcnew Def::ContentKind("スポーツ", "マリン・ウィンタースポーツ", 0x01, 0x08));
-    list->Add(0x0109, gcnew Def::ContentKind("スポーツ", "競馬・公営競技", 0x01, 0x09));
+    list->Add(0x0108, gcnew Def::ContentKind("スポーツ", "モータースポーツ", 0x01, 0x08));
+    list->Add(0x0108, gcnew Def::ContentKind("スポーツ", "マリン・ウィンタースポーツ", 0x01, 0x09));
+    list->Add(0x0109, gcnew Def::ContentKind("スポーツ", "競馬・公営競技", 0x01, 0x0A));
     list->Add(0x010F, gcnew Def::ContentKind("スポーツ", "その他", 0x01, 0x0F));
 
     list->Add(0x02FF, gcnew Def::ContentKind("情報／ワイドショー", "", 0x02, 0xFF));

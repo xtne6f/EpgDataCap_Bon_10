@@ -24,6 +24,12 @@ namespace EpgTimer
         public SetDefSearchSettingWindow()
         {
             InitializeComponent();
+
+            if (Settings.Instance.NoStyle == 1)
+            {
+                button_cancel.Style = null;
+                button_OK.Style = null;
+            }
         }
 
         public void SetDefSetting(EpgSearchKeyInfo key)

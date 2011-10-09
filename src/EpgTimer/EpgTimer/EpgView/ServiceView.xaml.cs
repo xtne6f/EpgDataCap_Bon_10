@@ -51,6 +51,7 @@ namespace EpgTimer.EpgView
                 item.Width = Settings.Instance.ServiceWidth - 4;
                 item.Margin = new Thickness(2, 2, 2, 2);
                 item.Background = Brushes.AliceBlue;
+                item.Foreground = Brushes.Black;
                 item.TextAlignment = TextAlignment.Center;
                 item.FontSize = 12;
                 item.MouseLeftButtonDown += new MouseButtonEventHandler(item_MouseLeftButtonDown);

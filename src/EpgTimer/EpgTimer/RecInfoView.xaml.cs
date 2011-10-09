@@ -43,6 +43,12 @@ namespace EpgTimer
 
             try
             {
+                if (Settings.Instance.NoStyle == 1)
+                {
+                    button_del.Style = null;
+                    button_play.Style = null;
+                }
+
                 foreach (GridViewColumn info in gridView_recinfo.Columns)
                 {
                     GridViewColumnHeader header = info.Header as GridViewColumnHeader;
@@ -434,7 +440,7 @@ namespace EpgTimer
                     if (System.IO.File.Exists(info.RecFilePath) == true)
                     {
                         String cmd = "/select,";
-                        cmd += info.RecFilePath;
+                        cmd += "\"" + info.RecFilePath + "\"";
 
                         System.Diagnostics.Process.Start("EXPLORER.EXE", cmd);
                     }

@@ -356,8 +356,9 @@ void CreateContentKindMap()
     contentKindMap.insert(pair<WORD,wstring>(0x0105, L"相撲・格闘技"));
     contentKindMap.insert(pair<WORD,wstring>(0x0106, L"オリンピック・国際大会"));
     contentKindMap.insert(pair<WORD,wstring>(0x0107, L"マラソン・陸上・水泳"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0108, L"マリン・ウィンタースポーツ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0109, L"競馬・公営競技"));
+    contentKindMap.insert(pair<WORD,wstring>(0x0108, L"モータースポーツ"));
+    contentKindMap.insert(pair<WORD,wstring>(0x0109, L"マリン・ウィンタースポーツ"));
+    contentKindMap.insert(pair<WORD,wstring>(0x010A, L"競馬・公営競技"));
     contentKindMap.insert(pair<WORD,wstring>(0x010F, L"その他"));
 
     contentKindMap.insert(pair<WORD,wstring>(0x02FF, L"情報／ワイドショー"));

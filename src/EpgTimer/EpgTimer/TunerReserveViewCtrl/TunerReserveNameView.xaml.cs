@@ -44,6 +44,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                 item.Width = info.Width - 4;
                 item.Margin = new Thickness(2, 2, 2, 2);
                 item.Background = Brushes.AliceBlue;
+                item.Foreground = Brushes.Black;
                 item.TextAlignment = TextAlignment.Center;
                 item.FontSize = 12;
                 stackPanel_tuner.Children.Add(item);

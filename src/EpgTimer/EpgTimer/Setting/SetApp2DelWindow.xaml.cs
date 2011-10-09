@@ -23,6 +23,15 @@ namespace EpgTimer
         public SetApp2DelWindow()
         {
             InitializeComponent();
+            if (Settings.Instance.NoStyle == 1)
+            {
+                button_del.Style = null;
+                button_add.Style = null;
+                button_chk_del.Style = null;
+                button_chk_add.Style = null;
+                button_chk_open.Style = null;
+
+            }
         }
 
         private void button_del_Click(object sender, RoutedEventArgs e)
