@@ -163,47 +163,47 @@ BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* 
 				case 0x00:
 					//映画？
 					item->content->nibbleList[i].content_nibble_level_1 = 0x06;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x00;
+					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
 					break;
 				case 0x02:
 					//スポーツ？
 					item->content->nibbleList[i].content_nibble_level_1 = 0x01;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x00;
+					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
 					break;
 				case 0x04:
 					//音楽？
 					item->content->nibbleList[i].content_nibble_level_1 = 0x04;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x00;
+					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
 					break;
 				case 0x05:
 					//ドラマ？
 					item->content->nibbleList[i].content_nibble_level_1 = 0x03;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x00;
+					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
 					break;
 				case 0x06:
 					//ニュース？
 					item->content->nibbleList[i].content_nibble_level_1 = 0x00;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x00;
+					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
 					break;
 				case 0x07:
 					//バラエティ？
 					item->content->nibbleList[i].content_nibble_level_1 = 0x05;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x00;
+					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
 					break;
 				case 0x08:
 					//趣味／教育？
 					item->content->nibbleList[i].content_nibble_level_1 = 0x0A;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x00;
+					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
 					break;
 				case 0x09:
 					//アニメ？
 					item->content->nibbleList[i].content_nibble_level_1 = 0x07;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x00;
+					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
 					break;
 				case 0x0A:
 					//ドキュメンタリー／教養？
 					item->content->nibbleList[i].content_nibble_level_1 = 0x08;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x00;
+					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
 					break;
 				default:
 					break;

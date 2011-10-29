@@ -34,6 +34,11 @@ namespace EpgTimer
             get;
             set;
         }
+        public Dictionary<UInt16, ContentKindInfo> ContentKindDictionary2
+        {
+            get;
+            set;
+        }
         public Dictionary<UInt16, ComponentKindInfo> ComponentKindDictionary
         {
             get;
@@ -262,6 +267,50 @@ namespace EpgTimer
 
                 ContentKindDictionary.Add(0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF));
                 ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("なし", "", 0xFF, 0xFF));
+            }
+            if (ContentKindDictionary2 == null)
+            {
+                ContentKindDictionary2 = new Dictionary<UInt16, ContentKindInfo>();
+                ContentKindDictionary2.Add(0x00FF, new ContentKindInfo("スポーツ", "", 0x00, 0xFF));
+                ContentKindDictionary2.Add(0x0000, new ContentKindInfo("スポーツ", "テニス", 0x00, 0x00));
+                ContentKindDictionary2.Add(0x0001, new ContentKindInfo("スポーツ", "バスケットボール", 0x00, 0x01));
+                ContentKindDictionary2.Add(0x0002, new ContentKindInfo("スポーツ", "ラグビー", 0x00, 0x02));
+                ContentKindDictionary2.Add(0x0003, new ContentKindInfo("スポーツ", "アメリカンフットボール", 0x00, 0x03));
+                ContentKindDictionary2.Add(0x0004, new ContentKindInfo("スポーツ", "ボクシング", 0x00, 0x04));
+                ContentKindDictionary2.Add(0x0005, new ContentKindInfo("スポーツ", "プロレス", 0x00, 0x05));
+                ContentKindDictionary2.Add(0x000F, new ContentKindInfo("スポーツ", "その他", 0x00, 0x0F));
+
+                ContentKindDictionary2.Add(0x01FF, new ContentKindInfo("洋画", "", 0x01, 0xFF));
+                ContentKindDictionary2.Add(0x0100, new ContentKindInfo("洋画", "アクション", 0x01, 0x00));
+                ContentKindDictionary2.Add(0x0101, new ContentKindInfo("洋画", "SF／ファンタジー", 0x01, 0x01));
+                ContentKindDictionary2.Add(0x0102, new ContentKindInfo("洋画", "コメディー", 0x01, 0x02));
+                ContentKindDictionary2.Add(0x0103, new ContentKindInfo("洋画", "サスペンス／ミステリー", 0x01, 0x03));
+                ContentKindDictionary2.Add(0x0104, new ContentKindInfo("洋画", "恋愛／ロマンス", 0x01, 0x04));
+                ContentKindDictionary2.Add(0x0105, new ContentKindInfo("洋画", "ホラー／スリラー", 0x01, 0x05));
+                ContentKindDictionary2.Add(0x0106, new ContentKindInfo("洋画", "ウエスタン", 0x01, 0x06));
+                ContentKindDictionary2.Add(0x0107, new ContentKindInfo("洋画", "ドラマ／社会派ドラマ", 0x01, 0x07));
+                ContentKindDictionary2.Add(0x0108, new ContentKindInfo("洋画", "アニメーション", 0x01, 0x08));
+                ContentKindDictionary2.Add(0x0109, new ContentKindInfo("洋画", "ドキュメンタリー", 0x01, 0x09));
+                ContentKindDictionary2.Add(0x010A, new ContentKindInfo("洋画", "アドベンチャー／冒険", 0x01, 0x0A));
+                ContentKindDictionary2.Add(0x010B, new ContentKindInfo("洋画", "ミュージカル／音楽映画", 0x01, 0x0A));
+                ContentKindDictionary2.Add(0x010C, new ContentKindInfo("洋画", "ホームドラマ", 0x01, 0x0A));
+                ContentKindDictionary2.Add(0x010F, new ContentKindInfo("洋画", "その他", 0x01, 0x0F));
+
+                ContentKindDictionary2.Add(0x02FF, new ContentKindInfo("邦画", "", 0x02, 0xFF));
+                ContentKindDictionary2.Add(0x0200, new ContentKindInfo("邦画", "アクション", 0x02, 0x00));
+                ContentKindDictionary2.Add(0x0201, new ContentKindInfo("邦画", "SF／ファンタジー", 0x02, 0x01));
+                ContentKindDictionary2.Add(0x0202, new ContentKindInfo("邦画", "コメディー", 0x02, 0x02));
+                ContentKindDictionary2.Add(0x0203, new ContentKindInfo("邦画", "サスペンス／ミステリー", 0x02, 0x03));
+                ContentKindDictionary2.Add(0x0204, new ContentKindInfo("邦画", "恋愛／ロマンス", 0x02, 0x04));
+                ContentKindDictionary2.Add(0x0205, new ContentKindInfo("邦画", "ホラー／スリラー", 0x02, 0x05));
+                ContentKindDictionary2.Add(0x0206, new ContentKindInfo("邦画", "ウエスタン", 0x02, 0x06));
+                ContentKindDictionary2.Add(0x0207, new ContentKindInfo("邦画", "ドラマ／社会派ドラマ", 0x02, 0x07));
+                ContentKindDictionary2.Add(0x0208, new ContentKindInfo("邦画", "アニメーション", 0x02, 0x08));
+                ContentKindDictionary2.Add(0x0209, new ContentKindInfo("邦画", "ドキュメンタリー", 0x02, 0x09));
+                ContentKindDictionary2.Add(0x020A, new ContentKindInfo("邦画", "アドベンチャー／冒険", 0x02, 0x0A));
+                ContentKindDictionary2.Add(0x020B, new ContentKindInfo("邦画", "ミュージカル／音楽映画", 0x02, 0x0A));
+                ContentKindDictionary2.Add(0x020C, new ContentKindInfo("邦画", "ホームドラマ", 0x02, 0x0A));
+                ContentKindDictionary2.Add(0x020F, new ContentKindInfo("邦画", "その他", 0x02, 0x0F));
             }
             if (ComponentKindDictionary == null)
             {
@@ -786,21 +835,44 @@ namespace EpgTimer
                         String content = "";
                         int nibble1 = info.content_nibble_level_1;
                         int nibble2 = info.content_nibble_level_2;
-                        UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
-                        UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
-                        if (ContentKindDictionary.ContainsKey(contentKey1) == true)
+                        if (nibble1 == 0x0E && nibble2 == 0x01)
                         {
-                            content += ContentKindDictionary[contentKey1];
+                            nibble1 = info.user_nibble_1;
+                            nibble2 = info.user_nibble_2;
+                            UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
+                            UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
+                            if (ContentKindDictionary2.ContainsKey(contentKey1) == true)
+                            {
+                                content += ContentKindDictionary2[contentKey1];
+                            }
+                            if (ContentKindDictionary2.ContainsKey(contentKey2) == true)
+                            {
+                                content += " - " + ContentKindDictionary2[contentKey2];
+                            }
+                            if (content.Length == 0 || nibble1 == 0x0F)
+                            {
+                                content += "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")" + "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
+                            }
+                            extInfo += content + "\r\n";
                         }
-                        if (ContentKindDictionary.ContainsKey(contentKey2) == true)
+                        else
                         {
-                            content += " - " + ContentKindDictionary[contentKey2];
+                            UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
+                            UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
+                            if (ContentKindDictionary.ContainsKey(contentKey1) == true)
+                            {
+                                content += ContentKindDictionary[contentKey1];
+                            }
+                            if (ContentKindDictionary.ContainsKey(contentKey2) == true)
+                            {
+                                content += " - " + ContentKindDictionary[contentKey2];
+                            }
+                            if (content.Length == 0 || nibble1 == 0x0F)
+                            {
+                                content += "(0x" + nibble1.ToString("X2") + nibble2.ToString("X2") + ")" + "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
+                            }
+                            extInfo += content + "\r\n";
                         }
-                        if (content.Length == 0 || nibble1 == 0x0F)
-                        {
-                            content += "(0x" + nibble1.ToString("X2") + nibble2.ToString("X2") + ")" + "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
-                        }
-                        extInfo += content+"\r\n";
                     }
                 }
                 extInfo += "\r\n";

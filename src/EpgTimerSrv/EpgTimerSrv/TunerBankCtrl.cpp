@@ -629,7 +629,9 @@ void CTunerBankCtrl::GetCheckList(multimap<LONGLONG, RESERVE_WORK*>* sortList)
 		itr->second->TSID = data.transportStreamID;
 		itr->second->SID = data.serviceID;
 
-		sortList->insert(pair<LONGLONG, RESERVE_WORK*>(itr->second->stratTime, itr->second));
+		LONGLONG sortKey = itr->second->stratTime - itr->second->startMargine;
+
+		sortList->insert(pair<LONGLONG, RESERVE_WORK*>(sortKey, itr->second));
 	}
 }
 
