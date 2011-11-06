@@ -3,7 +3,7 @@
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "../../Common/PathUtil.h"
-#include "../../Common/ParseChText5.h"
+
 
 #define HTML_TOP "<HTML LANG=\"ja\">\r\n<HEAD>\r\n<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html;charset=Shift_JIS\">\r\n<TITLE>EpgTimer</TITLE>\r\n</HEAD>\r\n<BODY>\r\n"
 #define HTML_END "</BODY>\r\n</HTML>\r\n"
@@ -342,6 +342,209 @@ void CHTMLManager::CreateRecSetForm(REC_SETTING_DATA* recSetData, vector<TUNER_R
 	htmlText+="<BR>\r\n";
 }
 
+void CHTMLManager::CreateSearchSetForm(EPGDB_SEARCH_KEY_INFO* setData, CParseChText5* chSet5, string& htmlText)
+{
+	string buff;
+
+	vector<GENRU_INFO> contentMap;
+	GetGenreList(&contentMap);
+
+	htmlText = "";
+
+	string buffA;
+	WtoA(setData->andKey, buffA);
+	Format(buff, "検索キーワード<input type=\"text\" name=\"andKey\" value=\"%s\" size=25><BR>\r\n", buffA.c_str());
+	htmlText+=buff;
+	WtoA(setData->notKey, buffA);
+	Format(buff, "NOTキーワード<input type=\"text\" name=\"notKey\" value=\"%s\" size=25><BR>\r\n", buffA.c_str());
+	htmlText+=buff;
+
+	if( setData->regExpFlag == 0 ){
+		htmlText+="<input type=checkbox name=\"regExpFlag\" value=\"1\">正規表現\r\n";
+	}else{
+		htmlText+="<input type=checkbox name=\"regExpFlag\" value=\"1\" checked>正規表現\r\n";
+	}
+	if( setData->aimaiFlag == 0 ){
+		htmlText+="<input type=checkbox name=\"aimaiFlag\" value=\"1\">あいまい検索モード\r\n";
+	}else{
+		htmlText+="<input type=checkbox name=\"aimaiFlag\" value=\"1\" checked>あいまい検索モード\r\n";
+	}
+	if( setData->titleOnlyFlag == 0 ){
+		htmlText+="<input type=checkbox name=\"titleOnlyFlag\" value=\"1\">番組名のみ検索対象にする\r\n";
+	}else{
+		htmlText+="<input type=checkbox name=\"titleOnlyFlag\" value=\"1\" checked>番組名のみ検索対象にする\r\n";
+	}
+	htmlText+= "<BR><BR>\r\n";
+
+	htmlText+="ジャンル絞り込み\r\n<BR><select name=\"contentList\" multiple size=5>\r\n";
+	for(size_t i=0; i<contentMap.size(); i++ ){
+		string select = "";
+		for( size_t j=0; j<setData->contentList.size(); j++ ){
+			if( contentMap[i].nibble1 == setData->contentList[j].content_nibble_level_1 &&
+				contentMap[i].nibble2 == setData->contentList[j].content_nibble_level_2){
+					select = "selected";
+					break;
+			}
+		}
+		string name;
+		WtoA(contentMap[i].name, name);
+		if( contentMap[i].nibble2 != 0xFF ){
+			Format(buff, "<option value=\"%d\" %s>　%s\r\n", contentMap[i].key, select.c_str(), name.c_str());
+		}else{
+			Format(buff, "<option value=\"%d\" %s>%s\r\n", contentMap[i].key, select.c_str(), name.c_str());
+		}
+		htmlText+=buff;
+	}
+	htmlText+="</select><BR>\r\n";
+	if( setData->notContetFlag == 0 ){
+		htmlText+="<input type=checkbox name=\"notContetFlag\" value=\"1\">NOT扱い\r\n";
+	}else{
+		htmlText+="<input type=checkbox name=\"notContetFlag\" value=\"1\" checked>NOT扱い\r\n";
+	}
+	htmlText+="<BR><BR>\r\n";
+
+	map<LONGLONG, CH_DATA5>::iterator itrCh;
+	htmlText+="サービス絞り込み\r\n<BR><select name=\"serviceList\" multiple size=5>\r\n";
+	for(itrCh = chSet5->chList.begin(); itrCh != chSet5->chList.end(); itrCh++ ){
+		string select = "";
+		for( size_t j=0; j<setData->serviceList.size(); j++ ){
+			if( itrCh->first == setData->serviceList[j] ){
+					select = "selected";
+					break;
+			}
+		}
+		string name;
+		WtoA(itrCh->second.serviceName, name);
+		string network;
+		if( itrCh->second.originalNetworkID == 0x04 ){
+			network = "(BS)";
+		}else if( itrCh->second.originalNetworkID == 0x06 ){
+			network = "(CS1)";
+		}else if( itrCh->second.originalNetworkID == 0x07 ){
+			network = "(CS2)";
+		}else if( itrCh->second.originalNetworkID == 0x0A ){
+			network = "(スカパーHD)";
+		}else if( itrCh->second.originalNetworkID == 0x03 ){
+			network = "(スカパーSD)";
+		}else if( itrCh->second.originalNetworkID == 0x01 ){
+			network = "(スカパーSD)";
+		}else if( 0x7880 <= itrCh->second.originalNetworkID && itrCh->second.originalNetworkID <= 0x7FE8 ){
+			network = "(地デジ)";
+		}else{
+			network = "(その他)";
+		}
+
+		Format(buff, "<option value=\"%I64d\" %s>%s %s\r\n", itrCh->first, select.c_str(), network.c_str(), name.c_str());
+		htmlText+=buff;
+	}
+	htmlText+="</select><BR>\r\n";
+	if( setData->notContetFlag == 0 ){
+		htmlText+="<input type=checkbox name=\"notContetFlag\" value=\"1\">NOT扱い\r\n";
+	}else{
+		htmlText+="<input type=checkbox name=\"notContetFlag\" value=\"1\" checked>NOT扱い\r\n";
+	}
+	htmlText+="<BR><BR>\r\n";
+
+	string time;
+	for( size_t i=0; i<setData->dateList.size(); i++ ){
+		string addTime;
+		string weeks;
+		string weeke;
+		switch( setData->dateList[i].startDayOfWeek ){
+			case 0:
+				weeks="日";
+				break;
+			case 1:
+				weeks="月";
+				break;
+			case 2:
+				weeks="火";
+				break;
+			case 3:
+				weeks="水";
+				break;
+			case 4:
+				weeks="木";
+				break;
+			case 5:
+				weeks="金";
+				break;
+			case 6:
+				weeks="土";
+				break;
+			default:
+				weeks="";
+				break;
+		}
+		switch( setData->dateList[i].endDayOfWeek ){
+			case 0:
+				weeke="日";
+				break;
+			case 1:
+				weeke="月";
+				break;
+			case 2:
+				weeke="火";
+				break;
+			case 3:
+				weeke="水";
+				break;
+			case 4:
+				weeke="木";
+				break;
+			case 5:
+				weeke="金";
+				break;
+			case 6:
+				weeke="土";
+				break;
+			default:
+				weeke="";
+				break;
+		}
+
+		Format(addTime, "%s-%d:%d-%s-%d:%d", weeks.c_str(), setData->dateList[i].startHour, setData->dateList[i].startMin, weeke.c_str(), setData->dateList[i].endHour, setData->dateList[i].endMin);
+		if( time.size() > 0 ){
+			time += ",";
+		}
+		time += addTime;
+	}
+	Format(buff, "時間絞り込み<input type=\"text\" name=\"dateList\" value=\"%s\" size=25><BR>\r\n", time.c_str());
+	htmlText+=buff;
+	htmlText+="書式：[日～土]-HH:MM-[日～土]-HH:MM, （例：日-23:00-月-5:00,水-3:00-水-5:00）<BR>\r\n";
+	htmlText+="<BR><BR>\r\n";
+
+	htmlText+="スクランブル放送:\r\n<select name=\"freeCAFlag\">\r\n";
+	if( setData->freeCAFlag == 0 ){
+		htmlText+="<option value=\"0\" selected>無料、有料番組を対象とする\r\n";
+	}else{
+		htmlText+="<option value=\"0\">無料、有料番組を対象とする\r\n";
+	}
+	if( setData->freeCAFlag == 1 ){
+		htmlText+="<option value=\"1\" selected>無料番組を対象とする\r\n";
+	}else{
+		htmlText+="<option value=\"1\">無料番組を対象とする\r\n";
+	}
+	if( setData->freeCAFlag == 2 ){
+		htmlText+="<option value=\"2\" selected>有料番組を対象とする\r\n";
+	}else{
+		htmlText+="<option value=\"2\">有料番組を対象とする\r\n";
+	}
+	htmlText+="</select>\r\n";
+	htmlText+="<BR><BR>\r\n";
+
+	if( setData->chkRecEnd == 0 ){
+		htmlText+="<input type=checkbox name=\"chkRecEnd\" value=\"1\">同一番組名の録画結果があれば無効で登録する\r\n";
+	}else{
+		htmlText+="<input type=checkbox name=\"chkRecEnd\" value=\"1\" checked>同一番組名の録画結果があれば無効で登録する\r\n";
+	}
+	htmlText+="<BR>\r\n";
+
+	Format(buff, "確認対象期間<input type=\"text\" name=\"chkRecDay\" value=\"%d\" size=5>日前まで<BR>\r\n", setData->chkRecDay);
+	htmlText+=buff;
+	htmlText+="<BR><BR>\r\n";
+}
+
 BOOL CHTMLManager::GetIndexPage(HTTP_STREAM* sendParam)
 {
 	if( sendParam == NULL ){
@@ -351,6 +554,7 @@ BOOL CHTMLManager::GetIndexPage(HTTP_STREAM* sendParam)
 	html+="メニュー<BR><BR>";
 	html+="<A HREF=\"reserve.html\">予約一覧</A><BR>\r\n";
 	html+="<A HREF=\"recinfo.html\">録画結果一覧</A><BR>\r\n";
+	html+="<A HREF=\"autoaddepg.html\">自動予約登録 EPG予約一覧</A><BR>\r\n";
 	html+="<A HREF=\"epg.html\">番組表</A><BR>\r\n";
 	html+="<BR>\r\n";
 	html+="<A HREF=\"addprogres.html\">プログラム予約追加</A><BR>\r\n";
@@ -503,7 +707,9 @@ BOOL CHTMLManager::GetReserveInfoPage(RESERVE_DATA* reserveData, wstring eventTe
 		do{
 			wstring presetID =L"";
 			Separate(parseBuff, L",", presetID, parseBuff);
-			idList.push_back((DWORD)_wtoi(presetID.c_str()));
+			if(presetID.size() > 0 ){
+				idList.push_back((DWORD)_wtoi(presetID.c_str()));
+			}
 		}while(parseBuff.size()>0);
 		for( size_t i=0; i<idList.size(); i++ ){
 			wstring appName = L"";
@@ -2209,7 +2415,9 @@ BOOL CHTMLManager::GetEpgInfoPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* r
 	do{
 		wstring presetID =L"";
 		Separate(parseBuff, L",", presetID, parseBuff);
-		idList.push_back((DWORD)_wtoi(presetID.c_str()));
+		if(presetID.size() > 0 ){
+			idList.push_back((DWORD)_wtoi(presetID.c_str()));
+		}
 	}while(parseBuff.size()>0);
 	for( size_t i=0; i<idList.size(); i++ ){
 		wstring appName = L"";
@@ -2937,7 +3145,9 @@ BOOL CHTMLManager::GetAddProgramReservePage(CEpgDBManager* epgDB, vector<TUNER_R
 	do{
 		wstring presetID =L"";
 		Separate(parseBuff, L",", presetID, parseBuff);
-		idList.push_back((DWORD)_wtoi(presetID.c_str()));
+		if(presetID.size() > 0 ){
+			idList.push_back((DWORD)_wtoi(presetID.c_str()));
+		}
 	}while(parseBuff.size()>0);
 	for( size_t i=0; i<idList.size(); i++ ){
 		wstring appName = L"";
@@ -3258,3 +3468,1012 @@ BOOL CHTMLManager::GetAddReservePgData(CEpgDBManager* epgDB, RESERVE_DATA* reser
 	return TRUE;
 }
 
+BOOL CHTMLManager::GetAutoAddEpgPage(vector<EPG_AUTO_ADD_DATA>* val, int pageIndex, HTTP_STREAM* sendParam)
+{
+	if( sendParam == NULL ){
+		return FALSE;
+	}
+
+	wstring iniPath = L"";
+	GetModuleIniPath(iniPath);
+	int pageCount = GetPrivateProfileInt(L"HTTP", L"ReservePageCount", 30, iniPath.c_str());
+	if( pageCount == 0 ){
+		pageCount = 30;
+	}
+
+	wstring chSet5Path = L"";
+	GetSettingPath(chSet5Path);
+	chSet5Path += L"\\ChSet5.txt";
+
+	CParseChText5 chSet5;
+	chSet5.ParseText(chSet5Path.c_str());
+
+
+	string html = HTML_TOP;
+	html+="自動予約登録　EPG予約一覧<BR><BR>\r\n";
+
+	if(val == NULL ){
+		html+="条件なし<BR>\r\n";
+	}else{
+		if( val->size() == 0 || (size_t)pageIndex*pageCount > val->size()){
+			html+="条件なし<BR>\r\n";
+		}else{
+			//ページリンクの作成
+			int pageNum = (int)val->size()/pageCount;
+			if( (int)val->size()%pageCount > 0 ){
+				pageNum++;
+			}
+			for( int i=0; i<pageNum; i++ ){
+				string ref = "";
+				if( i != pageIndex){
+					Format(ref, "<A HREF=\"autoaddepg.html?page=%d\">%d～</A> \r\n", i, i*pageCount+1);
+				}else{
+					Format(ref, "%d～ \r\n", i*pageCount+1);
+				}
+				html+=ref;
+			}
+			html+="<BR><BR>\r\n";
+			//追加ボタン
+			html +="<A HREF=\"autoaddepgadd.html\">新規追加</A><BR><BR>\r\n";
+
+			//一覧の作成
+			html+="<TABLE BORDER=\"1\">\r\n";
+			int maxCount = (pageIndex+1)*pageCount;
+			if( (int)val->size() < maxCount ){
+				maxCount = (int)val->size();
+			}
+			for( int i=pageIndex*pageCount; i<maxCount; i++){
+				string and = "";
+				string not = "";
+				string content = "";
+				string service = "";
+				string mode = "";
+				wstring minAnd = (*val)[i].searchInfo.andKey;
+				wstring minNot = (*val)[i].searchInfo.notKey;
+				if( minAnd.size() > 10 ){
+					minAnd.erase(9);
+					minAnd += L"…";
+				}
+				if( minNot.size() > 10 ){
+					minNot.erase(9);
+					minNot += L"…";
+				}
+
+				WtoA(minAnd, and);
+				WtoA(minNot, not);
+
+				wstring buff;
+				if( (*val)[i].searchInfo.contentList.size() > 0 ){
+					GetGenreName((*val)[i].searchInfo.contentList[0].content_nibble_level_1, 
+						(*val)[i].searchInfo.contentList[0].content_nibble_level_2,
+						buff);
+					WtoA(buff, content);
+
+					if( (*val)[i].searchInfo.contentList.size() > 1 ){
+						content += "など";
+					}
+				}
+
+				switch((*val)[i].recSetting.recMode){
+				case RECMODE_ALL:
+					mode = "全サービス";
+					break;
+				case RECMODE_SERVICE:
+					mode = "指定サービスのみ";
+					break;
+				case RECMODE_ALL_NOB25:
+					mode = "全サービス（デコード処理なし）";
+					break;
+				case RECMODE_SERVICE_NOB25:
+					mode = "指定サービスのみ（デコード処理なし）";
+					break;
+				case RECMODE_VIEW:
+					mode = "視聴";
+					break;
+				case RECMODE_NO:
+					mode = "無効";
+					break;
+				default:
+					break;
+				}
+
+
+				if( (*val)[i].searchInfo.serviceList.size() > 0 ){
+					map<LONGLONG, CH_DATA5>::iterator itrCh;
+					itrCh = chSet5.chList.find((*val)[i].searchInfo.serviceList[0]);
+					if( itrCh != chSet5.chList.end()){
+						WtoA(itrCh->second.serviceName, service);
+					}
+					if((*val)[i].searchInfo.serviceList.size() > 1 ){
+						service += "など";
+					}
+				}
+
+				string item;
+				Format(item, "<TR><TD>%s</TD><TD>%s</TD><TD>%s</TD><TD>%s</TD><TD>%s</TD><TD><A HREF=\"autoaddepginfo.html?id=%d\">詳細</A></TD></TR>\r\n",
+					and.c_str(), not.c_str(), content.c_str(), service.c_str(), mode.c_str(), (*val)[i].dataID);
+				html+=item;
+			}
+			html+="</TABLE>\r\n<BR><BR>\r\n";
+		}
+	}
+	html+= "<A HREF=\"index.html\">メニューへ</A><BR>\r\n";
+
+	html+=HTML_END;
+	sendParam->dataSize = (DWORD)html.size();
+	sendParam->data = new BYTE[sendParam->dataSize];
+	memcpy(sendParam->data, html.c_str(), sendParam->dataSize);
+	if( sendParam->dataSize > 0 ){
+		Format(sendParam->httpHeader, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", sendParam->dataSize);
+	}else{
+		sendParam->httpHeader = "HTTP/1.0 400 Bad Request\r\nConnection: close\r\n\r\n";
+	}
+	return TRUE;
+}
+
+BOOL CHTMLManager::GetAddAutoEpgPage(EPG_AUTO_ADD_DATA* val, string param, vector<TUNER_RESERVE_INFO>* tunerList, HTTP_STREAM* sendParam)
+{
+	if( sendParam == NULL ){
+		return FALSE;
+	}
+
+
+	multimap<string,string> paramMap;
+	while(param.size()>0){
+		string buff;
+		Separate(param, "&", buff, param);
+		if(buff.size()>0){
+			string key;
+			string val;
+			Separate(buff, "=", key, val);
+			paramMap.insert(pair<string,string>(key, val));
+		}
+	}
+	multimap<string,string>::iterator itr;
+	WORD preset = 0;
+	itr = paramMap.find("preset");
+	if( itr != paramMap.end() ){
+		preset = (WORD)atoi(itr->second.c_str());
+	}
+
+	wstring chSet5Path = L"";
+	GetSettingPath(chSet5Path);
+	chSet5Path += L"\\ChSet5.txt";
+
+	CParseChText5 chSet5;
+	chSet5.ParseText(chSet5Path.c_str());
+
+
+	string buff;
+	string html = HTML_TOP;
+
+	html+="<HR>EPG予約　新規条件追加<HR>\r\n";
+	//予約情報
+	html+="<HR>検索条件<HR>\r\n";
+	html+="<B>※検索条件を確定してから録画設定の変更と追加をしてください</B>\r\n";
+
+	Format(buff, "<form method=\"POST\" action=\"autoaddepgadd.html\">\r\n");
+	html+=buff;
+
+	string paramText;
+	string hiddenParam;
+	EPGDB_SEARCH_KEY_INFO searchKey;
+	//パラメーター分解
+	for( itr = paramMap.begin(); itr != paramMap.end(); itr++ ){
+		if( CompareNoCase(itr->first, "andKey") == 0 ){
+			string urlDec;
+			UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), urlDec);
+			AtoW(urlDec, searchKey.andKey);
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), urlDec.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "notKey") == 0 ){
+			string urlDec;
+			UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), urlDec);
+			AtoW(urlDec, searchKey.notKey);
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), urlDec.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "regExpFlag") == 0 ){
+			searchKey.regExpFlag = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "titleOnlyFlag") == 0 ){
+			searchKey.titleOnlyFlag = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "contentList") == 0 ){
+			EPGDB_CONTENT_DATA inItem;
+			WORD nibble = (WORD)atoi(itr->second.c_str());
+			inItem.content_nibble_level_1 = nibble>>8;
+			inItem.content_nibble_level_2 = nibble&0x00FF;
+			inItem.user_nibble_1 = 0;
+			inItem.user_nibble_2 = 0;
+			searchKey.contentList.push_back(inItem);
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "serviceList") == 0 ){
+
+			searchKey.serviceList.push_back(_atoi64(itr->second.c_str()));
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "dateList") == 0 ){
+			string urlDec;
+			UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), urlDec);
+
+			string timeS = urlDec;
+			string item1;
+			while(timeS.size()> 0 ){
+				Separate(timeS, ",", item1, timeS);
+				EPGDB_SEARCH_DATE_INFO inItem;
+				string weeks;
+				string hhs;
+				string mms;
+				string weeke;
+				string hhe;
+				string mme;
+
+				Separate(item1, "-", weeks, item1);
+				Separate(item1, ":", hhs, item1);
+				Separate(item1, "-", mms, item1);
+				Separate(item1, "-", weeke, item1);
+				Separate(item1, ":", hhe, mme);
+
+				if(CompareNoCase(weeks,"日") == 0 ){
+					inItem.startDayOfWeek = 0;
+				}else if(CompareNoCase(weeks,"月") == 0 ){
+					inItem.startDayOfWeek = 1;
+				}else if(CompareNoCase(weeks,"火") == 0 ){
+					inItem.startDayOfWeek = 2;
+				}else if(CompareNoCase(weeks,"水") == 0 ){
+					inItem.startDayOfWeek = 3;
+				}else if(CompareNoCase(weeks,"木") == 0 ){
+					inItem.startDayOfWeek = 4;
+				}else if(CompareNoCase(weeks,"金") == 0 ){
+					inItem.startDayOfWeek = 5;
+				}else if(CompareNoCase(weeks,"土") == 0){
+					inItem.startDayOfWeek = 6;
+				}
+				inItem.startHour = (WORD)atoi(hhs.c_str());
+				inItem.startMin = (WORD)atoi(mms.c_str());
+
+				if(CompareNoCase(weeke,"日") == 0 ){
+					inItem.endDayOfWeek = 0;
+				}else if(CompareNoCase(weeke,"月") == 0 ){
+					inItem.endDayOfWeek = 1;
+				}else if(CompareNoCase(weeke,"火") == 0 ){
+					inItem.endDayOfWeek = 2;
+				}else if(CompareNoCase(weeke,"水") == 0 ){
+					inItem.endDayOfWeek = 3;
+				}else if(CompareNoCase(weeke,"木") == 0 ){
+					inItem.endDayOfWeek = 4;
+				}else if(CompareNoCase(weeke,"金") == 0 ){
+					inItem.endDayOfWeek = 5;
+				}else if(CompareNoCase(weeke,"土") == 0 ){
+					inItem.endDayOfWeek = 6;
+				}
+				inItem.endHour = (WORD)atoi(hhe.c_str());
+				inItem.endMin = (WORD)atoi(mme.c_str());
+
+				searchKey.dateList.push_back(inItem);
+			}
+			
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), urlDec.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "aimaiFlag") == 0 ){
+			searchKey.aimaiFlag = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "notContetFlag") == 0 ){
+			searchKey.notContetFlag = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "notDateFlag") == 0 ){
+			searchKey.notDateFlag = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "freeCAFlag") == 0 ){
+			searchKey.freeCAFlag = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "chkRecEnd") == 0 ){
+			searchKey.chkRecEnd = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "chkRecDay") == 0 ){
+			searchKey.chkRecDay = (WORD)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+	}
+	CreateSearchSetForm(&searchKey, &chSet5, paramText);
+
+	html+=paramText;
+
+
+	html+="</select>\r\n<input type=submit value=\"確定\">\r\n</form>\r\n";
+
+	html+="<HR>録画設定<HR>\r\n";
+
+	//プリセット
+	Format(buff, "<form method=\"POST\" action=\"autoaddepgadd.html\">\r\n");
+	html+=buff;
+	html+="プリセット:\r\n<select name=\"preset\">\r\n";
+	html+="<option value=\"0\">デフォルト\r\n";
+
+	wstring iniPath = L"";
+	GetModuleIniPath(iniPath);
+	WCHAR iniBuff[512]=L"";
+	GetPrivateProfileString(L"SET", L"PresetID", L"", iniBuff, 512, iniPath.c_str());
+	wstring parseBuff = iniBuff;
+	vector<DWORD> idList;
+	do{
+		wstring presetID =L"";
+		Separate(parseBuff, L",", presetID, parseBuff);
+		if(presetID.size() > 0 ){
+			idList.push_back((DWORD)_wtoi(presetID.c_str()));
+		}
+	}while(parseBuff.size()>0);
+	for( size_t i=0; i<idList.size(); i++ ){
+		wstring appName = L"";
+		Format(appName, L"REC_DEF%d", idList[i]);
+		ZeroMemory(iniBuff, sizeof(WCHAR)*512);
+		GetPrivateProfileString(appName.c_str(), L"SetName", L"", iniBuff, 512, iniPath.c_str());
+		string item = "";
+		string name = "";
+		WtoA(iniBuff, name);
+		if( idList[i]==preset ){
+			Format(item, "<option value=\"%d\" selected>%s\r\n", idList[i], name.c_str());
+		}else{
+			Format(item, "<option value=\"%d\">%s\r\n", idList[i], name.c_str());
+		}
+		html+=item;
+	}
+	//hiddenパラメーター挿入
+	html+=hiddenParam;
+
+	html+="</select>\r\n<input type=submit value=\"load\">\r\n</form>\r\n";
+
+	//録画設定
+	Format(buff, "<form method=\"POST\" action=\"autoaddepgaddkey.html\">\r\n");
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"presetID\" value=\"%d\">\r\n", preset);
+	html+=buff;
+	html+=hiddenParam;
+
+	string recParam = "";
+	if( preset != 0xFFFF ){
+		REC_SETTING_DATA recSetData;
+		LoadRecSetData(preset, &recSetData);
+		CreateRecSetForm(&recSetData, tunerList, recParam);
+	}
+	html+=recParam;
+
+
+	html+="<input type=submit value=\"追加\">\r\n</form>\r\n";
+
+	html+= "<A HREF=\"index.html\">メニューへ</A><BR>\r\n";
+
+	html+=HTML_END;
+	sendParam->dataSize = (DWORD)html.size();
+	sendParam->data = new BYTE[sendParam->dataSize];
+	memcpy(sendParam->data, html.c_str(), sendParam->dataSize);
+	if( sendParam->dataSize > 0 ){
+		Format(sendParam->httpHeader, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", sendParam->dataSize);
+	}else{
+		sendParam->httpHeader = "HTTP/1.0 400 Bad Request\r\nConnection: close\r\n\r\n";
+	}
+	return TRUE;
+}
+
+BOOL CHTMLManager::GetAutoEpgParam(EPG_AUTO_ADD_DATA* val, HTTP_STREAM* recvParam)
+{
+	if( val == NULL || recvParam == NULL ){
+		return FALSE;
+	}
+
+	string param = "";
+	param.append((char*)recvParam->data, 0, recvParam->dataSize);
+
+	multimap<string,string> paramMap;
+	while(param.size()>0){
+		string buff;
+		Separate(param, "&", buff, param);
+		if(buff.size()>0){
+			string key;
+			string val;
+			Separate(buff, "=", key, val);
+			paramMap.insert(pair<string,string>(key, val));
+		}
+	}
+	multimap<string,string>::iterator itr;
+	WORD preset = 0;
+	itr = paramMap.find("preset");
+	if( itr != paramMap.end() ){
+		preset = (WORD)atoi(itr->second.c_str());
+	}
+
+	//パラメーター分解
+	for( itr = paramMap.begin(); itr != paramMap.end(); itr++ ){
+		if( CompareNoCase(itr->first, "andKey") == 0 ){
+			string urlDec;
+			UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), urlDec);
+			AtoW(urlDec, val->searchInfo.andKey);
+		}
+		else if( CompareNoCase(itr->first, "notKey") == 0 ){
+			string urlDec;
+			UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), urlDec);
+			AtoW(urlDec, val->searchInfo.notKey);
+		}
+		else if( CompareNoCase(itr->first, "regExpFlag") == 0 ){
+			val->searchInfo.regExpFlag = (BOOL)atoi(itr->second.c_str());
+		}
+		else if( CompareNoCase(itr->first, "titleOnlyFlag") == 0 ){
+			val->searchInfo.titleOnlyFlag = (BOOL)atoi(itr->second.c_str());
+		}
+		else if( CompareNoCase(itr->first, "contentList") == 0 ){
+			EPGDB_CONTENT_DATA inItem;
+			WORD nibble = (WORD)atoi(itr->second.c_str());
+			inItem.content_nibble_level_1 = nibble>>8;
+			inItem.content_nibble_level_2 = nibble&0x00FF;
+			inItem.user_nibble_1 = 0;
+			inItem.user_nibble_2 = 0;
+			val->searchInfo.contentList.push_back(inItem);
+		}
+		else if( CompareNoCase(itr->first, "serviceList") == 0 ){
+
+			val->searchInfo.serviceList.push_back(_atoi64(itr->second.c_str()));
+		}
+		else if( CompareNoCase(itr->first, "dateList") == 0 ){
+			string urlDec;
+			UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), urlDec);
+
+			string timeS = urlDec;
+			string item1;
+			while(timeS.size()> 0 ){
+				Separate(timeS, ",", item1, timeS);
+				EPGDB_SEARCH_DATE_INFO inItem;
+				string weeks;
+				string hhs;
+				string mms;
+				string weeke;
+				string hhe;
+				string mme;
+
+				Separate(item1, "-", weeks, item1);
+				Separate(item1, ":", hhs, item1);
+				Separate(item1, "-", mms, item1);
+				Separate(item1, "-", weeke, item1);
+				Separate(item1, ":", hhe, mme);
+
+				if(CompareNoCase(weeks,"日") == 0 ){
+					inItem.startDayOfWeek = 0;
+				}else if(CompareNoCase(weeks,"月") == 0 ){
+					inItem.startDayOfWeek = 1;
+				}else if(CompareNoCase(weeks,"火") == 0 ){
+					inItem.startDayOfWeek = 2;
+				}else if(CompareNoCase(weeks,"水") == 0 ){
+					inItem.startDayOfWeek = 3;
+				}else if(CompareNoCase(weeks,"木") == 0 ){
+					inItem.startDayOfWeek = 4;
+				}else if(CompareNoCase(weeks,"金") == 0 ){
+					inItem.startDayOfWeek = 5;
+				}else if(CompareNoCase(weeks,"土") == 0 ){
+					inItem.startDayOfWeek = 6;
+				}
+				inItem.startHour = (WORD)atoi(hhs.c_str());
+				inItem.startMin = (WORD)atoi(mms.c_str());
+
+				if(CompareNoCase(weeke,"日") == 0 ){
+					inItem.endDayOfWeek = 0;
+				}else if(CompareNoCase(weeke,"月") == 0 ){
+					inItem.endDayOfWeek = 1;
+				}else if(CompareNoCase(weeke,"火") == 0 ){
+					inItem.endDayOfWeek = 2;
+				}else if(CompareNoCase(weeke,"水") == 0 ){
+					inItem.endDayOfWeek = 3;
+				}else if(CompareNoCase(weeke,"木") == 0 ){
+					inItem.endDayOfWeek = 4;
+				}else if(CompareNoCase(weeke,"金") == 0 ){
+					inItem.endDayOfWeek = 5;
+				}else if(CompareNoCase(weeke,"土") == 0 ){
+					inItem.endDayOfWeek = 6;
+				}
+				inItem.endHour = (WORD)atoi(hhe.c_str());
+				inItem.endMin = (WORD)atoi(mme.c_str());
+
+				val->searchInfo.dateList.push_back(inItem);
+			}
+		}
+		else if( CompareNoCase(itr->first, "aimaiFlag") == 0 ){
+			val->searchInfo.aimaiFlag = (BOOL)atoi(itr->second.c_str());
+		}
+		else if( CompareNoCase(itr->first, "notContetFlag") == 0 ){
+			val->searchInfo.notContetFlag = (BOOL)atoi(itr->second.c_str());
+		}
+		else if( CompareNoCase(itr->first, "notDateFlag") == 0 ){
+			val->searchInfo.notDateFlag = (BOOL)atoi(itr->second.c_str());
+		}
+		else if( CompareNoCase(itr->first, "freeCAFlag") == 0 ){
+			val->searchInfo.freeCAFlag = (BOOL)atoi(itr->second.c_str());
+		}
+		else if( CompareNoCase(itr->first, "chkRecEnd") == 0 ){
+			val->searchInfo.chkRecEnd = (BOOL)atoi(itr->second.c_str());
+		}
+		else if( CompareNoCase(itr->first, "chkRecDay") == 0 ){
+			val->searchInfo.chkRecDay = (WORD)atoi(itr->second.c_str());
+		}
+	}
+
+	if( preset != 0xFFFF ){
+		val->recSetting.recFolderList.clear();
+		val->recSetting.partialRecFolder.clear();
+		LoadRecSetData(preset, &val->recSetting);
+	}
+
+	itr = paramMap.find("recMode");
+	if( itr == paramMap.end() ){
+		return FALSE;
+	}
+	val->recSetting.recMode = (BYTE)atoi(itr->second.c_str());
+
+	itr = paramMap.find("tuijyuuFlag");
+	if( itr == paramMap.end() ){
+		return FALSE;
+	}
+	val->recSetting.tuijyuuFlag = (BYTE)atoi(itr->second.c_str());
+
+	itr = paramMap.find("priority");
+	if( itr == paramMap.end() ){
+		return FALSE;
+	}
+	val->recSetting.priority = (BYTE)atoi(itr->second.c_str());
+
+	itr = paramMap.find("pittariFlag");
+	if( itr == paramMap.end() ){
+		return FALSE;
+	}
+	val->recSetting.pittariFlag = (BYTE)atoi(itr->second.c_str());
+
+	itr = paramMap.find("suspendMode");
+	if( itr == paramMap.end() ){
+		return FALSE;
+	}
+	val->recSetting.suspendMode = (BYTE)atoi(itr->second.c_str());
+	
+	if( val->recSetting.suspendMode == 1 || val->recSetting.suspendMode == 2 ){
+		itr = paramMap.find("rebootFlag");
+		if( itr == paramMap.end() ){
+			val->recSetting.rebootFlag = 0;
+		}else{
+			val->recSetting.rebootFlag = 1;
+		}
+	}else{
+		val->recSetting.rebootFlag = 0;
+	}
+
+	itr = paramMap.find("useDefMargineFlag");
+	if( itr == paramMap.end() ){
+		val->recSetting.useMargineFlag = 1;
+		itr = paramMap.find("startMargine");
+		if( itr == paramMap.end() ){
+			return FALSE;
+		}
+		val->recSetting.startMargine = atoi(itr->second.c_str());
+		itr = paramMap.find("endMargine");
+		if( itr == paramMap.end() ){
+			return FALSE;
+		}
+		val->recSetting.endMargine = atoi(itr->second.c_str());
+	}else{
+		val->recSetting.useMargineFlag = 0;
+		val->recSetting.startMargine = 0;
+		val->recSetting.endMargine = 0;
+	}
+
+	itr = paramMap.find("serviceMode");
+	if( itr != paramMap.end() ){
+		val->recSetting.serviceMode = 0;
+	}else{
+		val->recSetting.serviceMode = 1;
+		itr = paramMap.find("serviceMode_1");
+		if( itr != paramMap.end() ){
+			val->recSetting.serviceMode |= 0x10;
+		}
+		itr = paramMap.find("serviceMode_2");
+		if( itr != paramMap.end() ){
+			val->recSetting.serviceMode |= 0x20;
+		}
+	}
+
+	itr = paramMap.find("continueRecFlag");
+	if( itr == paramMap.end() ){
+		val->recSetting.continueRecFlag = 0;
+	}else{
+		val->recSetting.continueRecFlag = 1;
+	}
+	
+	itr = paramMap.find("tunerID");
+	if( itr == paramMap.end() ){
+		return FALSE;
+	}
+	val->recSetting.tunerID = (DWORD)atoi(itr->second.c_str());
+
+	itr = paramMap.find("partialRecFlag");
+	if( itr == paramMap.end() ){
+		val->recSetting.partialRecFlag = 0;
+	}else{
+		val->recSetting.partialRecFlag = 1;
+	}
+
+	itr = paramMap.find("dataID");
+	if( itr == paramMap.end() ){
+		val->dataID = 0;
+	}else{
+		val->dataID = (DWORD)atoi(itr->second.c_str());
+	}
+
+	return TRUE;
+}
+
+BOOL CHTMLManager::GetAddAutoEpgPage(HTTP_STREAM* sendParam, BOOL err)
+{
+	if( sendParam == NULL ){
+		return FALSE;
+	}
+	string html = HTML_TOP;
+	if( err == FALSE ){
+		html+="追加しました<BR><BR>\r\n<A HREF=\"autoaddepg.html\">自動予約登録 EPG予約一覧</A>\r\n";
+	}else{
+		html+="入力値不正<BR><BR>\r\n<A HREF=\"autoaddepg.html\">自動予約登録 EPG予約一覧</A>\r\n";
+	}
+	html+=HTML_END;
+	sendParam->dataSize = (DWORD)html.size();
+	sendParam->data = new BYTE[sendParam->dataSize];
+	memcpy(sendParam->data, html.c_str(), sendParam->dataSize);
+	if( sendParam->dataSize > 0 ){
+		Format(sendParam->httpHeader, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", sendParam->dataSize);
+	}else{
+		sendParam->httpHeader = "HTTP/1.0 400 Bad Request\r\nConnection: close\r\n\r\n";
+	}
+	return TRUE;
+}
+
+BOOL CHTMLManager::GetChgAutoEpgPage(HTTP_STREAM* sendParam, BOOL err)
+{
+	if( sendParam == NULL ){
+		return FALSE;
+	}
+	string html = HTML_TOP;
+	if( err == FALSE ){
+		html+="変更しました<BR><BR>\r\n<A HREF=\"autoaddepg.html\">自動予約登録 EPG予約一覧</A>\r\n";
+	}else{
+		html+="入力値不正<BR><BR>\r\n<A HREF=\"autoaddepg.html\">自動予約登録 EPG予約一覧</A>\r\n";
+	}
+	html+=HTML_END;
+	sendParam->dataSize = (DWORD)html.size();
+	sendParam->data = new BYTE[sendParam->dataSize];
+	memcpy(sendParam->data, html.c_str(), sendParam->dataSize);
+	if( sendParam->dataSize > 0 ){
+		Format(sendParam->httpHeader, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", sendParam->dataSize);
+	}else{
+		sendParam->httpHeader = "HTTP/1.0 400 Bad Request\r\nConnection: close\r\n\r\n";
+	}
+	return TRUE;
+}
+
+BOOL CHTMLManager::GetDelAutoEpgPage(HTTP_STREAM* sendParam, BOOL err)
+{
+	if( sendParam == NULL ){
+		return FALSE;
+	}
+	string html = HTML_TOP;
+	if( err == FALSE ){
+		html+="削除しました<BR><BR>\r\n<A HREF=\"autoaddepg.html\">自動予約登録 EPG予約一覧</A>\r\n";
+	}else{
+		html+="入力値不正<BR><BR>\r\n<A HREF=\"autoaddepg.html\">自動予約登録 EPG予約一覧</A>\r\n";
+	}
+	html+=HTML_END;
+	sendParam->dataSize = (DWORD)html.size();
+	sendParam->data = new BYTE[sendParam->dataSize];
+	memcpy(sendParam->data, html.c_str(), sendParam->dataSize);
+	if( sendParam->dataSize > 0 ){
+		Format(sendParam->httpHeader, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", sendParam->dataSize);
+	}else{
+		sendParam->httpHeader = "HTTP/1.0 400 Bad Request\r\nConnection: close\r\n\r\n";
+	}
+	return TRUE;
+}
+
+BOOL CHTMLManager::GetChgAutoEpgPage(EPG_AUTO_ADD_DATA* val, string param, vector<TUNER_RESERVE_INFO>* tunerList, HTTP_STREAM* sendParam)
+{
+	if( sendParam == NULL ){
+		return FALSE;
+	}
+
+
+	multimap<string,string> paramMap;
+	while(param.size()>0){
+		string buff;
+		Separate(param, "&", buff, param);
+		if(buff.size()>0){
+			string key;
+			string val;
+			Separate(buff, "=", key, val);
+			paramMap.insert(pair<string,string>(key, val));
+		}
+	}
+	multimap<string,string>::iterator itr;
+	WORD preset = 0;
+	itr = paramMap.find("preset");
+	if( itr != paramMap.end() ){
+		preset = (WORD)atoi(itr->second.c_str());
+	}
+
+	wstring chSet5Path = L"";
+	GetSettingPath(chSet5Path);
+	chSet5Path += L"\\ChSet5.txt";
+
+	CParseChText5 chSet5;
+	chSet5.ParseText(chSet5Path.c_str());
+
+
+	string buff;
+	string html = HTML_TOP;
+
+	html+="<HR>EPG予約　条件変更<HR>\r\n";
+	//予約情報
+	html+="<HR>検索条件<HR>\r\n";
+	html+="<B>※検索条件を確定してから録画設定の変更をしてください</B>\r\n";
+
+	Format(buff, "<form method=\"POST\" action=\"autoaddepginfo.html?id=%d\">\r\n", val->dataID);
+	html+=buff;
+
+	string paramText;
+	string hiddenParam;
+
+	Format(buff, "<input type=hidden name=\"dataID\" value=\"%d\">\r\n", val->dataID);
+	hiddenParam += buff;
+	html+=buff;
+
+	EPGDB_SEARCH_KEY_INFO searchKey = val->searchInfo;
+	//パラメーター分解
+	for( itr = paramMap.begin(); itr != paramMap.end(); itr++ ){
+		if( CompareNoCase(itr->first, "andKey") == 0 ){
+			string urlDec;
+			UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), urlDec);
+			AtoW(urlDec, searchKey.andKey);
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), urlDec.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "notKey") == 0 ){
+			string urlDec;
+			UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), urlDec);
+			AtoW(urlDec, searchKey.notKey);
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), urlDec.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "regExpFlag") == 0 ){
+			searchKey.regExpFlag = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "titleOnlyFlag") == 0 ){
+			searchKey.titleOnlyFlag = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "contentList") == 0 ){
+			EPGDB_CONTENT_DATA inItem;
+			WORD nibble = (WORD)atoi(itr->second.c_str());
+			inItem.content_nibble_level_1 = nibble>>8;
+			inItem.content_nibble_level_2 = nibble&0x00FF;
+			inItem.user_nibble_1 = 0;
+			inItem.user_nibble_2 = 0;
+			searchKey.contentList.push_back(inItem);
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "serviceList") == 0 ){
+
+			searchKey.serviceList.push_back(_atoi64(itr->second.c_str()));
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "dateList") == 0 ){
+			string urlDec;
+			UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), urlDec);
+
+			string timeS = urlDec;
+			string item1;
+			while(timeS.size()> 0 ){
+				Separate(timeS, ",", item1, timeS);
+				EPGDB_SEARCH_DATE_INFO inItem;
+				string weeks;
+				string hhs;
+				string mms;
+				string weeke;
+				string hhe;
+				string mme;
+
+				Separate(item1, "-", weeks, item1);
+				Separate(item1, ":", hhs, item1);
+				Separate(item1, "-", mms, item1);
+				Separate(item1, "-", weeke, item1);
+				Separate(item1, ":", hhe, mme);
+
+				if(CompareNoCase(weeks,"日") == 0 ){
+					inItem.startDayOfWeek = 0;
+				}else if(CompareNoCase(weeks,"月") == 0 ){
+					inItem.startDayOfWeek = 1;
+				}else if(CompareNoCase(weeks,"火") == 0 ){
+					inItem.startDayOfWeek = 2;
+				}else if(CompareNoCase(weeks,"水") == 0 ){
+					inItem.startDayOfWeek = 3;
+				}else if(CompareNoCase(weeks,"木") == 0 ){
+					inItem.startDayOfWeek = 4;
+				}else if(CompareNoCase(weeks,"金") == 0 ){
+					inItem.startDayOfWeek = 5;
+				}else if(CompareNoCase(weeks,"土") == 0){
+					inItem.startDayOfWeek = 6;
+				}
+				inItem.startHour = (WORD)atoi(hhs.c_str());
+				inItem.startMin = (WORD)atoi(mms.c_str());
+
+				if(CompareNoCase(weeke,"日") == 0 ){
+					inItem.endDayOfWeek = 0;
+				}else if(CompareNoCase(weeke,"月") == 0 ){
+					inItem.endDayOfWeek = 1;
+				}else if(CompareNoCase(weeke,"火") == 0 ){
+					inItem.endDayOfWeek = 2;
+				}else if(CompareNoCase(weeke,"水") == 0 ){
+					inItem.endDayOfWeek = 3;
+				}else if(CompareNoCase(weeke,"木") == 0 ){
+					inItem.endDayOfWeek = 4;
+				}else if(CompareNoCase(weeke,"金") == 0 ){
+					inItem.endDayOfWeek = 5;
+				}else if(CompareNoCase(weeke,"土") == 0 ){
+					inItem.endDayOfWeek = 6;
+				}
+				inItem.endHour = (WORD)atoi(hhe.c_str());
+				inItem.endMin = (WORD)atoi(mme.c_str());
+
+				searchKey.dateList.push_back(inItem);
+			}
+			
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), urlDec.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "aimaiFlag") == 0 ){
+			searchKey.aimaiFlag = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "notContetFlag") == 0 ){
+			searchKey.notContetFlag = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "notDateFlag") == 0 ){
+			searchKey.notDateFlag = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "freeCAFlag") == 0 ){
+			searchKey.freeCAFlag = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "chkRecEnd") == 0 ){
+			searchKey.chkRecEnd = (BOOL)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+		else if( CompareNoCase(itr->first, "chkRecDay") == 0 ){
+			searchKey.chkRecDay = (WORD)atoi(itr->second.c_str());
+			Format(buff, "<input type=hidden name=\"%s\" value=\"%s\">\r\n", itr->first.c_str(), itr->second.c_str());
+			hiddenParam += buff;
+		}
+	}
+	CreateSearchSetForm(&searchKey, &chSet5, paramText);
+
+	html+=paramText;
+
+
+	html+="</select>\r\n<input type=submit value=\"確定\">\r\n</form>\r\n";
+
+	html+="<HR>録画設定<HR>\r\n";
+
+	//プリセット
+	Format(buff, "<form method=\"POST\" action=\"autoaddepginfo.html?id=%d\">\r\n", val->dataID);
+	html+=buff;
+	html+="プリセット:\r\n<select name=\"preset\">\r\n";
+	html+="<option value=\"0\">デフォルト\r\n";
+
+	wstring iniPath = L"";
+	GetModuleIniPath(iniPath);
+	WCHAR iniBuff[512]=L"";
+	GetPrivateProfileString(L"SET", L"PresetID", L"", iniBuff, 512, iniPath.c_str());
+	wstring parseBuff = iniBuff;
+	vector<DWORD> idList;
+	do{
+		wstring presetID =L"";
+		Separate(parseBuff, L",", presetID, parseBuff);
+		if(presetID.size() > 0 ){
+			idList.push_back((DWORD)_wtoi(presetID.c_str()));
+		}
+	}while(parseBuff.size()>0);
+	for( size_t i=0; i<idList.size(); i++ ){
+		wstring appName = L"";
+		Format(appName, L"REC_DEF%d", idList[i]);
+		ZeroMemory(iniBuff, sizeof(WCHAR)*512);
+		GetPrivateProfileString(appName.c_str(), L"SetName", L"", iniBuff, 512, iniPath.c_str());
+		string item = "";
+		string name = "";
+		WtoA(iniBuff, name);
+		if( idList[i]==preset ){
+			Format(item, "<option value=\"%d\" selected>%s\r\n", idList[i], name.c_str());
+		}else{
+			Format(item, "<option value=\"%d\">%s\r\n", idList[i], name.c_str());
+		}
+		html+=item;
+	}
+
+	if( preset == 0xFFFF ){
+		html+="<option value=\"65535\" selected>予約時\r\n";
+	}else{
+		html+="<option value=\"65535\">予約時\r\n";
+	}
+	//hiddenパラメーター挿入
+	html+=hiddenParam;
+
+	html+="</select>\r\n<input type=submit value=\"load\">\r\n</form>\r\n";
+
+	//録画設定
+	Format(buff, "<form method=\"POST\" action=\"autoaddepgchgkey.html\">\r\n");
+	html+=buff;
+	Format(buff, "<input type=hidden name=\"presetID\" value=\"%d\">\r\n", preset);
+	html+=buff;
+	html+=hiddenParam;
+
+	string recParam = "";
+	if( preset != 0xFFFF ){
+		REC_SETTING_DATA recSetData;
+		LoadRecSetData(preset, &recSetData);
+		CreateRecSetForm(&recSetData, tunerList, recParam);
+	}else{
+		CreateRecSetForm(&val->recSetting, tunerList, recParam);
+	}
+	html+=recParam;
+
+
+	html+="<input type=submit value=\"変更\">\r\n</form>\r\n";
+
+	//削除
+	Format(buff, "<form method=\"POST\" action=\"autoaddepgdelkey.html?id=%d\">\r\n", val->dataID);
+	html+=buff;
+	html+="<input type=submit value=\"削除\">\r\n</form>\r\n";
+
+	html+= "<A HREF=\"index.html\">メニューへ</A><BR>\r\n";
+
+	html+=HTML_END;
+	sendParam->dataSize = (DWORD)html.size();
+	sendParam->data = new BYTE[sendParam->dataSize];
+	memcpy(sendParam->data, html.c_str(), sendParam->dataSize);
+	if( sendParam->dataSize > 0 ){
+		Format(sendParam->httpHeader, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", sendParam->dataSize);
+	}else{
+		sendParam->httpHeader = "HTTP/1.0 400 Bad Request\r\nConnection: close\r\n\r\n";
+	}
+	return TRUE;
+}

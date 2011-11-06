@@ -959,6 +959,20 @@ typedef struct _COOP_SERVER_INFO{
 	};
 } COOP_SERVER_INFO;
 
+typedef struct _GENRU_INFO{
+	BYTE nibble1;
+	BYTE nibble2;
+	WORD key;
+	wstring name;
+	//=オペレーターの処理
+	_GENRU_INFO(void){
+		nibble1= 0xFF;
+		nibble2 = 0xFF;
+		key = 0xFFFF;
+		name = L"";
+	};
+} GENRU_INFO;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用

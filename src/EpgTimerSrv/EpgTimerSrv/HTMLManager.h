@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "../../Common/StructDef.h"
+#include "../../Common/ParseChText5.h"
 #include "EpgDBManager.h"
 
 class CHTMLManager
@@ -27,6 +28,14 @@ public:
 
 	BOOL GetAddProgramReservePage(CEpgDBManager* epgDB, vector<TUNER_RESERVE_INFO>* tunerList, string param, HTTP_STREAM* sendParam);
 	BOOL GetAddReservePgData(CEpgDBManager* epgDB, RESERVE_DATA* reserveData, string param);
+
+	BOOL GetAutoAddEpgPage(vector<EPG_AUTO_ADD_DATA>* val, int pageIndex, HTTP_STREAM* sendParam);
+	BOOL GetAddAutoEpgPage(EPG_AUTO_ADD_DATA* val, string param, vector<TUNER_RESERVE_INFO>* tunerList, HTTP_STREAM* sendParam);
+	BOOL GetAutoEpgParam(EPG_AUTO_ADD_DATA* val, HTTP_STREAM* recvParam);
+	BOOL GetChgAutoEpgPage(EPG_AUTO_ADD_DATA* val, string param, vector<TUNER_RESERVE_INFO>* tunerList, HTTP_STREAM* sendParam);
+	BOOL GetChgAutoEpgPage(HTTP_STREAM* sendParam, BOOL err = FALSE);
+	BOOL GetDelAutoEpgPage(HTTP_STREAM* sendParam, BOOL err = FALSE);
+	BOOL GetAddAutoEpgPage(HTTP_STREAM* sendParam, BOOL err = FALSE);
 protected:
 	typedef struct _EVENT_ITEM{
 		int colspan;
@@ -57,6 +66,7 @@ protected:
 protected:
 	void LoadRecSetData(WORD preset, REC_SETTING_DATA* recSetData);
 	void CreateRecSetForm(REC_SETTING_DATA* recSetData, vector<TUNER_RESERVE_INFO>* tunerList, string& htmlText);
+	void CreateSearchSetForm(EPGDB_SEARCH_KEY_INFO* setData, CParseChText5* chSet5, string& htmlText);
 
 	BOOL CreateDefEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* reserveList, int tab, int page, int date, string& htmlText);
 	BOOL CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* reserveList, int tab, int page, int date, string& htmlText);

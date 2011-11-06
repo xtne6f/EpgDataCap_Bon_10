@@ -9,6 +9,8 @@
 #include "../../Common/CtrlCmdUtil2.h"
 #include "../../Common/StringUtil.h"
 
+#include "SyoboiCalUtil.h"
+
 #include <process.h>
 
 CEpgTimerSrvMain::CEpgTimerSrvMain(void)
@@ -159,6 +161,21 @@ void CEpgTimerSrvMain::StartMain(
 					AutoAddReserveEPG();
 					AutoAddReserveProgram();
 					this->reserveManager.ReloadBankMap(TRUE);
+
+					//しょぼいカレンダー対応
+					CSyoboiCalUtil syoboi;
+					vector<RESERVE_DATA*> reserveList;
+					reserveManager.GetReserveDataAll(&reserveList);
+					vector<TUNER_RESERVE_INFO> tunerList;
+					reserveManager.GetTunerReserveAll(&tunerList);
+
+					syoboi.SendReserve(&reserveList, &tunerList);
+
+					for( size_t i=0; i<reserveList.size(); i++ ){
+						SAFE_DELETE(reserveList[i]);
+					}
+					reserveList.clear();
+
 					UnLock();
 				}
 				this->reloadEpgChkFlag = FALSE;
@@ -2670,6 +2687,41 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				string param = "";
 				htmlManager.GetAddProgramReservePage(&sys->epgDB, &tunerList, param, sendParam);
 			}
+			else if(url.find("/autoaddepg.html") == 0 ){
+				string page = "";
+				Separate(url, "page=", url, page);
+				int pageIndex = atoi(page.c_str());
+
+				vector<EPG_AUTO_ADD_DATA> list;
+				map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itr;
+				for( itr = sys->epgAutoAdd.dataIDMap.begin(); itr != sys->epgAutoAdd.dataIDMap.end(); itr++ ){
+					list.push_back(*(itr->second));
+				}
+
+				htmlManager.GetAutoAddEpgPage(&list, pageIndex, sendParam);
+			}
+			else if(url.find("/autoaddepgadd.html") == 0 ){
+				string param = "";
+				Separate(url, "?", url, param);
+				vector<TUNER_RESERVE_INFO> tunerList;
+				sys->reserveManager.GetTunerReserveAll(&tunerList);
+
+				EPG_AUTO_ADD_DATA val;
+				htmlManager.GetAddAutoEpgPage(&val, param, &tunerList, sendParam);
+			}
+			else if(url.find("/autoaddepginfo.html") == 0 ){
+				string param = "";
+				Separate(url, "id=", url, param);
+				vector<TUNER_RESERVE_INFO> tunerList;
+				sys->reserveManager.GetTunerReserveAll(&tunerList);
+
+				map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itr;
+				itr = sys->epgAutoAdd.dataIDMap.find(atoi(param.c_str()));
+				if( itr != sys->epgAutoAdd.dataIDMap.end() ){
+					htmlManager.GetChgAutoEpgPage(itr->second, "", &tunerList, sendParam);
+				}
+			}
+			
 		}else if( CompareNoCase(verb, "POST") == 0 ){
 			if(url.find("/reserveinfo.html") == 0 ){
 				string id = "";
@@ -2784,6 +2836,98 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 						htmlManager.GetReserveAddPage(sendParam, TRUE);
 					}
 				}
+			}
+			else if(url.find("/autoaddepgadd.html") == 0 ){
+				string param = "";
+				param.append((char*)recvParam->data, 0, recvParam->dataSize);
+
+				OutputDebugStringA(param.c_str());
+
+				vector<TUNER_RESERVE_INFO> tunerList;
+				sys->reserveManager.GetTunerReserveAll(&tunerList);
+
+				EPG_AUTO_ADD_DATA val;
+				htmlManager.GetAddAutoEpgPage(&val, param, &tunerList, sendParam);
+			}
+			else if(url.find("/autoaddepgaddkey.html") == 0 ){
+				string param = "";
+				param.append((char*)recvParam->data, 0, recvParam->dataSize);
+
+				OutputDebugStringA(param.c_str());
+
+				EPG_AUTO_ADD_DATA val;
+				if( htmlManager.GetAutoEpgParam(&val, recvParam) == TRUE ){
+					sys->epgAutoAdd.AddData(&val);
+
+					wstring savePath = L"";
+					GetSettingPath(savePath);
+					savePath += L"\\";
+					savePath += EPG_AUTO_ADD_TEXT_NAME;
+
+					sys->epgAutoAdd.SaveText(savePath.c_str());
+
+					sys->AutoAddReserveEPG();
+
+					htmlManager.GetAddAutoEpgPage(sendParam);
+				}
+			}
+			else if(url.find("/autoaddepginfo.html") == 0 ){
+				string param = "";
+				param.append((char*)recvParam->data, 0, recvParam->dataSize);
+
+				OutputDebugStringA(param.c_str());
+
+				string id;
+				Separate(url, "id=", url, id);
+				vector<TUNER_RESERVE_INFO> tunerList;
+				sys->reserveManager.GetTunerReserveAll(&tunerList);
+
+				map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itr;
+				itr = sys->epgAutoAdd.dataIDMap.find(atoi(id.c_str()));
+				if( itr != sys->epgAutoAdd.dataIDMap.end() ){
+					htmlManager.GetChgAutoEpgPage(itr->second, param, &tunerList, sendParam);
+				}
+			}
+			else if(url.find("/autoaddepgchgkey.html") == 0 ){
+				string param = "";
+				param.append((char*)recvParam->data, 0, recvParam->dataSize);
+
+				OutputDebugStringA(param.c_str());
+
+				EPG_AUTO_ADD_DATA val;
+				if( htmlManager.GetAutoEpgParam(&val, recvParam) == TRUE ){
+					sys->epgAutoAdd.ChgData(&val);
+
+					wstring savePath = L"";
+					GetSettingPath(savePath);
+					savePath += L"\\";
+					savePath += EPG_AUTO_ADD_TEXT_NAME;
+
+					sys->epgAutoAdd.SaveText(savePath.c_str());
+
+					sys->AutoAddReserveEPG();
+
+					htmlManager.GetChgAutoEpgPage(sendParam);
+				}
+			}
+			else if(url.find("/autoaddepgdelkey.html") == 0 ){
+				string id = "";
+				string preset = "";
+				Separate(url, "id=", url, id);
+				int dataID = atoi(id.c_str());
+
+				sys->epgAutoAdd.DelData(dataID);
+
+				wstring savePath = L"";
+				GetSettingPath(savePath);
+				savePath += L"\\";
+				savePath += EPG_AUTO_ADD_TEXT_NAME;
+
+				sys->epgAutoAdd.SaveText(savePath.c_str());
+
+				htmlManager.GetDelAutoEpgPage(sendParam);
+
+				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
 			}
 		}
 	}
