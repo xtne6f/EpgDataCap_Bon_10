@@ -501,10 +501,12 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	Format(strScrambles, "%I64d", info->recFileInfo.scrambles);
 	WtoA(info->recFileInfo.comment, strResult);
 
-	strTitleF = strTitle;
-	strTitle2F = strTitle2;
 	CheckFileName(strTitleF);
-	CheckFileName(strTitle2F);
+	CheckFileName(strTemp);
+	WtoA(strTemp, strTitle2F);
+	strTemp = info->recFileInfo.title;
+	CheckFileName(strTemp);
+	WtoA(strTemp, strTitleF);
 
 	if( info->reserveInfo.comment.find(L"EPG自動予約(") != string::npos ){
 		WtoA(info->reserveInfo.comment, strAddKey);

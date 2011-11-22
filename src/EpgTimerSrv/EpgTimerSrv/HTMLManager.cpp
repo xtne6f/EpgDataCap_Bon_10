@@ -438,11 +438,6 @@ void CHTMLManager::CreateSearchSetForm(EPGDB_SEARCH_KEY_INFO* setData, CParseChT
 		htmlText+=buff;
 	}
 	htmlText+="</select><BR>\r\n";
-	if( setData->notContetFlag == 0 ){
-		htmlText+="<input type=checkbox name=\"notContetFlag\" value=\"1\">NOT扱い\r\n";
-	}else{
-		htmlText+="<input type=checkbox name=\"notContetFlag\" value=\"1\" checked>NOT扱い\r\n";
-	}
 	htmlText+="<BR><BR>\r\n";
 
 	string time;
