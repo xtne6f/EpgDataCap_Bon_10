@@ -690,7 +690,7 @@ BOOL CHTMLManager::GetReserveInfoPage(RESERVE_DATA* reserveData, wstring eventTe
 		//プリセット
 		Format(buff, "<form method=\"POST\" action=\"reserveinfo.html?id=%d\">\r\n", reserveData->reserveID);
 		html+=buff;
-		html+="プリセット:\r\n<select name=\"preset\">\r\n";
+		html+="プリセット:\r\n<select name=\"presetID\">\r\n";
 		html+="<option value=\"0\">デフォルト\r\n";
 
 		wstring iniPath = L"";
@@ -2351,16 +2351,16 @@ BOOL CHTMLManager::GetEpgInfoPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* r
 		evid = (WORD)atoi(itr->second.c_str());
 	}
 	WORD preset = 0;
-	itr = paramMap.find("preset");
+	itr = paramMap.find("presetID");
 	if( itr != paramMap.end() ){
 		preset = (WORD)atoi(itr->second.c_str());
 	}
 
 	RESERVE_DATA* reserveInfo = NULL;
 	for( size_t i=0; i<(*reserveList).size(); i++ ){
-		if( (*reserveList)[i]->originalNetworkID == onid,
-			(*reserveList)[i]->transportStreamID == tsid, 
-			(*reserveList)[i]->serviceID == sid,
+		if( (*reserveList)[i]->originalNetworkID == onid &&
+			(*reserveList)[i]->transportStreamID == tsid && 
+			(*reserveList)[i]->serviceID == sid &&
 			(*reserveList)[i]->eventID == evid
 			){
 				reserveInfo = (*reserveList)[i];
@@ -2398,7 +2398,7 @@ BOOL CHTMLManager::GetEpgInfoPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* r
 	html+=buff;
 	Format(buff, "<input type=hidden name=\"evid\" value=\"%d\">\r\n", evid);
 	html+=buff;
-	html+="プリセット:\r\n<select name=\"preset\">\r\n";
+	html+="プリセット:\r\n<select name=\"presetID\">\r\n";
 	html+="<option value=\"0\">デフォルト\r\n";
 
 	wstring iniPath = L"";
@@ -2786,7 +2786,7 @@ BOOL CHTMLManager::CreateHourTable(vector<EPGDB_EVENT_INFO*>* eventList, map<LON
 			);
 		itrReserve = reserveMap->find(key);
 		if( itrReserve != reserveMap->end() ){
-			Format(buff,"<tr><td valign=\"top\" height=\"%dpx\" width=\"148px\" bgcolor=#%s><font size=\"2\"><DIV style=\"height:%dpx; overflow:auto;\"><font color=#FF8000><B>予</B></font> %02d <a href=\"epginfo.html?onid=%d&tsid=%d&sid=%d&evid=%d&preset=65535\">%s</a></DIV></font></td></tr>\r\n",
+			Format(buff,"<tr><td valign=\"top\" height=\"%dpx\" width=\"148px\" bgcolor=#%s><font size=\"2\"><DIV style=\"height:%dpx; overflow:auto;\"><font color=#FF8000><B>予</B></font> %02d <a href=\"epginfo.html?onid=%d&tsid=%d&sid=%d&evid=%d&presetID=65535\">%s</a></DIV></font></td></tr>\r\n",
 				height,
 				color.c_str(),
 				height,
@@ -2798,7 +2798,7 @@ BOOL CHTMLManager::CreateHourTable(vector<EPGDB_EVENT_INFO*>* eventList, map<LON
 				title.c_str()
 				);
 		}else{
-			Format(buff,"<tr><td valign=\"top\" height=\"%dpx\" width=\"148px\" bgcolor=#%s><font size=\"2\"><DIV style=\"height:%dpx; overflow:auto;\">%02d <a href=\"epginfo.html?onid=%d&tsid=%d&sid=%d&evid=%d&preset=0\">%s</a></DIV></font></td></tr>\r\n",
+			Format(buff,"<tr><td valign=\"top\" height=\"%dpx\" width=\"148px\" bgcolor=#%s><font size=\"2\"><DIV style=\"height:%dpx; overflow:auto;\">%02d <a href=\"epginfo.html?onid=%d&tsid=%d&sid=%d&evid=%d&presetID=0\">%s</a></DIV></font></td></tr>\r\n",
 				height,
 				color.c_str(),
 				height,
@@ -2978,7 +2978,7 @@ BOOL CHTMLManager::GetAddProgramReservePage(CEpgDBManager* epgDB, vector<TUNER_R
 	}
 	map<string,string>::iterator itr;
 	WORD preset = 0;
-	itr = paramMap.find("preset");
+	itr = paramMap.find("presetID");
 	if( itr != paramMap.end() ){
 		preset = (WORD)atoi(itr->second.c_str());
 	}
@@ -3128,7 +3128,7 @@ BOOL CHTMLManager::GetAddProgramReservePage(CEpgDBManager* epgDB, vector<TUNER_R
 	//プリセット
 	Format(buff, "<form method=\"POST\" action=\"addprogres.html\">\r\n");
 	html+=buff;
-	html+="プリセット:\r\n<select name=\"preset\">\r\n";
+	html+="プリセット:\r\n<select name=\"presetID\">\r\n";
 	html+="<option value=\"0\">デフォルト\r\n";
 
 	wstring iniPath = L"";
@@ -3626,7 +3626,7 @@ BOOL CHTMLManager::GetAddAutoEpgPage(EPG_AUTO_ADD_DATA* val, string param, vecto
 	}
 	multimap<string,string>::iterator itr;
 	WORD preset = 0;
-	itr = paramMap.find("preset");
+	itr = paramMap.find("presetID");
 	if( itr != paramMap.end() ){
 		preset = (WORD)atoi(itr->second.c_str());
 	}
@@ -3803,7 +3803,7 @@ BOOL CHTMLManager::GetAddAutoEpgPage(EPG_AUTO_ADD_DATA* val, string param, vecto
 	//プリセット
 	Format(buff, "<form method=\"POST\" action=\"autoaddepgadd.html\">\r\n");
 	html+=buff;
-	html+="プリセット:\r\n<select name=\"preset\">\r\n";
+	html+="プリセット:\r\n<select name=\"presetID\">\r\n";
 	html+="<option value=\"0\">デフォルト\r\n";
 
 	wstring iniPath = L"";
@@ -3893,7 +3893,7 @@ BOOL CHTMLManager::GetAutoEpgParam(EPG_AUTO_ADD_DATA* val, HTTP_STREAM* recvPara
 	}
 	multimap<string,string>::iterator itr;
 	WORD preset = 0;
-	itr = paramMap.find("preset");
+	itr = paramMap.find("presetID");
 	if( itr != paramMap.end() ){
 		preset = (WORD)atoi(itr->second.c_str());
 	}
@@ -4210,7 +4210,7 @@ BOOL CHTMLManager::GetChgAutoEpgPage(EPG_AUTO_ADD_DATA* val, string param, vecto
 	}
 	multimap<string,string>::iterator itr;
 	WORD preset = 0;
-	itr = paramMap.find("preset");
+	itr = paramMap.find("presetID");
 	if( itr != paramMap.end() ){
 		preset = (WORD)atoi(itr->second.c_str());
 	}
@@ -4392,7 +4392,7 @@ BOOL CHTMLManager::GetChgAutoEpgPage(EPG_AUTO_ADD_DATA* val, string param, vecto
 	//プリセット
 	Format(buff, "<form method=\"POST\" action=\"autoaddepginfo.html?id=%d\">\r\n", val->dataID);
 	html+=buff;
-	html+="プリセット:\r\n<select name=\"preset\">\r\n";
+	html+="プリセット:\r\n<select name=\"presetID\">\r\n";
 	html+="<option value=\"0\">デフォルト\r\n";
 
 	wstring iniPath = L"";

@@ -43,7 +43,8 @@ public:
 	//引数：
 	// index			[IN]EnumBonDriverで取得されたBonDriverのインデックス値
 	DWORD OpenBonDriver(
-		int index
+		int index,
+		int openWait = 200
 		);
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
@@ -52,7 +53,8 @@ public:
 	//引数：
 	// bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
 	DWORD OpenBonDriver(
-		LPCWSTR bonDriverFile
+		LPCWSTR bonDriverFile,
+		int openWait = 200
 		);
 
 	//ロードしているBonDriverの開放
@@ -181,7 +183,8 @@ protected:
 	//引数：
 	// bonDriverFilePath		[IN] ロードするBonDriverのファイルパス
 	DWORD _OpenBonDriver(
-		LPCWSTR bonDriverFilePath
+		LPCWSTR bonDriverFilePath,
+		int openWait
 		);
 
 	//ロードしているBonDriverの開放の本体

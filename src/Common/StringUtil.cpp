@@ -367,3 +367,39 @@ BOOL UrlDecode(LPCWSTR src, DWORD srcSize, wstring& dest)
 
 	return TRUE;
 }
+
+void Trim(string& strBuff)
+{
+	while(1){
+		int iPos = (int)strBuff.find(" ");
+		if( iPos != 0 ){
+			break;
+		}
+		strBuff.erase(0, 1);
+	}
+	while(1){
+		int iPos = (int)strBuff.rfind(" ");
+		if( iPos != strBuff.size()-1 && iPos >= 0){
+			break;
+		}
+		strBuff.erase(iPos, 1);
+	}
+}
+
+void Trim(wstring& strBuff)
+{
+	while(1){
+		int iPos = (int)strBuff.find(L" ");
+		if( iPos != 0 ){
+			break;
+		}
+		strBuff.erase(0, 1);
+	}
+	while(1){
+		int iPos = (int)strBuff.rfind(L" ");
+		if( iPos != strBuff.size()-1 || iPos < 0){
+			break;
+		}
+		strBuff.erase(iPos, 1);
+	}
+}

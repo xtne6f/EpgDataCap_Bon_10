@@ -283,11 +283,13 @@ BOOL CSyoboiCalUtil::SendReserve(vector<RESERVE_DATA*>* reserveList, vector<TUNE
 	Format(data, "slot=%d&data=%s",slot, utf8.c_str());
 
 	if( devcolors.size() > 0){
+		utf8 = "";
 		UrlEncodeUTF8(devcolors.c_str(), (DWORD)devcolors.size(), utf8);
 		data += "&devcolors=";
 		data += utf8;
 	}
 	if( epgurl.size() > 0){
+		utf8 = "";
 		UrlEncodeUTF8(epgurl.c_str(), (DWORD)epgurl.size(), utf8);
 		data += "&epgurl=";
 		data += utf8;

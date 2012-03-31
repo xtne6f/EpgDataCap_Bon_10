@@ -39,4 +39,8 @@ BOOL UrlDecode(LPCSTR src, DWORD srcSize, string& dest);
 
 BOOL UrlDecode(LPCWSTR src, DWORD srcSize, wstring& dest);
 
+void Trim(string& strBuff);
+
+void Trim(wstring& strBuff);
+
 #endif

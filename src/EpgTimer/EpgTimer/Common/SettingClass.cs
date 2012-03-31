@@ -1097,7 +1097,34 @@ namespace EpgTimer
             {
                 if (ex.GetBaseException().GetType() != typeof(System.IO.FileNotFoundException))
                 {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    string backPath = path + ".back";
+                    if (System.IO.File.Exists(backPath) == true)
+                    {
+                        if (MessageBox.Show("設定ファイルが異常な可能性があります。\r\nバックアップファイルから読み込みますか？", "", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                        {
+                            try
+                            {
+                                FileStream fs = new FileStream(backPath,
+                                    FileMode.Open,
+                                    FileAccess.Read, FileShare.None);
+                                System.Xml.Serialization.XmlSerializer xs =
+                                    new System.Xml.Serialization.XmlSerializer(
+                                        typeof(Settings));
+                                //読み込んで逆シリアル化する
+                                object obj = xs.Deserialize(fs);
+                                fs.Close();
+                                Instance = (Settings)obj;
+                            }
+                            catch (Exception ex2)
+                            {
+                                MessageBox.Show(ex2.Message + "\r\n" + ex2.StackTrace);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    }
                 }
             }
             finally
@@ -1214,7 +1241,34 @@ namespace EpgTimer
             {
                 if (ex.GetBaseException().GetType() != typeof(System.IO.FileNotFoundException))
                 {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    string backPath = path + ".back";
+                    if (System.IO.File.Exists(backPath) == true)
+                    {
+                        if (MessageBox.Show("設定ファイルが異常な可能性があります。\r\nバックアップファイルから読み込みますか？", "", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                        {
+                            try
+                            {
+                                FileStream fs = new FileStream(backPath,
+                                    FileMode.Open,
+                                    FileAccess.Read, FileShare.None);
+                                System.Xml.Serialization.XmlSerializer xs =
+                                    new System.Xml.Serialization.XmlSerializer(
+                                        typeof(Settings));
+                                //読み込んで逆シリアル化する
+                                object obj = xs.Deserialize(fs);
+                                fs.Close();
+                                Instance = (Settings)obj;
+                            }
+                            catch (Exception ex2)
+                            {
+                                MessageBox.Show(ex2.Message + "\r\n" + ex2.StackTrace);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    }
                 }
             }
             finally
@@ -1300,6 +1354,7 @@ namespace EpgTimer
                     Instance.autoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
                     Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
                 }
+                Instance.nwTvMode = true;
             }
         }
 
@@ -1312,8 +1367,14 @@ namespace EpgTimer
                 {
                     path = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
                     path += "\\EpgTimer.exe.xml";
-                } 
-                
+                }
+
+                if (System.IO.File.Exists(path) == true)
+                {
+                    string backPath = path + ".back";
+                    System.IO.File.Copy(path, backPath, true);
+                }
+
                 FileStream fs = new FileStream(path,
                     FileMode.Create,
                     FileAccess.Write, FileShare.None);

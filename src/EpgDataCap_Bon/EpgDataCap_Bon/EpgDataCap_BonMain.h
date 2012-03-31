@@ -288,6 +288,8 @@ protected:
 	BOOL CS1Basic;
 	BOOL CS2Basic;
 
+	int openWait;
+
 	wstring viewPath;
 	wstring viewOpt;
 

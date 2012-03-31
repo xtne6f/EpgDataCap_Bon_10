@@ -33,7 +33,7 @@ namespace EpgTimer.Setting
             {
                 textBox_exe.Text = Settings.Instance.TvTestExe;
                 textBox_cmd.Text = Settings.Instance.TvTestCmd;
-                checkBox_nwTvMode.IsChecked = Settings.Instance.NwTvMode;
+                checkBox_nwTvMode.IsChecked = true;
                 checkBox_nwUDP.IsChecked = Settings.Instance.NwTvModeUDP;
                 checkBox_nwTCP.IsChecked = Settings.Instance.NwTvModeTCP;
 

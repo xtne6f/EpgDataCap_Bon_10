@@ -161,7 +161,8 @@ DWORD CBonDriverUtil::EnumBonDriver(
 //引数：
 // index			[IN]EnumBonDriverで取得されたBonDriverのインデックス値
 DWORD CBonDriverUtil::OpenBonDriver(
-	int index
+	int index,
+	int openWait
 )
 {
 	if( Lock() == FALSE ) return ERR_OPEN_TUNER;
@@ -170,7 +171,7 @@ DWORD CBonDriverUtil::OpenBonDriver(
 	map<int, BON_DRIVER_INFO>::iterator itrF;
 	itrF = this->bonDllMap.find(index);
 	if( itrF != this->bonDllMap.end() ){
-		err = _OpenBonDriver(itrF->second.filePath.c_str());
+		err = _OpenBonDriver(itrF->second.filePath.c_str(), openWait);
 		if( err == NO_ERR ){
 			this->loadIndex = index;
 		}
@@ -189,7 +190,8 @@ DWORD CBonDriverUtil::OpenBonDriver(
 //引数：
 // bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
 DWORD CBonDriverUtil::OpenBonDriver(
-	LPCWSTR bonDriverFile
+	LPCWSTR bonDriverFile,
+	int openWait
 	)
 {
 	if( Lock() == FALSE ) return ERR_OPEN_TUNER;
@@ -197,7 +199,7 @@ DWORD CBonDriverUtil::OpenBonDriver(
 	map<int, BON_DRIVER_INFO>::iterator itrF;
 	for( itrF = this->bonDllMap.begin(); itrF != this->bonDllMap.end(); itrF++ ){
 		if( CompareNoCase(bonDriverFile, itrF->second.fileName) == 0 ){
-			err = _OpenBonDriver(itrF->second.filePath.c_str());
+			err = _OpenBonDriver(itrF->second.filePath.c_str(), openWait);
 			if( err == NO_ERR ){
 				this->loadIndex = itrF->first;
 			}
@@ -219,7 +221,8 @@ DWORD CBonDriverUtil::OpenBonDriver(
 //引数：
 // bonDriverFilePath		[IN] ロードするBonDriverのファイルパス
 DWORD CBonDriverUtil::_OpenBonDriver(
-	LPCWSTR bonDriverFilePath
+	LPCWSTR bonDriverFilePath,
+	int openWait
 	)
 {
 	DWORD err = ERR_OPEN_TUNER;
@@ -296,7 +299,7 @@ DWORD CBonDriverUtil::_OpenBonDriver(
 				}
 				countSpace++;
 			}
-
+			Sleep(openWait);
 			this->initChSetFlag = FALSE;
 			err = NO_ERR;
 		}

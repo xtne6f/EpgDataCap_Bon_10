@@ -30,6 +30,7 @@ CEpgTimerSrvMain::CEpgTimerSrvMain(void)
 	this->pipeServer = NULL;
 	this->tcpServer = NULL;
 	this->httpServer = NULL;
+	this->tcpSrvUtil = NULL;
 
 	this->enableTCPSrv = FALSE;
 	this->tcpPort = 4510;
@@ -278,7 +279,12 @@ void CEpgTimerSrvMain::ReloadSetting()
 			this->httpServer->StartServer(this->httpPort, HttpCallback, this, 0, GetCurrentProcessId());
 		}
 	}
-
+	/*
+	if( this->tcpSrvUtil == NULL ){
+		this->tcpSrvUtil = new CTCPServerUtil;
+		this->tcpSrvUtil->StartServer(8081, TcpAcceptCallback, this);
+	}
+	*/
 
 	this->wakeMargin = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath.c_str());
 	this->autoAddDays = GetPrivateProfileInt(L"SET", L"AutoAddDays", 8, iniPath.c_str());
@@ -2934,3 +2940,112 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 	return 0;
 }
 
+#define HTTP_HEADER_READ_BUFF (64*1024)
+int CALLBACK CEpgTimerSrvMain::TcpAcceptCallback(void* param, SOCKET clientSock, HANDLE stopEvent)
+{
+	CEpgTimerSrvMain* sys = (CEpgTimerSrvMain*)param;
+
+	fd_set ready;
+	struct timeval to;
+
+	int result = 0;
+	char* httpHead = new char[HTTP_HEADER_READ_BUFF+1];
+	ZeroMemory(httpHead, HTTP_HEADER_READ_BUFF+1);
+	int httpHeadReadPos = 0;
+	BOOL readHead = FALSE;
+	int timeoutCount = 0;
+
+	string strHttpHead = "";
+	string strRequestLine = "";
+	string strBuff1 = "";
+	string strBuff2 = "";
+	string method = "";
+	string uri = "";
+	string httpVersion = "";
+	map<string, string> headerList;
+
+	//HTTPリクエストヘッダの読み込み
+	while(httpHeadReadPos<HTTP_HEADER_READ_BUFF || timeoutCount<30){
+		if( WaitForSingleObject( stopEvent, 0 ) != WAIT_TIMEOUT ){
+			//中止
+			break;
+		}
+
+		to.tv_sec = 1;
+		to.tv_usec = 0;
+		FD_ZERO(&ready);
+		FD_SET(clientSock, &ready);
+
+		result = select(clientSock+1, &ready, NULL, NULL, &to );
+		if( result == SOCKET_ERROR ){
+			goto Err_End;
+		}
+		if ( FD_ISSET(clientSock, &ready) ){
+			result = recv(clientSock, httpHead+httpHeadReadPos, 1, 0);
+			if( result == SOCKET_ERROR ){
+				goto Err_End;
+			}else if( result == 0 ){
+				goto Err_End;
+			}
+			if(httpHead[httpHeadReadPos] == '\n' && httpHeadReadPos>3){
+				if( httpHead[httpHeadReadPos-3] == '\r' &&
+					httpHead[httpHeadReadPos-2] == '\n' &&
+					httpHead[httpHeadReadPos-1] == '\r' &&
+					httpHead[httpHeadReadPos] == '\n' ){
+						readHead = TRUE;
+						break;
+				}
+			}
+			httpHeadReadPos++;
+			timeoutCount = 0;
+		}else{
+			timeoutCount++;
+		}
+	}
+	if( readHead == FALSE ){
+		//HTTP通信じゃない可能性あり
+		goto Err_End;
+	}
+
+	//ヘッダの解析
+	strHttpHead = httpHead;
+
+	Separate(strHttpHead, "\r\n", strRequestLine, strBuff1);
+
+	Separate(strRequestLine, " ", method, strBuff2);
+	Separate(strBuff2, " ", uri, httpVersion);
+
+	while(strBuff1.size() > 0 ){
+		Separate(strBuff1, "\r\n", strBuff2, strBuff1);
+
+		string name = "";
+		string val = "";
+		Separate(strBuff2, ":", name, val);
+		Trim(name);
+		Trim(val);
+		if( name.size() > 0 ){
+			headerList.insert(pair<string, string>(name, val));
+		}
+	}
+
+	//各処理に振り分け
+	if(uri.find("/api/") == 0 ){
+	}
+	else
+	if(uri.find("/file/") == 0 ){
+	}
+	else
+	if(uri.find("/recfile/") == 0 ){
+	}
+	else
+	if(uri.find("/upnp/") == 0 ){
+	}
+
+Err_End:
+	if( httpHead != NULL ){
+		int a=strlen(httpHead);
+		SAFE_DELETE_ARRAY(httpHead);
+	}
+
+	return 0;
+}

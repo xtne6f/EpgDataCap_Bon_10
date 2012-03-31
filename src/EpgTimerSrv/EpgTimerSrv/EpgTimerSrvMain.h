@@ -11,6 +11,7 @@
 #include "../../Common/PipeServer.h"
 #include "../../Common/TCPServer.h"
 #include "../../Common/HttpServer.h"
+#include "../../Common/TCPServerUtil.h"
 
 class CEpgTimerSrvMain
 {
@@ -53,6 +54,7 @@ protected:
 	CPipeServer* pipeServer;
 	CTCPServer* tcpServer;
 	CHttpServer* httpServer;
+	CTCPServerUtil* tcpSrvUtil;
 
 	HANDLE stopEvent;
 
@@ -105,5 +107,6 @@ protected:
 	//外部制御コマンド関係
 	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
 	static int CALLBACK HttpCallback(void* param, HTTP_STREAM* recvParam, HTTP_STREAM* sendParam);
+	static int CALLBACK TcpAcceptCallback(void* param, SOCKET clientSock, HANDLE stopEvent);
 };
 

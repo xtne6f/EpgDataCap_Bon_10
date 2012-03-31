@@ -348,3 +348,11 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこと�
 　BonCtrl.iniのCHSCANにChChgTimeOutとServiceChkTimeOutを追加すること設定可能。
 　　ChChgTimeOut：有効なTSデータが流れてくるまでのチェック秒数（デフォルト:9）
 　　ServiceChkTimeOut：サービスの一覧を確認できるまでのチェック秒数（デフォルト:8）
+
+■BonDriverオープン後にwaitを入れる■
+　BonDriverオープン後にwaitを入れます。
+　BonDriverオープン後にすぐにチャンネル切換処理をすると、正常に切り替わらない
+　場合のある環境で試してみてください。
+　EpgDataCap_Bon.iniのSETにOpenWaitを追加すること設定可能。
+　　OpenWait：10進数でmsec（デフォルト：200）
+

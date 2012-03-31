@@ -37,6 +37,8 @@ CEpgDataCap_BonMain::CEpgDataCap_BonMain(void)
 
 	this->currentBonDriver = L"";
 	this->outCtrlID = -1;
+
+	this->openWait = 200;
 }
 
 
@@ -128,6 +130,8 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	DWORD tsBuffMaxCount = (DWORD)GetPrivateProfileInt( L"SET", L"TsBuffMaxCount", 5000, appIniPath.c_str() );
 	int writeBuffMaxCount = GetPrivateProfileInt( L"SET", L"WriteBuffMaxCount", -1, appIniPath.c_str() );
 	this->bonCtrl.SetTsBuffMaxCount(tsBuffMaxCount, writeBuffMaxCount);
+
+	this->openWait = (DWORD)GetPrivateProfileInt( L"SET", L"OpenWait", 200, appIniPath.c_str() );
 }
 
 //BonDriverフォルダのBonDriver_*.dllを列挙
@@ -151,7 +155,7 @@ DWORD CEpgDataCap_BonMain::OpenBonDriver(
 	LPCWSTR bonDriverFile
 )
 {
-	DWORD ret = this->bonCtrl.OpenBonDriver(bonDriverFile);
+	DWORD ret = this->bonCtrl.OpenBonDriver(bonDriverFile, this->openWait);
 	if( ret == NO_ERR ){
 		this->lastONID = 0xFFFF;
 		this->lastTSID = 0xFFFF;

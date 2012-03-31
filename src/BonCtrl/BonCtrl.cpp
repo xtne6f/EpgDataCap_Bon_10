@@ -221,12 +221,13 @@ DWORD CBonCtrl::EnumBonDriver(
 //引数：
 // iIndex			[IN]EnumBonDriverで取得されたBonDriverのインデックス値
 DWORD CBonCtrl::OpenBonDriver(
-	int index
+	int index,
+	int openWait
 )
 {
 	if( Lock(L"OpenBonDriver") == FALSE ) return ERR_FALSE;
 	_CloseBonDriver();
-	DWORD ret = this->bonUtil.OpenBonDriver(index);
+	DWORD ret = this->bonUtil.OpenBonDriver(index, openWait);
 	if( ret == NO_ERR ){
 		ret = _OpenBonDriver();
 		this->tsOut.ResetChChange();
@@ -249,12 +250,13 @@ DWORD CBonCtrl::OpenBonDriver(
 //引数：
 // bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
 DWORD CBonCtrl::OpenBonDriver(
-	LPCWSTR bonDriverFile
+	LPCWSTR bonDriverFile,
+	int openWait
 )
 {
 	if( Lock(L"OpenBonDriver-2") == FALSE ) return ERR_FALSE;
 	_CloseBonDriver();
-	DWORD ret = this->bonUtil.OpenBonDriver(bonDriverFile);
+	DWORD ret = this->bonUtil.OpenBonDriver(bonDriverFile, openWait);
 	if( ret == NO_ERR ){
 		ret = _OpenBonDriver();
 		this->tsOut.ResetChChange();
