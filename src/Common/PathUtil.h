@@ -25,6 +25,8 @@ void GetFileTitle(wstring strPath, wstring& strTitle);
 
 void GetFileName(wstring strPath, wstring& strName);
 
+void GetFileExt(wstring strPath, wstring& strExt);
+
 void GetFileFolder(wstring strPath, wstring& strFolder);
 
 BOOL IsExt(wstring filePath, wstring ext);

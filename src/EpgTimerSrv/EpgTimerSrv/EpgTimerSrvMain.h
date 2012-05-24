@@ -13,6 +13,8 @@
 #include "../../Common/HttpServer.h"
 #include "../../Common/TCPServerUtil.h"
 
+#include "DLNAManager.h"
+
 class CEpgTimerSrvMain
 {
 public:
@@ -56,6 +58,8 @@ protected:
 	CHttpServer* httpServer;
 	CTCPServerUtil* tcpSrvUtil;
 
+	CDLNAManager* dlnaManager;
+
 	HANDLE stopEvent;
 
 	BOOL reloadEpgChkFlag;
@@ -82,6 +86,10 @@ protected:
 	BOOL ngEpgFileSrvCoop;
 	BOOL enableHttpSrv;
 	DWORD httpPort;
+	BOOL enableDMS;
+
+	BOOL enableHttpPublic;
+	wstring httpPublicFolder;
 
 	BOOL awayMode;
 
@@ -104,9 +112,13 @@ protected:
 
 	void ReloadSetting();
 
+	void AddRecFileDMS();
+
 	//外部制御コマンド関係
 	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
 	static int CALLBACK HttpCallback(void* param, HTTP_STREAM* recvParam, HTTP_STREAM* sendParam);
-	static int CALLBACK TcpAcceptCallback(void* param, SOCKET clientSock, HANDLE stopEvent);
+	static int CALLBACK TcpAcceptCallback(void* param, SOCKET clientSock, struct sockaddr_in* client, HANDLE stopEvent);
+
+
 };
 

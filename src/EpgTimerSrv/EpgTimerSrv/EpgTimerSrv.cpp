@@ -49,6 +49,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			if( err != ERROR_ALREADY_EXISTS ) {
 				//起動
 				StartMain(FALSE);
+			}else{
+				// 起動されているので予約追加の確認
+				CSendCtrlCmd cmd;
+				cmd.SetConnectTimeOut(1000);
+				cmd.SendAddloadReserve();
 			}
 			::ReleaseMutex(g_hMutex);
 			::CloseHandle(g_hMutex);

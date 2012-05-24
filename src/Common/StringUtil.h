@@ -43,4 +43,10 @@ void Trim(string& strBuff);
 
 void Trim(wstring& strBuff);
 
+string Tolower(string src);
+
+wstring Tolower(wstring src);
+
+void EscapeXmlString(wstring& src);
+
 #endif

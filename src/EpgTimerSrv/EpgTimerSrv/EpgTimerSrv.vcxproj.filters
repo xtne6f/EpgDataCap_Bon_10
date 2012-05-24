@@ -25,6 +25,12 @@
     <Filter Include="ヘッダー ファイル\BonCtrl">
       <UniqueIdentifier>{cce20c92-24e6-47aa-9ccb-3dbb4c749986}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\UPnPCtrl">
+      <UniqueIdentifier>{235f2aa2-a38e-42b5-b427-6167e37a6f1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\UPnPCtrl">
+      <UniqueIdentifier>{5b968ac7-23f3-49ff-af07-8514fa958e20}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -243,6 +249,63 @@
     <ClInclude Include="HttpRecFileSend.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="HttpFileSend.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\ParseContentTypeText.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="DLNAManager.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\UPnPCtrl\CharUtil.h">
+      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\UPnPCtrl\UpnpStructDef.h">
+      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\UPnPCtrl\HttpUtil.h">
+      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\UPnPCtrl\MPInclude.h">
+      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\UPnPCtrl\NICUtil.h">
+      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\UPnPCtrl\SortListUtil.h">
+      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\UPnPCtrl\ThreadUtil.h">
+      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\UPnPCtrl\UpnpSsdpUtil.h">
+      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\UPnPCtrl\UpnpUtil.h">
+      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="DLNADmsManager.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="SOAPUtil.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpRequestReader.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="DLNAParseProtocolInfo.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="DLNADmsContentDB.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\LockUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="DLNAParsePublicFolder.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -417,6 +480,60 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="HttpRecFileSend.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpFileSend.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\ParseContentTypeText.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="DLNAManager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\UPnPCtrl\CharUtil.cpp">
+      <Filter>ソース ファイル\UPnPCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\UPnPCtrl\HttpUtil.cpp">
+      <Filter>ソース ファイル\UPnPCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\UPnPCtrl\NICUtil.cpp">
+      <Filter>ソース ファイル\UPnPCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\UPnPCtrl\SortListUtil.cpp">
+      <Filter>ソース ファイル\UPnPCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\UPnPCtrl\ThreadUtil.cpp">
+      <Filter>ソース ファイル\UPnPCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\UPnPCtrl\UpnpSsdpUtil.cpp">
+      <Filter>ソース ファイル\UPnPCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\UPnPCtrl\UpnpStructDef.cpp">
+      <Filter>ソース ファイル\UPnPCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\UPnPCtrl\UpnpUtil.cpp">
+      <Filter>ソース ファイル\UPnPCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="DLNADmsManager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="SOAPUtil.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpRequestReader.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="DLNAParseProtocolInfo.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="DLNADmsContentDB.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\LockUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="DLNAParsePublicFolder.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

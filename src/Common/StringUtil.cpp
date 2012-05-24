@@ -379,7 +379,7 @@ void Trim(string& strBuff)
 	}
 	while(1){
 		int iPos = (int)strBuff.rfind(" ");
-		if( iPos != strBuff.size()-1 && iPos >= 0){
+		if( iPos != strBuff.size()-1 || iPos < 0){
 			break;
 		}
 		strBuff.erase(iPos, 1);
@@ -402,4 +402,51 @@ void Trim(wstring& strBuff)
 		}
 		strBuff.erase(iPos, 1);
 	}
+}
+
+string Tolower(string src)
+{
+	DWORD dwSize1 = (DWORD)src.length()+1;
+
+	char* szBuff1 = new char[dwSize1];
+
+	ZeroMemory(szBuff1, sizeof(char)*dwSize1);
+
+	strcpy_s(szBuff1, dwSize1, src.c_str());
+
+	_strlwr_s(szBuff1, dwSize1);
+
+	string strBuff1 = szBuff1;
+
+	delete[] szBuff1;
+
+	return strBuff1;
+}
+
+wstring Tolower(wstring src)
+{
+	DWORD dwSize1 = (DWORD)src.length()+1;
+
+	WCHAR* szBuff1 = new WCHAR[dwSize1];
+
+	ZeroMemory(szBuff1, sizeof(WCHAR)*dwSize1);
+
+	wcscpy_s(szBuff1, dwSize1, src.c_str());
+
+	_wcslwr_s(szBuff1, dwSize1);
+
+	wstring strBuff1 = szBuff1;
+
+	delete[] szBuff1;
+
+	return strBuff1;
+}
+
+void EscapeXmlString(wstring& src)
+{
+	Replace(src, L"&", L"&amp;");
+	Replace(src, L"<", L"&lt;");
+	Replace(src, L">", L"&gt;");
+	Replace(src, L"\"", L"&quot;");
+	Replace(src, L"'", L"&apos;");
 }

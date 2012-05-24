@@ -208,6 +208,8 @@ public:
 	//6日以内の録画結果に同じ番組名あるかチェックする
 	BOOL IsFindRecEventInfo(EPGDB_EVENT_INFO* info, WORD chkDay);
 	void ChgAutoAddNoRec(EPGDB_EVENT_INFO* info);
+
+	BOOL IsRecInfoChg();
 protected:
 	HANDLE lockEvent;
 
@@ -335,6 +337,8 @@ protected:
 	int reloadBankMapAlgo;
 	BOOL useRecNamePlugIn;
 	wstring recNamePlugInFilePath;
+
+	BOOL chgRecInfo;
 protected:
 	//PublicAPI排他制御用
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);

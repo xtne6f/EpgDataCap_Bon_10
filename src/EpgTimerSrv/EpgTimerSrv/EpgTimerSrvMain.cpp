@@ -9,6 +9,10 @@
 #include "../../Common/CtrlCmdUtil2.h"
 #include "../../Common/StringUtil.h"
 
+#include "HttpPublicFileSend.h"
+#include "HttpRecFileSend.h"
+#include "HttpRequestReader.h"
+
 #include "SyoboiCalUtil.h"
 
 #include <process.h>
@@ -32,6 +36,8 @@ CEpgTimerSrvMain::CEpgTimerSrvMain(void)
 	this->httpServer = NULL;
 	this->tcpSrvUtil = NULL;
 
+	this->dlnaManager = NULL;
+
 	this->enableTCPSrv = FALSE;
 	this->tcpPort = 4510;
 	this->autoAddDays = 8;
@@ -41,6 +47,9 @@ CEpgTimerSrvMain::CEpgTimerSrvMain(void)
 	this->ngEpgFileSrvCoop = FALSE;
 
 	this->awayMode = FALSE;
+
+	this->httpPublicFolder = L"";
+	this->enableHttpPublic = FALSE;
 
 	OSVERSIONINFO osvi;
 	ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
@@ -73,6 +82,15 @@ CEpgTimerSrvMain::~CEpgTimerSrvMain(void)
 	if( this->pipeServer != NULL ){
 		this->pipeServer->StopServer();
 		SAFE_DELETE(this->pipeServer);
+	}
+	if( this->tcpSrvUtil != NULL ){
+		this->tcpSrvUtil->StopServer();
+		SAFE_DELETE(this->tcpSrvUtil);
+	}
+	if( this->dlnaManager != NULL ){
+		this->dlnaManager->StopDMS();
+		this->dlnaManager->StopSSDPServer();
+		SAFE_DELETE(this->dlnaManager);
 	}
 
 	if( this->lockEvent != NULL ){
@@ -217,6 +235,10 @@ void CEpgTimerSrvMain::StartMain(
 			}
 		}
 
+		if( this->reserveManager.IsRecInfoChg() == TRUE ){
+			AddRecFileDMS();
+		}
+
 		if( countChkSuspend > 10 ){
 			BOOL streamingChk = TRUE;
 			if( this->ngFileStreaming == TRUE ){
@@ -279,12 +301,34 @@ void CEpgTimerSrvMain::ReloadSetting()
 			this->httpServer->StartServer(this->httpPort, HttpCallback, this, 0, GetCurrentProcessId());
 		}
 	}
-	/*
-	if( this->tcpSrvUtil == NULL ){
-		this->tcpSrvUtil = new CTCPServerUtil;
-		this->tcpSrvUtil->StartServer(8081, TcpAcceptCallback, this);
+	
+	this->enableDMS = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath.c_str());
+	if( this->enableDMS == FALSE ){
+		if( this->tcpSrvUtil != NULL ){
+			this->tcpSrvUtil->StopServer();
+			SAFE_DELETE(this->tcpSrvUtil);
+		}
+		if( this->dlnaManager != NULL ){
+			this->dlnaManager->StopDMS();
+			this->dlnaManager->StopSSDPServer();
+			SAFE_DELETE(this->dlnaManager);
+		}
+	}else{
+		if( this->tcpSrvUtil == NULL ){
+			this->tcpSrvUtil = new CTCPServerUtil;
+			this->tcpSrvUtil->StartServer(this->httpPort+1, TcpAcceptCallback, this);
+		}
+		if( this->dlnaManager == NULL ){
+			this->dlnaManager = new CDLNAManager;
+			this->dlnaManager->StartSSDPServer(this->httpPort+1);
+			this->dlnaManager->LoadPublicFolder();
+			AddRecFileDMS();
+			this->dlnaManager->StartDMS();
+		}else{
+			this->dlnaManager->LoadPublicFolder();
+			AddRecFileDMS();
+		}
 	}
-	*/
 
 	this->wakeMargin = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath.c_str());
 	this->autoAddDays = GetPrivateProfileInt(L"SET", L"AutoAddDays", 8, iniPath.c_str());
@@ -298,6 +342,14 @@ void CEpgTimerSrvMain::ReloadSetting()
 		this->ngEpgFileSrvCoop = TRUE;
 	}
 
+	WCHAR buff[512] = L"";
+	GetPrivateProfileString( L"SET", L"HttpPublicFolder", L"", buff, 512, iniPath.c_str() );
+	this->httpPublicFolder = buff;
+	if( this->httpPublicFolder.size() == 0 ){
+		GetModuleFolderPath(this->httpPublicFolder);
+		this->httpPublicFolder += L"\\httpPublic";
+	}
+	this->enableHttpPublic = GetPrivateProfileInt(L"SET", L"EnableHttpPublic", 0, iniPath.c_str());
 }
 
 //メイン処理停止
@@ -2624,7 +2676,7 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				if( recvParam->dataSize > 0 ){
 					string param = "";
 					param.append((char*)recvParam->data, 0, recvParam->dataSize);
-					Separate(param, "preset=", param, preset);
+					Separate(param, "presetID=", param, preset);
 					presetID = atoi(preset.c_str());
 				}
 				RESERVE_DATA reserveData;
@@ -2940,112 +2992,69 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 	return 0;
 }
 
-#define HTTP_HEADER_READ_BUFF (64*1024)
-int CALLBACK CEpgTimerSrvMain::TcpAcceptCallback(void* param, SOCKET clientSock, HANDLE stopEvent)
+
+int CALLBACK CEpgTimerSrvMain::TcpAcceptCallback(void* param, SOCKET clientSock, struct sockaddr_in* client, HANDLE stopEvent)
 {
 	CEpgTimerSrvMain* sys = (CEpgTimerSrvMain*)param;
 
-	fd_set ready;
-	struct timeval to;
+	CHttpRequestReader reqReader;
 
-	int result = 0;
-	char* httpHead = new char[HTTP_HEADER_READ_BUFF+1];
-	ZeroMemory(httpHead, HTTP_HEADER_READ_BUFF+1);
-	int httpHeadReadPos = 0;
-	BOOL readHead = FALSE;
-	int timeoutCount = 0;
-
-	string strHttpHead = "";
-	string strRequestLine = "";
-	string strBuff1 = "";
-	string strBuff2 = "";
 	string method = "";
 	string uri = "";
 	string httpVersion = "";
-	map<string, string> headerList;
+	nocase::map<string, string> headerList;
 
-	//HTTPリクエストヘッダの読み込み
-	while(httpHeadReadPos<HTTP_HEADER_READ_BUFF || timeoutCount<30){
-		if( WaitForSingleObject( stopEvent, 0 ) != WAIT_TIMEOUT ){
-			//中止
-			break;
-		}
-
-		to.tv_sec = 1;
-		to.tv_usec = 0;
-		FD_ZERO(&ready);
-		FD_SET(clientSock, &ready);
-
-		result = select(clientSock+1, &ready, NULL, NULL, &to );
-		if( result == SOCKET_ERROR ){
-			goto Err_End;
-		}
-		if ( FD_ISSET(clientSock, &ready) ){
-			result = recv(clientSock, httpHead+httpHeadReadPos, 1, 0);
-			if( result == SOCKET_ERROR ){
-				goto Err_End;
-			}else if( result == 0 ){
-				goto Err_End;
-			}
-			if(httpHead[httpHeadReadPos] == '\n' && httpHeadReadPos>3){
-				if( httpHead[httpHeadReadPos-3] == '\r' &&
-					httpHead[httpHeadReadPos-2] == '\n' &&
-					httpHead[httpHeadReadPos-1] == '\r' &&
-					httpHead[httpHeadReadPos] == '\n' ){
-						readHead = TRUE;
-						break;
-				}
-			}
-			httpHeadReadPos++;
-			timeoutCount = 0;
-		}else{
-			timeoutCount++;
-		}
-	}
-	if( readHead == FALSE ){
-		//HTTP通信じゃない可能性あり
+	reqReader.SetSocket(clientSock, stopEvent);
+	if(reqReader.ReadHeader(method, uri, httpVersion, &headerList) != NO_ERR){
 		goto Err_End;
-	}
-
-	//ヘッダの解析
-	strHttpHead = httpHead;
-
-	Separate(strHttpHead, "\r\n", strRequestLine, strBuff1);
-
-	Separate(strRequestLine, " ", method, strBuff2);
-	Separate(strBuff2, " ", uri, httpVersion);
-
-	while(strBuff1.size() > 0 ){
-		Separate(strBuff1, "\r\n", strBuff2, strBuff1);
-
-		string name = "";
-		string val = "";
-		Separate(strBuff2, ":", name, val);
-		Trim(name);
-		Trim(val);
-		if( name.size() > 0 ){
-			headerList.insert(pair<string, string>(name, val));
-		}
 	}
 
 	//各処理に振り分け
 	if(uri.find("/api/") == 0 ){
 	}
 	else
-	if(uri.find("/file/") == 0 ){
+	if(uri.find("/file/") == 0 && sys->enableHttpPublic == TRUE){
+		CHttpPublicFileSend send;
+		send.SetPublicFolder(L"/file", sys->httpPublicFolder);
+		send.HttpRequest(method, uri, &headerList, clientSock, stopEvent);
 	}
 	else
 	if(uri.find("/recfile/") == 0 ){
+		vector<REC_FILE_INFO> infoList;
+		sys->reserveManager.GetRecFileInfoAll(&infoList);
+
+		CHttpRecFileSend send;
+		send.SetRootUri(L"/recfile");
+		send.SetRecInfo(&infoList);
+		send.HttpRequest(method, uri, &headerList, clientSock, stopEvent);
 	}
 	else
-	if(uri.find("/upnp/") == 0 ){
+	if(uri.find("/dlna/") == 0 && sys->dlnaManager != NULL){
+		sys->dlnaManager->HttpRequest(method, uri, &headerList, &reqReader, clientSock, stopEvent);
+	}
+	else
+	{
+		string sendHeader = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+		send(clientSock, sendHeader.c_str(), (int)sendHeader.size(), 0);
 	}
 
 Err_End:
-	if( httpHead != NULL ){
-		int a=strlen(httpHead);
-		SAFE_DELETE_ARRAY(httpHead);
-	}
 
 	return 0;
 }
+
+void CEpgTimerSrvMain::AddRecFileDMS()
+{
+	if( dlnaManager == NULL || enableDMS == FALSE ){
+		return;
+	}
+	vector<REC_FILE_INFO> list;
+	if(this->reserveManager.GetRecFileInfoAll(&list) == TRUE ){
+		for( size_t i= 0; i<list.size(); i++ ){
+			if( list[i].recFilePath.size() > 0 ){
+				dlnaManager->AddDMSRecFile(list[i].recFilePath);
+			}
+		}
+	}
+}
+

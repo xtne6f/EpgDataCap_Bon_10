@@ -1,8 +1,6 @@
 ﻿#pragma once
 
 #include "StringUtil.h"
-#include "CtrlCmdDef.h"
-#include "StructDef.h"
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -11,11 +9,12 @@
 typedef struct _TCP_ACCEPT_PARAM{
 	void* param;
 	SOCKET sock;
+	struct sockaddr_in client;
 	HANDLE stopEvent;
 	HANDLE thread;
 }TCP_ACCEPT_PARAM;
 
-typedef int (CALLBACK *TCP_ACCEPT_CALLBACK_PROC)(void* param, SOCKET clientSock, HANDLE stopEvent);
+typedef int (CALLBACK *TCP_ACCEPT_CALLBACK_PROC)(void* param, SOCKET clientSock, struct sockaddr_in* client, HANDLE stopEvent);
 
 class CTCPServerUtil
 {
@@ -47,7 +46,7 @@ protected:
 	SOCKET srvSock;
 	struct sockaddr_in srvAddr;
 
-	map<HANDLE, TCP_ACCEPT_PARAM> acceptThreadMap;
+	map<HANDLE, TCP_ACCEPT_PARAM*> acceptThreadMap;
 	
 protected:
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);

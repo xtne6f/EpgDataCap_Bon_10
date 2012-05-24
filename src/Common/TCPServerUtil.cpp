@@ -10,7 +10,7 @@ CTCPServerUtil::CTCPServerUtil(void)
 	this->funcParam = NULL;
 	this->port = 8081;
 
-	this->stopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	this->stopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	this->serverThread = NULL;
 
 	this->srvSock = NULL;
@@ -27,20 +27,21 @@ CTCPServerUtil::~CTCPServerUtil(void)
 		this->srvSock = NULL;
 	}
 
-	map<HANDLE, TCP_ACCEPT_PARAM>::iterator itr;
+	map<HANDLE, TCP_ACCEPT_PARAM*>::iterator itr;
 	itr = acceptThreadMap.begin();
 	while(itr != acceptThreadMap.end() )
 	{
-		if( WaitForSingleObject(itr->second.thread, 0) == WAIT_OBJECT_0 ){
-			CloseHandle(itr->second.stopEvent);
-			CloseHandle(itr->second.thread);
+		if( WaitForSingleObject(itr->second->thread, 0) == WAIT_OBJECT_0 ){
+			CloseHandle(itr->second->stopEvent);
+			CloseHandle(itr->second->thread);
 		}else{
-			::SetEvent(itr->second.stopEvent);
+			::SetEvent(itr->second->stopEvent);
 			// スレッド終了待ち
-			if ( ::WaitForSingleObject(itr->second.thread, 15000) == WAIT_TIMEOUT ){
-				::TerminateThread(itr->second.thread, 0xffffffff);
+			if ( ::WaitForSingleObject(itr->second->thread, 15000) == WAIT_TIMEOUT ){
+				::TerminateThread(itr->second->thread, 0xffffffff);
 			}
 		}
+		SAFE_DELETE(itr->second);
 		itr++;
 	}
 	acceptThreadMap.clear();
@@ -134,7 +135,7 @@ BOOL CTCPServerUtil::StartServer(DWORD port, TCP_ACCEPT_CALLBACK_PROC tcpAcceptP
 		return FALSE;
 	}
 
-	if( listen(this->srvSock, 10) == SOCKET_ERROR){
+	if( listen(this->srvSock, 0) == SOCKET_ERROR){
 		return FALSE;
 	}
 
@@ -153,20 +154,21 @@ void CTCPServerUtil::StopServer()
 		this->srvSock = NULL;
 	}
 
-	map<HANDLE, TCP_ACCEPT_PARAM>::iterator itr;
+	map<HANDLE, TCP_ACCEPT_PARAM*>::iterator itr;
 	itr = acceptThreadMap.begin();
 	while(itr != acceptThreadMap.end() )
 	{
-		if( WaitForSingleObject(itr->second.thread, 0) == WAIT_OBJECT_0 ){
-			CloseHandle(itr->second.stopEvent);
-			CloseHandle(itr->second.thread);
+		if( WaitForSingleObject(itr->second->thread, 0) == WAIT_OBJECT_0 ){
+			CloseHandle(itr->second->stopEvent);
+			CloseHandle(itr->second->thread);
 		}else{
-			::SetEvent(itr->second.stopEvent);
+			::SetEvent(itr->second->stopEvent);
 			// スレッド終了待ち
-			if ( ::WaitForSingleObject(itr->second.thread, 15000) == WAIT_TIMEOUT ){
-				::TerminateThread(itr->second.thread, 0xffffffff);
+			if ( ::WaitForSingleObject(itr->second->thread, 15000) == WAIT_TIMEOUT ){
+				::TerminateThread(itr->second->thread, 0xffffffff);
 			}
 		}
+		SAFE_DELETE(itr->second);
 		itr++;
 	}
 	acceptThreadMap.clear();
@@ -204,14 +206,32 @@ UINT WINAPI CTCPServerUtil::ServerThread(LPVOID pParam)
 			break;
 		}
 
-		to.tv_sec = 1;
-		to.tv_usec = 0;
+		to.tv_sec = 0;
+		to.tv_usec = 500*1000;
 		FD_ZERO(&ready);
 		FD_SET(pSys->srvSock, &ready);
 
-		result = select(pSys->srvSock+1, &ready, NULL, NULL, &to );
+		result = select(0, &ready, NULL, NULL, &to );
 		if( result == SOCKET_ERROR ){
 			break;
+		}else if( result == 0 ){
+			pSys->Lock();
+			map<HANDLE, TCP_ACCEPT_PARAM*>::iterator itr;
+			itr = pSys->acceptThreadMap.begin();
+			while(itr != pSys->acceptThreadMap.end() )
+			{
+				if( WaitForSingleObject(itr->second->thread, 0) == WAIT_OBJECT_0 ){
+					CloseHandle(itr->second->stopEvent);
+					CloseHandle(itr->second->thread);
+					SAFE_DELETE(itr->second);
+					pSys->acceptThreadMap.erase(itr++);
+				}else{
+					itr++;
+				}
+			}
+			pSys->UnLock();
+
+			continue;
 		}
 		if ( FD_ISSET(pSys->srvSock, &ready) ){
 			int len = sizeof(client);
@@ -219,33 +239,22 @@ UINT WINAPI CTCPServerUtil::ServerThread(LPVOID pParam)
 			if (sock == INVALID_SOCKET) {
 				continue;
 			}else{
-				TCP_ACCEPT_PARAM param;
-				param.param = pSys;
-				param.sock = sock;
-				param.stopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+				string aa;
+				Format(aa, "accept  %s:%u\r\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
+				//OutputDebugStringA(aa.c_str());
 
-				param.thread = (HANDLE)_beginthreadex(NULL, 0, AcceptThread, (LPVOID)&param, CREATE_SUSPENDED, NULL);
 				pSys->Lock();
-				pSys->acceptThreadMap.insert(pair<HANDLE,TCP_ACCEPT_PARAM>(param.thread, param));
-				pSys->UnLock();
-				ResumeThread(param.thread);
-			}
-		}else{
+				TCP_ACCEPT_PARAM* param = new TCP_ACCEPT_PARAM;
+				param->param = pSys;
+				param->sock = sock;
+				param->client = client;
+				param->stopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-			pSys->Lock();
-			map<HANDLE, TCP_ACCEPT_PARAM>::iterator itr;
-			itr = pSys->acceptThreadMap.begin();
-			while(itr != pSys->acceptThreadMap.end() )
-			{
-				if( WaitForSingleObject(itr->second.thread, 0) == WAIT_OBJECT_0 ){
-					CloseHandle(itr->second.stopEvent);
-					CloseHandle(itr->second.thread);
-					pSys->acceptThreadMap.erase(itr++);
-				}else{
-					itr++;
-				}
+				param->thread = (HANDLE)_beginthreadex(NULL, 0, AcceptThread, (LPVOID)param, CREATE_SUSPENDED, NULL);
+				pSys->acceptThreadMap.insert(pair<HANDLE,TCP_ACCEPT_PARAM*>(param->thread, param));
+				ResumeThread(param->thread);
+				pSys->UnLock();
 			}
-			pSys->UnLock();
 		}
 
 	}
@@ -258,10 +267,10 @@ UINT WINAPI CTCPServerUtil::AcceptThread(LPVOID pParam)
 	TCP_ACCEPT_PARAM* pTemp = (TCP_ACCEPT_PARAM*)pParam;
 	CTCPServerUtil* pSys = (CTCPServerUtil*)pTemp->param;
 
-	pSys->tcpAcceptProc(pSys->funcParam, pTemp->sock, pTemp->stopEvent);
+	pSys->tcpAcceptProc(pSys->funcParam, pTemp->sock, &pTemp->client, pTemp->stopEvent);
 	
 //Err_End:
-	shutdown(pTemp->sock,SD_BOTH);
+	shutdown(pTemp->sock,SD_SEND);
 	closesocket(pTemp->sock);
 	pTemp->sock = NULL;
 

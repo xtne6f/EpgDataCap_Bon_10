@@ -93,6 +93,8 @@ CReserveManager::CReserveManager(void)
 	this->ngShareFile = FALSE;
 	this->epgDBManager = NULL;
 
+	this->chgRecInfo = FALSE;
+
 	ReloadSetting();
 }
 
@@ -942,6 +944,7 @@ BOOL CReserveManager::ReloadReserveData()
 	this->reserveInfoIDMap.clear();
 
 	this->recInfoText.ParseRecInfoText(recInfoFilePath.c_str());
+	this->chgRecInfo = TRUE;
 
 	vector<DWORD> deleteList;
 	LONGLONG nowTime = GetNowI64Time();
@@ -1016,6 +1019,7 @@ BOOL CReserveManager::ReloadReserveData()
 		}
 		this->reserveText.SaveReserveText();
 		this->recInfoText.SaveRecInfoText();
+		this->chgRecInfo = TRUE;
 	}
 
 	if( this->bankCheckThread != NULL ){
@@ -2857,6 +2861,7 @@ void CReserveManager::CheckOverTimeReserve()
 		_DelReserveData(&deleteList);
 		this->reserveText.SaveReserveText();
 		this->recInfoText.SaveRecInfoText();
+		this->chgRecInfo = TRUE;
 	}
 }
 
@@ -3403,6 +3408,7 @@ void CReserveManager::CheckEndReserve()
 
 		this->recInfoText.SaveRecInfoText(recFilePath.c_str());
 		this->recInfoManager.SaveRecInfo();
+		this->chgRecInfo = TRUE;
 
 		_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
 		_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
@@ -4917,6 +4923,7 @@ BOOL CReserveManager::DelRecFileInfo(
 	filePath += REC_INFO_TEXT_NAME;
 
 	this->recInfoText.SaveRecInfoText(filePath.c_str());
+	this->chgRecInfo = TRUE;
 
 	_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
 
@@ -4946,6 +4953,7 @@ BOOL CReserveManager::ChgProtectRecFileInfo(
 	filePath += REC_INFO_TEXT_NAME;
 
 	this->recInfoText.SaveRecInfoText(filePath.c_str());
+	this->chgRecInfo = TRUE;
 
 	_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
 
@@ -5741,4 +5749,17 @@ void CReserveManager::ChgAutoAddNoRec(EPGDB_EVENT_INFO* info)
 
 	UnLock();
 	return ;
+}
+
+BOOL CReserveManager::IsRecInfoChg()
+{
+	if( Lock(L"IsFindRecEventInfo") == FALSE ) return FALSE;
+	BOOL ret = TRUE;
+
+	ret = this->chgRecInfo;
+
+	this->chgRecInfo = FALSE;
+
+	UnLock();
+	return ret;
 }

@@ -103,24 +103,11 @@ void CDropCount::CheckCounter(CTSPacketUtil* tsPacket, DROP_INFO* info)
 		info->scramble++;
 		this->scramble++;
 	}
-
+	
 	if( tsPacket->adaptation_field_control == 0x00 || tsPacket->adaptation_field_control == 0x02 ){
 		//ペイロードが存在しない場合は意味なし
 		info->duplicateFlag = FALSE;
-		if( tsPacket->adaptation_field_control == 0x02 || tsPacket->adaptation_field_control == 0x03 ){
-			if( tsPacket->transport_scrambling_control == 0 ){
-				if(tsPacket->discontinuity_indicator == 1){
-					//不連続の判定が必要
-					info->drop++;
-					this->drop++;
-					goto CHK_END;
-				}else{
-					goto CHK_END;
-				}
-			}
-		}else{
-			goto CHK_END;
-		}
+		goto CHK_END;
 	}
 	if( info->lastCounter == tsPacket->continuity_counter ){
 		if( tsPacket->adaptation_field_control == 0x01 || tsPacket->adaptation_field_control == 0x03 ){
@@ -130,17 +117,11 @@ void CDropCount::CheckCounter(CTSPacketUtil* tsPacket, DROP_INFO* info)
 					info->duplicateFlag = TRUE;
 					if( tsPacket->adaptation_field_control == 0x02 || tsPacket->adaptation_field_control == 0x03 ){
 						if(tsPacket->discontinuity_indicator == 1){
-							//不連続の判定が必要
+							//不連続の判定だが正常
 							info->duplicateFlag = FALSE;
-							info->drop++;
-							this->drop++;
-							goto CHK_END;
-						}else{
-							goto CHK_END;
 						}
-					}else{
-						goto CHK_END;
 					}
+					goto CHK_END;
 				}else{
 					//前回重送と判断してるので不連続
 					info->duplicateFlag = FALSE;
@@ -155,6 +136,10 @@ void CDropCount::CheckCounter(CTSPacketUtil* tsPacket, DROP_INFO* info)
 	}
 	if( info->lastCounter+1 != tsPacket->continuity_counter ){
 		if( info->lastCounter != 0x0F && tsPacket->continuity_counter != 0x00 ){
+			if(tsPacket->discontinuity_indicator == 1){
+				//不連続の判定だが正常
+				goto CHK_END;
+			}
 			//カウンターが飛んだので不連続
 			ULONGLONG count = 0;
 			if( tsPacket->continuity_counter <= info->lastCounter ){

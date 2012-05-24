@@ -924,14 +924,14 @@ DWORD CRestApiManager::GetSearchEvent(string param, HTTP_STREAM* sendParam, CEpg
 	itr = paramMap.find("andkey");
 	if( itr != paramMap.end() ){
 		string utf8;
-		UrlDecode(itr->second.c_str(), itr->second.size(), utf8);
+		UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), utf8);
 		UTF8toW(utf8, andkey);
 	}
 	wstring notkey;
 	itr = paramMap.find("notkey");
 	if( itr != paramMap.end() ){
 		string utf8;
-		UrlDecode(itr->second.c_str(), itr->second.size(), utf8);
+		UrlDecode(itr->second.c_str(), (DWORD)itr->second.size(), utf8);
 		UTF8toW(utf8, notkey);
 	}
 	vector<DWORD> genru;

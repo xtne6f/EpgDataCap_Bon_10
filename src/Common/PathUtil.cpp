@@ -175,6 +175,19 @@ void GetFileName(wstring strPath, wstring& strName)
 	return ;
 }
 
+void GetFileExt(wstring strPath, wstring& strExt)
+{
+	WCHAR strFileName[512] = L"";
+	WCHAR szDrive[_MAX_DRIVE];
+	WCHAR szDir[_MAX_DIR];
+	WCHAR szFname[_MAX_FNAME];
+	WCHAR szExt[_MAX_EXT];
+	_wsplitpath_s( strPath.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
+
+	strExt = szExt;
+	return ;
+}
+
 void GetFileFolder(wstring strPath, wstring& strFolder)
 {
 	WCHAR szPath[512] = L"";

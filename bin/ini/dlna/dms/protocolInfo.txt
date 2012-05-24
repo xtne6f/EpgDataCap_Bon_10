@@ -1,0 +1,9 @@
+;Browseのメタ情報、protocolInfoの情報として使うもの
+;拡張子判別で行う
+;書式（タブ区切り）：拡張子（タブ）<upnp:class>の値（タブ）MimeType（タブ）DLNA.ORG_PN
+.mp4	object.item.videoItem	video/mp4	
+.ts	object.item.videoItem	video/mpeg	
+.mp3	object.item.audioItem	audio/mpeg	MP3
+.m4a	object.item.audioItem	audio/mp4	AAC_ISO
+.jpg	object.item.imageItem	image/jpeg	JPEG_LRG
+.jpeg	object.item.imageItem	image/jpeg	JPEG_LRG
